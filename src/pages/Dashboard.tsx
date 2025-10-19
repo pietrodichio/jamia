@@ -4,40 +4,47 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar, Users, LogOut } from "lucide-react";
+import { Plus, Calendar, Users, LogOut, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import JamCard from "@/components/JamCard";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [myJams, setMyJams] = useState<any[]>([]);
+  const [upcomingJams, setUpcomingJams] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-
-      setUser(session.user);
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
-
-      setProfile(profileData);
-
-      if (profileData && !profileData.phone) {
-        navigate("/profile-setup");
-      }
-    };
-
     checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    setUser(session.user);
+
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+
+    setProfile(profileData);
+
+    if (profileData && !profileData.phone) {
+      navigate("/profile-setup");
+      return;
+    }
+
+    await loadJams(session.user.id);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
@@ -46,7 +53,86 @@ const Dashboard = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  };
+
+  const loadJams = async (userId: string) => {
+    setIsLoading(true);
+    try {
+      // Load jams created by user
+      const { data: ownedJams, error: ownedError } = await supabase
+        .from("jams")
+        .select(`
+          *,
+          jam_participants (
+            id,
+            state
+          )
+        `)
+        .eq("owner_id", userId)
+        .order("starts_at", { ascending: true });
+
+      if (ownedError) throw ownedError;
+
+      // Calculate participant counts
+      const jamsWithCounts = (ownedJams || []).map(jam => ({
+        ...jam,
+        participant_count: jam.jam_participants?.filter((p: any) => p.state === "participant").length || 0,
+        waiting_count: jam.jam_participants?.filter((p: any) => p.state === "waiting").length || 0,
+      }));
+
+      setMyJams(jamsWithCounts);
+
+      // Load jams user is participating in
+      const { data: participations, error: participationsError } = await supabase
+        .from("jam_participants")
+        .select(`
+          *,
+          jams (
+            *
+          )
+        `)
+        .eq("user_id", userId)
+        .in("state", ["participant", "waiting"])
+        .order("joined_at", { ascending: false });
+
+      if (participationsError) throw participationsError;
+
+      // Load full jam details for participated jams
+      const participatedJamIds = participations?.map(p => p.jam_id) || [];
+      if (participatedJamIds.length > 0) {
+        const { data: participatedJams, error: participatedError } = await supabase
+          .from("jams")
+          .select(`
+            *,
+            jam_participants (
+              id,
+              state
+            )
+          `)
+          .in("id", participatedJamIds)
+          .eq("status", "published")
+          .order("starts_at", { ascending: true });
+
+        if (participatedError) throw participatedError;
+
+        const participatedWithCounts = (participatedJams || []).map(jam => ({
+          ...jam,
+          participant_count: jam.jam_participants?.filter((p: any) => p.state === "participant").length || 0,
+          waiting_count: jam.jam_participants?.filter((p: any) => p.state === "waiting").length || 0,
+        }));
+
+        setUpcomingJams(participatedWithCounts);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -57,8 +143,14 @@ const Dashboard = () => {
   };
 
   if (!user || !profile) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
+
+  const totalParticipations = upcomingJams.length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
@@ -96,7 +188,7 @@ const Dashboard = () => {
               <Calendar className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{myJams.length}</div>
               <p className="text-xs text-muted-foreground">Jam creati</p>
             </CardContent>
           </Card>
@@ -107,7 +199,7 @@ const Dashboard = () => {
               <Users className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{totalParticipations}</div>
               <p className="text-xs text-muted-foreground">Jam a cui partecipo</p>
             </CardContent>
           </Card>
@@ -142,11 +234,23 @@ const Dashboard = () => {
                 <CardDescription>Jam a cui hai deciso di partecipare</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Non hai ancora prenotato nessun jam</p>
-                  <p className="text-sm text-muted-foreground mt-2">Inizia a cercare jam nella tua zona!</p>
-                </div>
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : upcomingJams.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Non hai ancora prenotato nessun jam</p>
+                    <p className="text-sm text-muted-foreground mt-2">Inizia a cercare jam nella tua zona!</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {upcomingJams.map((jam) => (
+                      <JamCard key={jam.id} jam={jam} />
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -158,17 +262,29 @@ const Dashboard = () => {
                 <CardDescription>Jam che hai creato e stai organizzando</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Non hai ancora creato nessun jam</p>
-                  <Button
-                    onClick={() => navigate("/create-jam")}
-                    className="mt-4 rounded-xl"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Crea il tuo primo Jam
-                  </Button>
-                </div>
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : myJams.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Non hai ancora creato nessun jam</p>
+                    <Button
+                      onClick={() => navigate("/create-jam")}
+                      className="mt-4 rounded-xl"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Crea il tuo primo Jam
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {myJams.map((jam) => (
+                      <JamCard key={jam.id} jam={jam} showStatus />
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
