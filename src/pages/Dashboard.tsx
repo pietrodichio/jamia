@@ -31,6 +31,12 @@ const Dashboard = () => {
       return;
     }
 
+    // Check if email is confirmed
+    if (!session.user.email_confirmed_at) {
+      navigate("/email-confirmation");
+      return;
+    }
+
     setUser(session.user);
 
     try {
@@ -50,6 +56,8 @@ const Dashboard = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
         navigate("/auth");
+      } else if (event === "SIGNED_IN" && session?.user && !session.user.email_confirmed_at) {
+        navigate("/email-confirmation");
       }
     });
 

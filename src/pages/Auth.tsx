@@ -36,10 +36,10 @@ const Auth = () => {
 
         toast({
           title: "Registrazione completata!",
-          description: "Benvenuto in Jamia. Completa il tuo profilo per iniziare.",
+          description: "Ti abbiamo inviato un'email di conferma. Controlla la tua casella di posta.",
         });
 
-        navigate("/profile-setup");
+        navigate("/email-confirmation");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,

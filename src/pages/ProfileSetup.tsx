@@ -29,6 +29,12 @@ const ProfileSetup = () => {
         return;
       }
 
+      // Check if email is confirmed
+      if (!user.email_confirmed_at) {
+        navigate("/email-confirmation");
+        return;
+      }
+
       try {
         const profile = await profilesApi.getProfile(user.id);
         setName(profile.name || "");
@@ -104,10 +110,11 @@ const ProfileSetup = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefono</Label>
+                <Label htmlFor="phone">Telefono *</Label>
                 <Input
                   id="phone"
                   type="tel"
+                  required
                   placeholder="+39 123 456 7890"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
