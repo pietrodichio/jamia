@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { jamsApi } from "@/api/jams.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,35 +53,19 @@ const CreateJam = () => {
         throw new Error("La data di fine deve essere successiva alla data di inizio");
       }
 
-      const { data, error } = await supabase
-        .from("jams")
-        .insert({
-          owner_id: user.id,
-          name,
-          location_text: locationText,
-          gmaps_link: gmapsLink || null,
-          starts_at: startsAt,
-          ends_at: endsAt,
-          description: description || null,
-          capacity: capacity || null,
-          desired_bases_min: desiredBasesMin || null,
-          desired_bases_max: desiredBasesMax || null,
-          desired_flyers_min: desiredFlyersMin || null,
-          desired_flyers_max: desiredFlyersMax || null,
-          auto_promote: autoPromote,
-          status: 'draft',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Log creation
-      await supabase.from("audit_log").insert({
-        jam_id: data.id,
-        actor_user_id: user.id,
-        action: 'created',
-        metadata: { jam_name: name },
+      const jam = await jamsApi.createJam({
+        name,
+        location_text: locationText,
+        gmaps_link: gmapsLink || undefined,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        description: description || undefined,
+        capacity: capacity || undefined,
+        desired_bases_min: desiredBasesMin || undefined,
+        desired_bases_max: desiredBasesMax || undefined,
+        desired_flyers_min: desiredFlyersMin || undefined,
+        desired_flyers_max: desiredFlyersMax || undefined,
+        auto_promote: autoPromote,
       });
 
       toast({
@@ -88,11 +73,11 @@ const CreateJam = () => {
         description: "La tua jam è stata salvata come bozza. Pubblicala quando sei pronto.",
       });
 
-      navigate(`/jam/${data.id}`);
+      navigate(`/jam/${jam.id}`);
     } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesApi } from "@/api/profiles.api";
+import { jamsApi } from "@/api/jams.api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,20 +33,19 @@ const Dashboard = () => {
 
     setUser(session.user);
 
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", session.user.id)
-      .single();
+    try {
+      const profileData = await profilesApi.getProfile(session.user.id);
+      setProfile(profileData);
 
-    setProfile(profileData);
+      if (profileData && !profileData.phone) {
+        navigate("/profile-setup");
+        return;
+      }
 
-    if (profileData && !profileData.phone) {
-      navigate("/profile-setup");
-      return;
+      await loadJams(session.user.id);
+    } catch (error) {
+      console.error("Error loading profile:", error);
     }
-
-    await loadJams(session.user.id);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
@@ -59,74 +60,16 @@ const Dashboard = () => {
     setIsLoading(true);
     try {
       // Load jams created by user
-      const { data: ownedJams, error: ownedError } = await supabase
-        .from("jams")
-        .select(`
-          *,
-          jam_participants (
-            id,
-            state
-          )
-        `)
-        .eq("owner_id", userId)
-        .order("starts_at", { ascending: true });
-
-      if (ownedError) throw ownedError;
-
-      // Calculate participant counts
-      const jamsWithCounts = (ownedJams || []).map(jam => ({
-        ...jam,
-        participant_count: jam.jam_participants?.filter((p: any) => p.state === "participant").length || 0,
-        waiting_count: jam.jam_participants?.filter((p: any) => p.state === "waiting").length || 0,
-      }));
-
-      setMyJams(jamsWithCounts);
+      const ownedJams = await jamsApi.getMyJams();
+      setMyJams(ownedJams);
 
       // Load jams user is participating in
-      const { data: participations, error: participationsError } = await supabase
-        .from("jam_participants")
-        .select(`
-          *,
-          jams (
-            *
-          )
-        `)
-        .eq("user_id", userId)
-        .in("state", ["participant", "waiting"])
-        .order("joined_at", { ascending: false });
-
-      if (participationsError) throw participationsError;
-
-      // Load full jam details for participated jams
-      const participatedJamIds = participations?.map(p => p.jam_id) || [];
-      if (participatedJamIds.length > 0) {
-        const { data: participatedJams, error: participatedError } = await supabase
-          .from("jams")
-          .select(`
-            *,
-            jam_participants (
-              id,
-              state
-            )
-          `)
-          .in("id", participatedJamIds)
-          .eq("status", "published")
-          .order("starts_at", { ascending: true });
-
-        if (participatedError) throw participatedError;
-
-        const participatedWithCounts = (participatedJams || []).map(jam => ({
-          ...jam,
-          participant_count: jam.jam_participants?.filter((p: any) => p.state === "participant").length || 0,
-          waiting_count: jam.jam_participants?.filter((p: any) => p.state === "waiting").length || 0,
-        }));
-
-        setUpcomingJams(participatedWithCounts);
-      }
+      const participatedJams = await jamsApi.getParticipatingJams();
+      setUpcomingJams(participatedJams);
     } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {

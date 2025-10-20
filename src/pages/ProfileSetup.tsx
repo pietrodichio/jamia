@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesApi } from "@/api/profiles.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,18 +29,15 @@ const ProfileSetup = () => {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (profile) {
+      try {
+        const profile = await profilesApi.getProfile(user.id);
         setName(profile.name || "");
         setPhone(profile.phone || "");
         setBio(profile.bio || "");
         setCity(profile.city || "");
         setMainRole(profile.main_role || "both");
+      } catch (error) {
+        console.error("Error fetching profile:", error);
       }
     };
 
@@ -54,18 +52,13 @@ const ProfileSetup = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non autenticato");
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          name,
-          phone,
-          bio,
-          city,
-          main_role: mainRole,
-        })
-        .eq("id", user.id);
-
-      if (error) throw error;
+      await profilesApi.updateProfile(user.id, {
+        name,
+        phone,
+        bio,
+        city,
+        main_role: mainRole,
+      });
 
       toast({
         title: "Profilo aggiornato!",
@@ -76,7 +69,7 @@ const ProfileSetup = () => {
     } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {

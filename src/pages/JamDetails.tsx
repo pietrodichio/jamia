@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { jamsApi } from "@/api/jams.api";
+import { participantsApi } from "@/api/participants.api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,59 +44,25 @@ const JamDetails = () => {
       setCurrentUser(user);
 
       // Load jam
-      const { data: jamData, error: jamError } = await supabase
-        .from("jams")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (jamError) throw jamError;
+      const jamData = await jamsApi.getJamById(id!);
       setJam(jamData);
       setIsOwner(jamData.owner_id === user.id);
 
-      // Load participants
-      const { data: participantsData, error: participantsError } = await supabase
-        .from("jam_participants")
-        .select(`
-          *,
-          profiles:user_id (name, main_role, phone)
-        `)
-        .eq("jam_id", id)
-        .eq("state", "participant")
-        .order("joined_at", { ascending: true });
-
-      if (participantsError) throw participantsError;
-      setParticipants(participantsData || []);
-
-      // Load waiting list
-      const { data: waitingData, error: waitingError } = await supabase
-        .from("jam_participants")
-        .select(`
-          *,
-          profiles:user_id (name, main_role, phone)
-        `)
-        .eq("jam_id", id)
-        .eq("state", "waiting")
-        .order("joined_at", { ascending: true });
-
-      if (waitingError) throw waitingError;
-      setWaitingList(waitingData || []);
+      // Load participants and waiting list (only if owner)
+      if (jamData.owner_id === user.id) {
+        const participantsData = await participantsApi.getJamParticipants(id!);
+        setParticipants(participantsData.participants || []);
+        setWaitingList(participantsData.waitingList || []);
+      }
 
       // Check if current user is participating
-      const { data: userParticipationData } = await supabase
-        .from("jam_participants")
-        .select("*")
-        .eq("jam_id", id)
-        .eq("user_id", user.id)
-        .neq("state", "cancelled")
-        .maybeSingle();
-
+      const userParticipationData = await participantsApi.getUserParticipation(id!);
       setUserParticipation(userParticipationData);
 
     } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {
@@ -107,32 +75,13 @@ const JamDetails = () => {
     
     setIsBooking(true);
     try {
-      const isAtCapacity = jam.capacity && participants.length >= jam.capacity;
-      const newState = isAtCapacity ? "waiting" : "participant";
-
-      const { error } = await supabase
-        .from("jam_participants")
-        .insert({
-          jam_id: jam.id,
-          user_id: currentUser.id,
-          role: selectedRole,
-          state: newState,
-          source: "direct",
-        });
-
-      if (error) throw error;
-
-      // Log action
-      await supabase.from("audit_log").insert({
-        jam_id: jam.id,
-        actor_user_id: currentUser.id,
-        action: "joined",
-        metadata: { role: selectedRole, state: newState },
+      const result = await participantsApi.joinJam(jam.id, {
+        role: selectedRole,
       });
 
       toast({
-        title: isAtCapacity ? "Aggiunto alla lista d'attesa" : "Prenotazione confermata!",
-        description: isAtCapacity 
+        title: result.state === "waiting" ? "Aggiunto alla lista d'attesa" : "Prenotazione confermata!",
+        description: result.state === "waiting"
           ? "Ti avviseremo se si libera un posto"
           : "Ci vediamo alla jam!",
       });
@@ -141,7 +90,7 @@ const JamDetails = () => {
     } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {
@@ -153,23 +102,7 @@ const JamDetails = () => {
     if (!userParticipation) return;
 
     try {
-      const { error } = await supabase
-        .from("jam_participants")
-        .update({
-          state: "cancelled",
-          cancelled_at: new Date().toISOString(),
-        })
-        .eq("id", userParticipation.id);
-
-      if (error) throw error;
-
-      // Log cancellation
-      await supabase.from("audit_log").insert({
-        jam_id: jam.id,
-        actor_user_id: currentUser.id,
-        action: "cancelled",
-        metadata: { previous_state: userParticipation.state },
-      });
+      await participantsApi.cancelParticipation(userParticipation.id);
 
       toast({
         title: "Prenotazione annullata",
@@ -180,7 +113,7 @@ const JamDetails = () => {
     } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     }
@@ -189,18 +122,7 @@ const JamDetails = () => {
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
-      const { error } = await supabase
-        .from("jams")
-        .update({ status: "published" })
-        .eq("id", jam.id);
-
-      if (error) throw error;
-
-      await supabase.from("audit_log").insert({
-        jam_id: jam.id,
-        actor_user_id: currentUser.id,
-        action: "published",
-      });
+      await jamsApi.publishJam(jam.id);
 
       toast({
         title: "Jam pubblicato!",
@@ -211,7 +133,7 @@ const JamDetails = () => {
     } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {
@@ -223,12 +145,7 @@ const JamDetails = () => {
     if (!confirm("Sei sicuro di voler eliminare questa jam?")) return;
 
     try {
-      const { error } = await supabase
-        .from("jams")
-        .delete()
-        .eq("id", jam.id);
-
-      if (error) throw error;
+      await jamsApi.deleteJam(jam.id);
 
       toast({
         title: "Jam eliminato",
@@ -239,7 +156,7 @@ const JamDetails = () => {
     } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     }
