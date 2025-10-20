@@ -90,7 +90,7 @@ const ProfileSetup = () => {
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl">Completa il tuo profilo</CardTitle>
           <CardDescription>
-            Raccontaci qualcosa di te per iniziare a partecipare ai jam
+            Raccontaci qualcosa di te per iniziare a partecipare alle tue jam
           </CardDescription>
         </CardHeader>
         <CardContent>

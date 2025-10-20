@@ -223,14 +223,14 @@ const Dashboard = () => {
         {/* Jams Tabs */}
         <Tabs defaultValue="upcoming" className="w-full">
           <TabsList className="grid w-full grid-cols-2 rounded-xl">
-            <TabsTrigger value="upcoming" className="rounded-xl">Prossimi Jam</TabsTrigger>
-            <TabsTrigger value="my-jams" className="rounded-xl">I Miei Jam</TabsTrigger>
+            <TabsTrigger value="upcoming" className="rounded-xl">Prossime Jam</TabsTrigger>
+            <TabsTrigger value="my-jams" className="rounded-xl">Le mie Jam</TabsTrigger>
           </TabsList>
           
           <TabsContent value="upcoming" className="mt-6">
             <Card className="border-primary/10 rounded-2xl">
               <CardHeader>
-                <CardTitle>Prossimi Jam</CardTitle>
+                <CardTitle>Prossime Jam</CardTitle>
                 <CardDescription>Jam a cui hai deciso di partecipare</CardDescription>
               </CardHeader>
               <CardContent>
@@ -241,7 +241,7 @@ const Dashboard = () => {
                 ) : upcomingJams.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Non hai ancora prenotato nessun jam</p>
+                    <p className="text-muted-foreground">Non hai ancora prenotato nessuna jam</p>
                     <p className="text-sm text-muted-foreground mt-2">Inizia a cercare jam nella tua zona!</p>
                   </div>
                 ) : (
@@ -258,7 +258,7 @@ const Dashboard = () => {
           <TabsContent value="my-jams" className="mt-6">
             <Card className="border-primary/10 rounded-2xl">
               <CardHeader>
-                <CardTitle>I Miei Jam</CardTitle>
+                <CardTitle>Le mie Jam</CardTitle>
                 <CardDescription>Jam che hai creato e stai organizzando</CardDescription>
               </CardHeader>
               <CardContent>
@@ -269,13 +269,13 @@ const Dashboard = () => {
                 ) : myJams.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Non hai ancora creato nessun jam</p>
+                    <p className="text-muted-foreground">Non hai ancora creato nessuna jam</p>
                     <Button
                       onClick={() => navigate("/create-jam")}
                       className="mt-4 rounded-xl"
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Crea il tuo primo Jam
+                      Crea la tua prima Jam
                     </Button>
                   </div>
                 ) : (

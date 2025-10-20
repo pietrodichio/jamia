@@ -28,9 +28,9 @@ const JamCard = ({ jam, showStatus = false }: JamCardProps) => {
       case "draft":
         return <Badge variant="secondary">Bozza</Badge>;
       case "published":
-        return <Badge className="bg-primary">Pubblicato</Badge>;
+        return <Badge className="bg-primary">Pubblicata</Badge>;
       case "archived":
-        return <Badge variant="outline">Archiviato</Badge>;
+        return <Badge variant="outline">Archiviata</Badge>;
     }
   };
 

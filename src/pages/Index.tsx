@@ -25,7 +25,7 @@ const Index = () => {
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
             <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">La community italiana di AcroYoga</span>
+            <span className="text-sm font-medium text-primary">Il primo sito per le tue jam di AcroYoga</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold leading-tight">
@@ -79,7 +79,7 @@ const Index = () => {
             </div>
             <h3 className="text-xl font-semibold">Gestione Ruoli Intelligente</h3>
             <p className="text-muted-foreground">
-              Liste d'attesa bilanciate automaticamente tra Base e Flyer per jam equilibrati.
+              Liste d'attesa bilanciate automaticamente tra Base e Flyer per jam equilibrate.
             </p>
           </div>
 
@@ -99,7 +99,7 @@ const Index = () => {
       <div className="container mx-auto px-4 pb-32">
         <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary to-primary/80 rounded-3xl p-12 text-center text-white space-y-6">
           <h2 className="text-3xl md:text-4xl font-bold">
-            Pronto a organizzare il tuo primo jam?
+            Pronto a organizzare la tua prima jam?
           </h2>
           <p className="text-lg opacity-90">
             Unisciti alla community Jamia e semplifica l'organizzazione dei tuoi eventi AcroYoga

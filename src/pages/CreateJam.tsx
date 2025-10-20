@@ -84,8 +84,8 @@ const CreateJam = () => {
       });
 
       toast({
-        title: "Jam creato!",
-        description: "Il tuo jam è stato salvato come bozza. Pubblicalo quando sei pronto.",
+        title: "Jam creata!",
+        description: "La tua jam è stata salvata come bozza. Pubblicala quando sei pronto.",
       });
 
       navigate(`/jam/${data.id}`);
@@ -114,9 +114,9 @@ const CreateJam = () => {
 
         <Card className="border-primary/10 shadow-lg rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl">Crea un Nuovo Jam</CardTitle>
+            <CardTitle className="text-2xl">Crea una nuova Jam</CardTitle>
             <CardDescription>
-              Compila i dettagli del tuo jam di AcroYoga
+              Compila i dettagli della tua jam di AcroYoga
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -124,10 +124,10 @@ const CreateJam = () => {
               {/* Basic Info */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome del Jam *</Label>
+                  <Label htmlFor="name">Nome della Jam *</Label>
                   <Input
                     id="name"
-                    placeholder="es. Jam AcroYoga Milano"
+                    placeholder="es. Jam di AcroYoga a Milano"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -203,7 +203,7 @@ const CreateJam = () => {
                 <Label htmlFor="description">Descrizione</Label>
                 <Textarea
                   id="description"
-                  placeholder="Descrivi il jam, livello, cosa portare..."
+                  placeholder="Descrivi la tua jam, livello, cosa portare..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={isLoading}
@@ -229,7 +229,7 @@ const CreateJam = () => {
                     className="rounded-xl"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Se omesso, il jam avrà posti illimitati
+                    Se omesso, la jam avrà posti illimitati
                   </p>
                 </div>
 

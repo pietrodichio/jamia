@@ -134,7 +134,7 @@ const JamDetails = () => {
         title: isAtCapacity ? "Aggiunto alla lista d'attesa" : "Prenotazione confermata!",
         description: isAtCapacity 
           ? "Ti avviseremo se si libera un posto"
-          : "Ci vediamo al jam!",
+          : "Ci vediamo alla jam!",
       });
 
       loadJamDetails();
@@ -204,7 +204,7 @@ const JamDetails = () => {
 
       toast({
         title: "Jam pubblicato!",
-        description: "Il tuo jam è ora visibile e prenotabile",
+        description: "La tua jam è ora visibile e prenotabile",
       });
 
       loadJamDetails();
@@ -220,7 +220,7 @@ const JamDetails = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Sei sicuro di voler eliminare questo jam?")) return;
+    if (!confirm("Sei sicuro di voler eliminare questa jam?")) return;
 
     try {
       const { error } = await supabase
@@ -232,7 +232,7 @@ const JamDetails = () => {
 
       toast({
         title: "Jam eliminato",
-        description: "Il jam è stato eliminato con successo",
+        description: "La jam è stato eliminato con successo",
       });
 
       navigate("/dashboard");
@@ -250,7 +250,7 @@ const JamDetails = () => {
     navigator.clipboard.writeText(link);
     toast({
       title: "Link copiato!",
-      description: "Il link del jam è stato copiato negli appunti",
+      description: "Il link della jam è stato copiato negli appunti",
     });
   };
 
@@ -265,7 +265,7 @@ const JamDetails = () => {
   if (!jam) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Jam non trovato</p>
+        <p>Jam non trovata</p>
       </div>
     );
   }
@@ -298,7 +298,7 @@ const JamDetails = () => {
                 <div className="flex items-center gap-2 mb-2">
                   <CardTitle className="text-3xl">{jam.name}</CardTitle>
                   {jam.status === "draft" && <Badge variant="secondary">Bozza</Badge>}
-                  {jam.status === "published" && <Badge className="bg-primary">Pubblicato</Badge>}
+                  {jam.status === "published" && <Badge className="bg-primary">Pubblicata</Badge>}
                 </div>
                 <CardDescription className="flex items-center gap-1 text-base">
                   <MapPin className="h-4 w-4" />
@@ -393,9 +393,9 @@ const JamDetails = () => {
                     </DialogTrigger>
                     <DialogContent className="rounded-2xl">
                       <DialogHeader>
-                        <DialogTitle>Prenota il jam</DialogTitle>
+                        <DialogTitle>Prenota la tua jam</DialogTitle>
                         <DialogDescription>
-                          Seleziona il tuo ruolo per questo jam
+                          Seleziona il tuo ruolo per la tua jam
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
