@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
-import type { JoinJamDto } from './dto/join-jam.dto';
+import { JoinJamDto } from './dto/join-jam.dto';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -37,15 +37,10 @@ export class ParticipantsService {
     }
 
     // Get participants
-    const { data: participants, error: participantsError } =
+    const { data: participantsData, error: participantsError } =
       await this.supabase
         .from('jam_participants')
-        .select(
-          `
-        *,
-        profiles:user_id (name, main_role, phone)
-      `,
-        )
+        .select('*')
         .eq('jam_id', jamId)
         .eq('state', 'participant')
         .order('joined_at', { ascending: true });
@@ -57,14 +52,9 @@ export class ParticipantsService {
     }
 
     // Get waiting list
-    const { data: waitingList, error: waitingError } = await this.supabase
+    const { data: waitingData, error: waitingError } = await this.supabase
       .from('jam_participants')
-      .select(
-        `
-        *,
-        profiles:user_id (name, main_role, phone)
-      `,
-      )
+      .select('*')
       .eq('jam_id', jamId)
       .eq('state', 'waiting')
       .order('joined_at', { ascending: true });
@@ -72,6 +62,37 @@ export class ParticipantsService {
     if (waitingError) {
       throw new Error(`Failed to fetch waiting list: ${waitingError.message}`);
     }
+
+    // Get profile data for participants
+    const participantIds = participantsData?.map(p => p.user_id) || [];
+    const waitingIds = waitingData?.map(w => w.user_id) || [];
+    const allUserIds = [...participantIds, ...waitingIds];
+
+    let profilesData: any[] = [];
+    if (allUserIds.length > 0) {
+      const { data: profiles, error: profilesError } = await this.supabase
+        .from('profiles')
+        .select('id, name, main_role, phone')
+        .in('id', allUserIds);
+
+      if (profilesError) {
+        console.warn('Failed to fetch profiles:', profilesError.message);
+      } else {
+        profilesData = profiles || [];
+      }
+    }
+
+    // Combine participants with profile data
+    const participants = participantsData?.map(participant => ({
+      ...participant,
+      profiles: profilesData.find(p => p.id === participant.user_id)
+    })) || [];
+
+    // Combine waiting list with profile data
+    const waitingList = waitingData?.map(waiting => ({
+      ...waiting,
+      profiles: profilesData.find(p => p.id === waiting.user_id)
+    })) || [];
 
     return {
       participants: participants || [],

@@ -7,10 +7,9 @@ import {
   Param,
   Body,
   UseGuards,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ParticipantsService } from './participants.service';
-import type { JoinJamDto } from './dto/join-jam.dto';
+import { JoinJamDto } from './dto/join-jam.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User, AuthUser } from '../auth/user.decorator';
 
@@ -39,7 +38,7 @@ export class ParticipantsController {
   async joinJam(
     @Param('jamId') jamId: string,
     @User() user: AuthUser,
-    @Body(ValidationPipe) joinJamDto: JoinJamDto,
+    @Body() joinJamDto: JoinJamDto,
   ) {
     return this.participantsService.joinJam(jamId, user.id, joinJamDto);
   }

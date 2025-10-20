@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SupabaseModule } from './config/supabase.module';
+import { HealthModule } from './health/health.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { JamsModule } from './jams/jams.module';
 import { ParticipantsModule } from './participants/participants.module';
@@ -14,6 +15,7 @@ import { AuditModule } from './audit/audit.module';
       isGlobal: true,
     }),
     SupabaseModule,
+    HealthModule,
     ProfilesModule,
     JamsModule,
     ParticipantsModule,

@@ -7,11 +7,10 @@ import {
   Param,
   Body,
   UseGuards,
-  ValidationPipe,
 } from '@nestjs/common';
 import { JamsService } from './jams.service';
-import type { CreateJamDto } from './dto/create-jam.dto';
-import type { UpdateJamDto } from './dto/update-jam.dto';
+import { CreateJamDto } from './dto/create-jam.dto';
+import { UpdateJamDto } from './dto/update-jam.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User, AuthUser } from '../auth/user.decorator';
 
@@ -43,7 +42,7 @@ export class JamsController {
   @Post()
   async createJam(
     @User() user: AuthUser,
-    @Body(ValidationPipe) createJamDto: CreateJamDto,
+    @Body() createJamDto: CreateJamDto,
   ) {
     return this.jamsService.createJam(user.id, createJamDto);
   }
@@ -52,7 +51,7 @@ export class JamsController {
   async updateJam(
     @Param('id') id: string,
     @User() user: AuthUser,
-    @Body(ValidationPipe) updateJamDto: UpdateJamDto,
+    @Body() updateJamDto: UpdateJamDto,
   ) {
     return this.jamsService.updateJam(id, user.id, updateJamDto);
   }

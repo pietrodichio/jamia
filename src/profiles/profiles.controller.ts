@@ -8,7 +8,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
-import type { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User, AuthUser } from '../auth/user.decorator';
 
@@ -26,7 +26,7 @@ export class ProfilesController {
   async updateProfile(
     @Param('id') id: string,
     @User() user: AuthUser,
-    @Body(ValidationPipe) updateProfileDto: UpdateProfileDto,
+    @Body(new ValidationPipe({ transform: true })) updateProfileDto: UpdateProfileDto,
   ) {
     return this.profilesService.updateProfile(id, user.id, updateProfileDto);
   }

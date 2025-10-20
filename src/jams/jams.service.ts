@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
-import type { CreateJamDto } from './dto/create-jam.dto';
-import type { UpdateJamDto } from './dto/update-jam.dto';
+import { CreateJamDto } from './dto/create-jam.dto';
+import { UpdateJamDto } from './dto/update-jam.dto';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -81,6 +81,8 @@ export class JamsService {
   }
 
   async getJamById(jamId: string, userId?: string) {
+    console.log('jamId:', jamId);
+    console.log('userId:', userId);
     const { data, error } = await this.supabase
       .from('jams')
       .select('*')
@@ -172,8 +174,9 @@ export class JamsService {
   }
 
   async publishJam(jamId: string, userId: string) {
-    const jam = await this.getJamById(jamId);
-
+    const jam = await this.getJamById(jamId, userId);
+    console.log('jam:', jam);
+    console.log('userId:', userId);
     if (jam.owner_id !== userId) {
       throw new ForbiddenException('You can only publish your own jams');
     }

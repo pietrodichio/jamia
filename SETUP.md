@@ -19,7 +19,7 @@ This NestJS backend provides a REST API for the Jamia AcroYoga jam management pl
 
    ```env
    # Server Configuration
-   PORT=3001
+   PORT=8088
 
    # Supabase Configuration
    SUPABASE_URL=https://your-project.supabase.co
@@ -47,7 +47,7 @@ pnpm install
 pnpm run start:dev
 ```
 
-The server will start on `http://localhost:3001`
+The server will start on `http://localhost:8088`
 
 ### Production Mode
 ```bash
