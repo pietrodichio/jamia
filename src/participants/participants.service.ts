@@ -86,7 +86,7 @@ export class ParticipantsService {
     if (allUserIds.length > 0) {
       const { data: profiles, error: profilesError } = await this.supabase
         .from('profiles')
-        .select('id, name, main_role, phone')
+        .select('id, first_name, last_name, main_role, phone, photo_url')
         .in('id', allUserIds);
 
       if (profilesError) {
