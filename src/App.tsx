@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EmailConfirmation from "./pages/EmailConfirmation";
 import ProfileSetup from "./pages/ProfileSetup";
+import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import CreateJam from "./pages/CreateJam";
 import JamDetails from "./pages/JamDetails";
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/email-confirmation" element={<EmailConfirmation />} />
           <Route path="/profile-setup" element={<ProfileSetup />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create-jam" element={<CreateJam />} />
           <Route path="/jam/:id" element={<JamDetails />} />

@@ -7,6 +7,7 @@ import { Trash2, UserX } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { participantsApi } from "@/api/participants.api";
 import { useToast } from "@/hooks/use-toast";
+import { UserAvatar } from "@/components/UserAvatar";
 
 interface ParticipantsListProps {
   participants: any[];
@@ -105,41 +106,41 @@ export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemo
                 key={p.id}
                 className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl "
               >
-                <div className="flex flex-col items-center gap-y-2">
-                    <div className="flex items-start gap-2">
-                      <p className="font-medium text-xl">
+                <div className="flex items-center gap-3">
+                  <UserAvatar
+                    photoUrl={p.profiles?.photo_url}
+                    firstName={p.profiles?.first_name}
+                    lastName={p.profiles?.last_name}
+                    size="md"
+                  />
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">
                         {p.profiles?.first_name} {p.profiles?.last_name || ''}
                       </p>
                       <Badge className={getRoleBadgeColor(p.role)}>
-                      {p.role === "base" ? "Base" : p.role === "flyer" ? "Flyer" : "Both"}
-                    </Badge>
+                        {p.role === "base" ? "Base" : p.role === "flyer" ? "Flyer" : "Both"}
+                      </Badge>
                     </div>
                     {p.profiles?.phone && (
                       <p className="text-sm text-muted-foreground">{p.profiles.phone}</p>
                     )}
-              
+                    <span className="text-xs text-muted-foreground">
+                      {formatJoinedDate(p.joined_at)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-y-2 items-end justify-end">
-                  <div className="flex justify-end w-full">
-               
-                  <span className="text-xs text-muted-foreground">
-                    {formatJoinedDate(p.joined_at)}
-                  </span>
-                    </div>
-                  {isOwner && (
-                    <div className="flex justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveParticipant(p.id, p.profiles?.first_name || 'questo partecipante')}
-                      disabled={removeParticipantMutation.isPending}
-                      className="h-10 w-fit px-2 text-destructive hover:text-destructive bg-destructive/10"
-                    >
-                     <Trash2 className="h-3 w-3" /> Rimuovi
-                    </Button>
-                      </div>
-                  )}
-                </div>
+                {isOwner && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveParticipant(p.id, p.profiles?.first_name || 'questo partecipante')}
+                    disabled={removeParticipantMutation.isPending}
+                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>

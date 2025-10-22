@@ -7,6 +7,7 @@ import { UserX } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { participantsApi } from "@/api/participants.api";
 import { useToast } from "@/hooks/use-toast";
+import { UserAvatar } from "@/components/UserAvatar";
 
 interface WaitingListProps {
   waitingList: any[];
@@ -88,32 +89,38 @@ export const WaitingList = ({ waitingList, jamId, onParticipantRemoved }: Waitin
             >
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
-                <div>
-                  <p className="font-medium">
-                    {w.profiles?.first_name} {w.profiles?.last_name || ''}
-                  </p>
+                <UserAvatar
+                  photoUrl={w.profiles?.photo_url}
+                  firstName={w.profiles?.first_name}
+                  lastName={w.profiles?.last_name}
+                  size="md"
+                />
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">
+                      {w.profiles?.first_name} {w.profiles?.last_name || ''}
+                    </p>
+                    <Badge className={getRoleBadgeColor(w.role)}>
+                      {w.role === "base" ? "Base" : w.role === "flyer" ? "Flyer" : "Both"}
+                    </Badge>
+                  </div>
                   {w.profiles?.phone && (
                     <p className="text-sm text-muted-foreground">{w.profiles.phone}</p>
                   )}
+                  <span className="text-xs text-muted-foreground">
+                    {formatJoinedDate(w.joined_at)}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge className={getRoleBadgeColor(w.role)}>
-                  {w.role === "base" ? "Base" : w.role === "flyer" ? "Flyer" : "Both"}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {formatJoinedDate(w.joined_at)}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveParticipant(w.id, w.profiles?.first_name || 'questo partecipante')}
-                  disabled={removeParticipantMutation.isPending}
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <UserX className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemoveParticipant(w.id, w.profiles?.first_name || 'questo partecipante')}
+                disabled={removeParticipantMutation.isPending}
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <UserX className="h-4 w-4" />
+              </Button>
             </div>
           ))}
         </div>
