@@ -135,7 +135,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-primary/10 rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">I Miei Jam</CardTitle>
+              <CardTitle className="text-sm font-medium">Le mie Jam</CardTitle>
               <Calendar className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
