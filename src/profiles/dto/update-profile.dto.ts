@@ -3,7 +3,11 @@ import { IsString, IsOptional, IsEnum } from 'class-validator';
 export class UpdateProfileDto {
   @IsString()
   @IsOptional()
-  name?: string;
+  first_name?: string;
+
+  @IsString()
+  @IsOptional()
+  last_name?: string;
 
   @IsString()
   @IsOptional()

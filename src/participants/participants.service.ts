@@ -10,6 +10,20 @@ import { SUPABASE_CLIENT } from '../config/supabase.config';
 import { JoinJamDto } from './dto/join-jam.dto';
 import { AuditService } from '../audit/audit.service';
 
+type ParticipantRole = 'base' | 'flyer' | 'both';
+
+type RoleCounts = {
+  base: number;
+  flyer: number;
+  total: number;
+};
+
+type JamRoleConfig = {
+  desired_bases_max?: number | null;
+  desired_flyers_max?: number | null;
+  capacity?: number | null;
+};
+
 @Injectable()
 export class ParticipantsService {
   constructor(
@@ -129,16 +143,19 @@ export class ParticipantsService {
       throw new BadRequestException('You are already participating in this jam');
     }
 
-    // Count current participants
-    const { count: participantCount } = await this.supabase
-      .from('jam_participants')
-      .select('*', { count: 'exact', head: true })
-      .eq('jam_id', jamId)
-      .eq('state', 'participant');
+    const activeParticipants = await this.fetchActiveParticipants(jamId);
+    const roleCounts = this.calculateRoleCounts(activeParticipants);
+    const effectiveRole = this.resolveEffectiveRole(joinJamDto.role);
+
+    const hasReachedRoleLimit = this.isRoleAtMax(effectiveRole, roleCounts, jam);
+    const totalCapacityReached =
+      jam.capacity !== null &&
+      jam.capacity !== undefined &&
+      roleCounts.total >= jam.capacity;
 
     // Determine if user should be participant or on waiting list
-    const isAtCapacity = jam.capacity && participantCount !== null && participantCount >= jam.capacity;
-    const newState = isAtCapacity ? 'waiting' : 'participant';
+    const newState =
+      totalCapacityReached || hasReachedRoleLimit ? 'waiting' : 'participant';
 
     // Add participant
     const { data, error } = await this.supabase
@@ -165,7 +182,7 @@ export class ParticipantsService {
 
     return {
       ...data,
-      message: isAtCapacity
+      message: newState === 'waiting'
         ? 'Added to waiting list'
         : 'Successfully joined the jam',
     };
@@ -266,7 +283,7 @@ export class ParticipantsService {
     // Get jam details
     const { data: jam } = await this.supabase
       .from('jams')
-      .select('capacity, auto_promote')
+      .select('capacity, auto_promote, desired_bases_max, desired_flyers_max')
       .eq('id', jamId)
       .single();
 
@@ -274,44 +291,74 @@ export class ParticipantsService {
       return;
     }
 
-    // Check if there's capacity
-    if (jam.capacity) {
-      const { count: participantCount } = await this.supabase
-        .from('jam_participants')
-        .select('*', { count: 'exact', head: true })
-        .eq('jam_id', jamId)
-        .eq('state', 'participant');
+    const activeParticipants = await this.fetchActiveParticipants(jamId);
+    let roleCounts = this.calculateRoleCounts(activeParticipants);
 
-      if (participantCount && participantCount >= jam.capacity) {
-        return; // Still at capacity
-      }
+    // Check if there's capacity
+    if (
+      jam.capacity !== null &&
+      jam.capacity !== undefined &&
+      roleCounts.total >= jam.capacity
+    ) {
+      return; // Still at capacity
     }
 
     // Get first person on waiting list
-    const { data: waitingPerson } = await this.supabase
+    const { data: waitingList, error: waitingError } = await this.supabase
       .from('jam_participants')
-      .select('*')
+      .select('id, user_id, role')
       .eq('jam_id', jamId)
       .eq('state', 'waiting')
-      .order('joined_at', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      .order('joined_at', { ascending: true });
 
-    if (!waitingPerson) {
+    if (waitingError) {
+      throw new Error(
+        `Failed to fetch waiting list: ${waitingError.message}`,
+      );
+    }
+
+    if (!waitingList || waitingList.length === 0) {
       return; // No one waiting
     }
 
-    // Promote to participant
-    await this.supabase
-      .from('jam_participants')
-      .update({
-        state: 'participant',
-        promoted_at: new Date().toISOString(),
-      })
-      .eq('id', waitingPerson.id);
+    for (const waitingPerson of waitingList) {
+      // Ensure overall capacity still allows promotion
+      if (
+        jam.capacity !== null &&
+        jam.capacity !== undefined &&
+        roleCounts.total >= jam.capacity
+      ) {
+        return;
+      }
 
-    // Log promotion
-    await this.auditService.log(jamId, waitingPerson.user_id, 'promoted');
+      const effectiveRole = this.resolveEffectiveRole(
+        waitingPerson.role as ParticipantRole,
+      );
+
+      if (this.isRoleAtMax(effectiveRole, roleCounts, jam)) {
+        continue;
+      }
+
+      const { error: updateError } = await this.supabase
+        .from('jam_participants')
+        .update({
+          state: 'participant',
+          promoted_at: new Date().toISOString(),
+        })
+        .eq('id', waitingPerson.id);
+
+      if (updateError) {
+        throw new Error(
+          `Failed to promote participant: ${updateError.message}`,
+        );
+      }
+
+      roleCounts = this.incrementRoleCounts(roleCounts, effectiveRole);
+
+      // Log promotion
+      await this.auditService.log(jamId, waitingPerson.user_id, 'promoted');
+      break;
+    }
   }
 
   async getUserParticipation(jamId: string, userId: string) {
@@ -331,5 +378,86 @@ export class ParticipantsService {
 
     return data;
   }
-}
 
+  private async fetchActiveParticipants(jamId: string) {
+    const { data, error } = await this.supabase
+      .from('jam_participants')
+      .select('id, role')
+      .eq('jam_id', jamId)
+      .eq('state', 'participant');
+
+    if (error) {
+      throw new Error(
+        `Failed to fetch active participants: ${error.message}`,
+      );
+    }
+
+    return (
+      data || []
+    ) as Array<{
+      id: string;
+      role: ParticipantRole;
+    }>;
+  }
+
+  private resolveEffectiveRole(role: ParticipantRole): 'base' | 'flyer' {
+    if (role === 'both') {
+      return 'flyer';
+    }
+
+    return role;
+  }
+
+  private calculateRoleCounts(
+    participants: Array<{ role: ParticipantRole }>,
+  ): RoleCounts {
+    return participants.reduce<RoleCounts>(
+      (acc, participant) => {
+        if (participant.role === 'base') {
+          acc.base += 1;
+        } else {
+          acc.flyer += 1;
+        }
+
+        acc.total += 1;
+        return acc;
+      },
+      { base: 0, flyer: 0, total: 0 },
+    );
+  }
+
+  private incrementRoleCounts(
+    counts: RoleCounts,
+    role: 'base' | 'flyer',
+  ): RoleCounts {
+    if (role === 'base') {
+      return {
+        ...counts,
+        base: counts.base + 1,
+        total: counts.total + 1,
+      };
+    }
+
+    return {
+      ...counts,
+      flyer: counts.flyer + 1,
+      total: counts.total + 1,
+    };
+  }
+
+  private isRoleAtMax(
+    role: 'base' | 'flyer',
+    counts: RoleCounts,
+    jam: JamRoleConfig,
+  ): boolean {
+    const max =
+      role === 'base' ? jam.desired_bases_max : jam.desired_flyers_max;
+
+    if (max === null || max === undefined) {
+      return false;
+    }
+
+    const current = role === 'base' ? counts.base : counts.flyer;
+    return current >= max;
+  }
+}

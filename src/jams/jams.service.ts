@@ -11,6 +11,8 @@ import { CreateJamDto } from './dto/create-jam.dto';
 import { UpdateJamDto } from './dto/update-jam.dto';
 import { AuditService } from '../audit/audit.service';
 
+type ParticipantRole = 'base' | 'flyer' | 'both';
+
 @Injectable()
 export class JamsService {
   constructor(
@@ -128,6 +130,8 @@ export class JamsService {
       throw new Error(`Failed to create jam: ${error.message}`);
     }
 
+    await this.ensureOwnerParticipation(data.id, userId);
+
     // Log creation
     await this.auditService.log(data.id, userId, 'created', {
       jam_name: createJamDto.name,
@@ -180,6 +184,8 @@ export class JamsService {
     if (jam.owner_id !== userId) {
       throw new ForbiddenException('You can only publish your own jams');
     }
+
+    await this.ensureOwnerParticipation(jamId, userId);
 
     const { data, error } = await this.supabase
       .from('jams')
@@ -265,5 +271,52 @@ export class JamsService {
           .length || 0,
     }));
   }
-}
 
+  private async ensureOwnerParticipation(
+    jamId: string,
+    ownerId: string,
+  ): Promise<void> {
+    const { data: existingParticipation } = await this.supabase
+      .from('jam_participants')
+      .select('id')
+      .eq('jam_id', jamId)
+      .eq('user_id', ownerId)
+      .neq('state', 'cancelled')
+      .maybeSingle();
+
+    if (existingParticipation) {
+      return;
+    }
+
+    let role: ParticipantRole = 'both';
+
+    const { data: profile, error: profileError } = await this.supabase
+      .from('profiles')
+      .select('main_role')
+      .eq('id', ownerId)
+      .maybeSingle();
+
+    if (!profileError && profile?.main_role) {
+      const normalizedRole = profile.main_role as ParticipantRole;
+      if (['base', 'flyer', 'both'].includes(normalizedRole)) {
+        role = normalizedRole;
+      }
+    }
+
+    const { error: insertError } = await this.supabase
+      .from('jam_participants')
+      .insert({
+        jam_id: jamId,
+        user_id: ownerId,
+        role,
+        state: 'participant',
+        source: 'owner',
+      });
+
+    if (insertError) {
+      throw new Error(
+        `Failed to enrol jam owner as participant: ${insertError.message}`,
+      );
+    }
+  }
+}
