@@ -89,7 +89,9 @@ export const WaitingList = ({ waitingList, jamId, onParticipantRemoved }: Waitin
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
                 <div>
-                  <p className="font-medium">{w.profiles?.name}</p>
+                  <p className="font-medium">
+                    {w.profiles?.first_name} {w.profiles?.last_name || ''}
+                  </p>
                   {w.profiles?.phone && (
                     <p className="text-sm text-muted-foreground">{w.profiles.phone}</p>
                   )}
@@ -105,7 +107,7 @@ export const WaitingList = ({ waitingList, jamId, onParticipantRemoved }: Waitin
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleRemoveParticipant(w.id, w.profiles?.name || 'questo partecipante')}
+                  onClick={() => handleRemoveParticipant(w.id, w.profiles?.first_name || 'questo partecipante')}
                   disabled={removeParticipantMutation.isPending}
                   className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                 >

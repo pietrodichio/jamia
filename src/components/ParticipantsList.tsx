@@ -107,7 +107,10 @@ export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemo
               >
                 <div className="flex flex-col items-center gap-y-2">
                     <div className="flex items-start gap-2">
-                      <p className="font-medium text-xl">{p.profiles?.name}</p>    <Badge className={getRoleBadgeColor(p.role)}>
+                      <p className="font-medium text-xl">
+                        {p.profiles?.first_name} {p.profiles?.last_name || ''}
+                      </p>
+                      <Badge className={getRoleBadgeColor(p.role)}>
                       {p.role === "base" ? "Base" : p.role === "flyer" ? "Flyer" : "Both"}
                     </Badge>
                     </div>
@@ -128,7 +131,7 @@ export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemo
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleRemoveParticipant(p.id, p.profiles?.name || 'questo partecipante')}
+                      onClick={() => handleRemoveParticipant(p.id, p.profiles?.first_name || 'questo partecipante')}
                       disabled={removeParticipantMutation.isPending}
                       className="h-10 w-fit px-2 text-destructive hover:text-destructive bg-destructive/10"
                     >

@@ -3,7 +3,8 @@ import { apiClient } from './client';
 export interface Profile {
   id: string;
   email: string;
-  name: string;
+  first_name: string;
+  last_name?: string;
   phone?: string;
   bio?: string;
   city?: string;
@@ -14,7 +15,8 @@ export interface Profile {
 }
 
 export interface UpdateProfileDto {
-  name?: string;
+  first_name?: string;
+  last_name?: string;
   phone?: string;
   bio?: string;
   city?: string;

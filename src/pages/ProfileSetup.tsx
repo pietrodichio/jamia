@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesApi } from "@/api/profiles.api";
@@ -9,15 +9,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
+import imageCompression from "browser-image-compression";
 
 const ProfileSetup = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
   const [mainRole, setMainRole] = useState<"base" | "flyer" | "both">("both");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -37,11 +43,15 @@ const ProfileSetup = () => {
 
       try {
         const profile = await profilesApi.getProfile(user.id);
-        setName(profile.name || "");
+        setFirstName(profile.first_name || "");
+        setLastName(profile.last_name || "");
         setPhone(profile.phone || "");
         setBio(profile.bio || "");
         setCity(profile.city || "");
         setMainRole(profile.main_role || "both");
+        if (profile.photo_url) {
+          setPhotoPreview(profile.photo_url);
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
@@ -49,6 +59,103 @@ const ProfileSetup = () => {
 
     checkProfile();
   }, [navigate]);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      toast({
+        title: "Formato non valido",
+        description: "Carica solo immagini JPG o PNG.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File troppo grande",
+        description: "L'immagine deve essere inferiore a 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Compress image
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+        fileType: file.type,
+      };
+      
+      const compressedFile = await imageCompression(file, options);
+      setPhotoFile(compressedFile);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Error compressing image:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile elaborare l'immagine.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadPhoto = async (userId: string): Promise<string | null> => {
+    if (!photoFile) return null;
+
+    setIsUploadingPhoto(true);
+    try {
+      const fileExt = photoFile.type.split('/')[1];
+      const fileName = `${userId}/avatar.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(fileName, photoFile, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error: any) {
+      console.error("Error uploading photo:", error);
+      toast({
+        title: "Errore upload",
+        description: "Impossibile caricare la foto profilo.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,12 +165,24 @@ const ProfileSetup = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non autenticato");
 
+      let photoUrl = photoPreview;
+
+      // Upload photo if a new one was selected
+      if (photoFile) {
+        const uploadedUrl = await uploadPhoto(user.id);
+        if (uploadedUrl) {
+          photoUrl = uploadedUrl;
+        }
+      }
+
       await profilesApi.updateProfile(user.id, {
-        name,
+        first_name: firstName,
+        last_name: lastName,
         phone,
         bio,
         city,
         main_role: mainRole,
+        photo_url: photoUrl || undefined,
       });
 
       toast({
@@ -94,21 +213,79 @@ const ProfileSetup = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Profile Photo Upload */}
+            <div className="space-y-2">
+              <Label>Foto profilo</Label>
+              <div className="flex items-center gap-4">
+                {photoPreview ? (
+                  <div className="relative">
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                      onClick={handleRemovePhoto}
+                      disabled={isLoading || isUploadingPhoto}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-primary/20">
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    onChange={handlePhotoChange}
+                    disabled={isLoading || isUploadingPhoto}
+                    className="rounded-xl"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPG o PNG, max 2MB
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome *</Label>
+                <Label htmlFor="firstName">Nome *</Label>
                 <Input
-                  id="name"
+                  id="firstName"
                   type="text"
-                  placeholder="Il tuo nome"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Mario"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   required
                   disabled={isLoading}
                   className="rounded-xl"
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Cognome</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  placeholder="Rossi"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  disabled={isLoading}
+                  className="rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefono *</Label>
                 <Input
@@ -122,19 +299,19 @@ const ProfileSetup = () => {
                   className="rounded-xl"
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="city">Città</Label>
-              <Input
-                id="city"
-                type="text"
-                placeholder="Milano, Roma, Torino..."
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                disabled={isLoading}
-                className="rounded-xl"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="city">Città</Label>
+                <Input
+                  id="city"
+                  type="text"
+                  placeholder="Milano, Roma, Torino..."
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  disabled={isLoading}
+                  className="rounded-xl"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -167,10 +344,10 @@ const ProfileSetup = () => {
             <Button
               type="submit"
               className="w-full rounded-xl"
-              disabled={isLoading}
+              disabled={isLoading || isUploadingPhoto}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salva profilo
+              {(isLoading || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isUploadingPhoto ? "Caricamento foto..." : "Salva profilo"}
             </Button>
           </form>
         </CardContent>

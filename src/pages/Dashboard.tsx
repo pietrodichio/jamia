@@ -109,7 +109,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Ciao, {profile.name}!</h1>
+            <h1 className="text-3xl font-bold text-foreground">Ciao, {profile.first_name}!</h1>
             <p className="text-muted-foreground">Benvenuto nella tua dashboard</p>
           </div>
           <div className="flex gap-2">
@@ -140,7 +140,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{myJams.length}</div>
-              <p className="text-xs text-muted-foreground">Jam creati</p>
+              <p className="text-xs text-muted-foreground">Jam create</p>
             </CardContent>
           </Card>
 
