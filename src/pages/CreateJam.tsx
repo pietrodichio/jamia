@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
 import { jamsApi } from "@/api/jams.api";
 import { Button } from "@/components/ui/button";
@@ -11,22 +12,106 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, MapPin, Calendar as CalendarIcon } from "lucide-react";
 
+interface CreateJamFormData {
+  name: string;
+  location_text: string;
+  gmaps_link: string;
+  starts_at: string;
+  ends_at: string;
+  description: string;
+  capacity: number | "";
+  desired_bases_min: number | "";
+  desired_bases_max: number | "";
+  desired_flyers_min: number | "";
+  desired_flyers_max: number | "";
+  auto_promote: boolean;
+}
+
 const CreateJam = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [locationText, setLocationText] = useState("");
-  const [gmapsLink, setGmapsLink] = useState("");
-  const [startsAt, setStartsAt] = useState("");
-  const [endsAt, setEndsAt] = useState("");
-  const [description, setDescription] = useState("");
-  const [capacity, setCapacity] = useState<number | "">("");
-  const [desiredBasesMin, setDesiredBasesMin] = useState<number | "">("");
-  const [desiredBasesMax, setDesiredBasesMax] = useState<number | "">("");
-  const [desiredFlyersMin, setDesiredFlyersMin] = useState<number | "">("");
-  const [desiredFlyersMax, setDesiredFlyersMax] = useState<number | "">("");
-  const [autoPromote, setAutoPromote] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { isSubmitting, errors },
+  } = useForm<CreateJamFormData>({
+    defaultValues: {
+      name: "",
+      location_text: "",
+      gmaps_link: "",
+      starts_at: "",
+      ends_at: "",
+      description: "",
+      capacity: "",
+      desired_bases_min: "",
+      desired_bases_max: "",
+      desired_flyers_min: "",
+      desired_flyers_max: "",
+      auto_promote: true,
+    },
+  });
+
+  // Watch fields for auto-fill logic
+  const startsAt = watch("starts_at");
+  const capacity = watch("capacity");
+
+  // Auto-fill end date whenever start date changes
+  // Debounced to wait for user to finish selecting both date and time
+  useEffect(() => {
+    if (startsAt) {
+      const timer = setTimeout(() => {
+        // Validate that we have a complete datetime (YYYY-MM-DDTHH:MM format)
+        if (startsAt.length === 16) {
+          const start = new Date(startsAt);
+          // Add 1 hour
+          start.setHours(start.getHours() + 5);
+          // Format to datetime-local input format (YYYY-MM-DDTHH:mm)
+          const formattedEnd = start.toISOString().slice(0, 16);
+          setValue("ends_at", formattedEnd);
+        }
+      }, 500); // Wait 500ms after user stops typing
+
+      return () => clearTimeout(timer);
+    }
+  }, [startsAt, setValue]);
+
+  // Auto-fill capacity fields whenever capacity changes
+  // Golden rule: 2 flyers for each base (capacity = bases + flyers, flyers = 2 * bases)
+  // So: capacity = bases + 2*bases = 3*bases → bases = capacity/3
+  // Debounced to wait for user to finish typing
+  useEffect(() => {
+    if (capacity && capacity > 0) {
+      const timer = setTimeout(() => {
+        const totalCapacity = Number(capacity);
+        const idealBases = Math.floor(totalCapacity / 3);
+        const idealFlyers = totalCapacity - idealBases;
+
+        // Bases: add flexibility ±1
+        const basesMin = Math.max(0, idealBases - 1);
+        const basesMax = idealBases + 1;
+        
+        // Flyers: add flexibility ±2
+        let flyersMin = Math.max(0, idealFlyers - 2);
+        const flyersMax = idealFlyers + 2;
+
+        // Ensure that basesMax + flyersMin >= capacity
+        // This guarantees we can always reach full capacity
+        if (basesMax + flyersMin < totalCapacity) {
+          flyersMin = totalCapacity - basesMax;
+        }
+
+        setValue("desired_bases_min", basesMin);
+        setValue("desired_bases_max", basesMax);
+        setValue("desired_flyers_min", flyersMin);
+        setValue("desired_flyers_max", flyersMax);
+      }, 500); // Wait 500ms after user stops typing
+
+      return () => clearTimeout(timer);
+    }
+  }, [capacity, setValue]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -38,34 +123,31 @@ const CreateJam = () => {
     checkAuth();
   }, [navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
+  const onSubmit = async (data: CreateJamFormData) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non autenticato");
 
       // Validate dates
-      const start = new Date(startsAt);
-      const end = new Date(endsAt);
+      const start = new Date(data.starts_at);
+      const end = new Date(data.ends_at);
       if (end <= start) {
         throw new Error("La data di fine deve essere successiva alla data di inizio");
       }
 
       const jam = await jamsApi.createJam({
-        name,
-        location_text: locationText,
-        gmaps_link: gmapsLink || undefined,
-        starts_at: startsAt,
-        ends_at: endsAt,
-        description: description || undefined,
-        capacity: capacity || undefined,
-        desired_bases_min: desiredBasesMin || undefined,
-        desired_bases_max: desiredBasesMax || undefined,
-        desired_flyers_min: desiredFlyersMin || undefined,
-        desired_flyers_max: desiredFlyersMax || undefined,
-        auto_promote: autoPromote,
+        name: data.name,
+        location_text: data.location_text,
+        gmaps_link: data.gmaps_link || undefined,
+        starts_at: data.starts_at,
+        ends_at: data.ends_at,
+        description: data.description || undefined,
+        capacity: data.capacity || undefined,
+        desired_bases_min: data.desired_bases_min || undefined,
+        desired_bases_max: data.desired_bases_max || undefined,
+        desired_flyers_min: data.desired_flyers_min || undefined,
+        desired_flyers_max: data.desired_flyers_max || undefined,
+        auto_promote: data.auto_promote,
       });
 
       toast({
@@ -80,8 +162,6 @@ const CreateJam = () => {
         description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -105,7 +185,7 @@ const CreateJam = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Basic Info */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -113,10 +193,8 @@ const CreateJam = () => {
                   <Input
                     id="name"
                     placeholder="es. Jam di AcroYoga a Milano"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    disabled={isLoading}
+                    {...register("name", { required: true })}
+                    disabled={isSubmitting}
                     className="rounded-xl"
                   />
                 </div>
@@ -129,10 +207,8 @@ const CreateJam = () => {
                   <Input
                     id="location"
                     placeholder="es. Parco Sempione, Milano"
-                    value={locationText}
-                    onChange={(e) => setLocationText(e.target.value)}
-                    required
-                    disabled={isLoading}
+                    {...register("location_text", { required: true })}
+                    disabled={isSubmitting}
                     className="rounded-xl"
                   />
                 </div>
@@ -143,9 +219,8 @@ const CreateJam = () => {
                     id="gmaps"
                     type="url"
                     placeholder="https://maps.google.com/..."
-                    value={gmapsLink}
-                    onChange={(e) => setGmapsLink(e.target.value)}
-                    disabled={isLoading}
+                    {...register("gmaps_link")}
+                    disabled={isSubmitting}
                     className="rounded-xl"
                   />
                 </div>
@@ -161,10 +236,8 @@ const CreateJam = () => {
                   <Input
                     id="starts"
                     type="datetime-local"
-                    value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                    required
-                    disabled={isLoading}
+                    {...register("starts_at", { required: true })}
+                    disabled={isSubmitting}
                     className="rounded-xl"
                   />
                 </div>
@@ -174,10 +247,8 @@ const CreateJam = () => {
                   <Input
                     id="ends"
                     type="datetime-local"
-                    value={endsAt}
-                    onChange={(e) => setEndsAt(e.target.value)}
-                    required
-                    disabled={isLoading}
+                    {...register("ends_at", { required: true })}
+                    disabled={isSubmitting}
                     className="rounded-xl"
                   />
                 </div>
@@ -189,9 +260,8 @@ const CreateJam = () => {
                 <Textarea
                   id="description"
                   placeholder="Descrivi la tua jam, livello, cosa portare..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={isLoading}
+                  {...register("description")}
+                  disabled={isSubmitting}
                   rows={4}
                   className="rounded-xl resize-none"
                 />
@@ -208,13 +278,15 @@ const CreateJam = () => {
                     type="number"
                     min="1"
                     placeholder="Lascia vuoto per nessun limite"
-                    value={capacity}
-                    onChange={(e) => setCapacity(e.target.value ? parseInt(e.target.value) : "")}
-                    disabled={isLoading}
+                    {...register("capacity", { 
+                      valueAsNumber: true,
+                      validate: value => value === "" || value > 0 || "Deve essere maggiore di 0"
+                    })}
+                    disabled={isSubmitting}
                     className="rounded-xl"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Se omesso, la jam avrà posti illimitati
+                    Se omesso, la jam avrà posti illimitati. I campi sotto si aggiorneranno automaticamente con ratio 2:1 (flyer:base).
                   </p>
                 </div>
 
@@ -226,9 +298,8 @@ const CreateJam = () => {
                       type="number"
                       min="0"
                       placeholder="0"
-                      value={desiredBasesMin}
-                      onChange={(e) => setDesiredBasesMin(e.target.value ? parseInt(e.target.value) : "")}
-                      disabled={isLoading}
+                      {...register("desired_bases_min", { valueAsNumber: true })}
+                      disabled={isSubmitting}
                       className="rounded-xl"
                     />
                   </div>
@@ -239,9 +310,8 @@ const CreateJam = () => {
                       type="number"
                       min="0"
                       placeholder="∞"
-                      value={desiredBasesMax}
-                      onChange={(e) => setDesiredBasesMax(e.target.value ? parseInt(e.target.value) : "")}
-                      disabled={isLoading}
+                      {...register("desired_bases_max", { valueAsNumber: true })}
+                      disabled={isSubmitting}
                       className="rounded-xl"
                     />
                   </div>
@@ -255,9 +325,8 @@ const CreateJam = () => {
                       type="number"
                       min="0"
                       placeholder="0"
-                      value={desiredFlyersMin}
-                      onChange={(e) => setDesiredFlyersMin(e.target.value ? parseInt(e.target.value) : "")}
-                      disabled={isLoading}
+                      {...register("desired_flyers_min", { valueAsNumber: true })}
+                      disabled={isSubmitting}
                       className="rounded-xl"
                     />
                   </div>
@@ -268,9 +337,8 @@ const CreateJam = () => {
                       type="number"
                       min="0"
                       placeholder="∞"
-                      value={desiredFlyersMax}
-                      onChange={(e) => setDesiredFlyersMax(e.target.value ? parseInt(e.target.value) : "")}
-                      disabled={isLoading}
+                      {...register("desired_flyers_max", { valueAsNumber: true })}
+                      disabled={isSubmitting}
                       className="rounded-xl"
                     />
                   </div>
@@ -289,9 +357,9 @@ const CreateJam = () => {
                 </div>
                 <Switch
                   id="auto-promote"
-                  checked={autoPromote}
-                  onCheckedChange={setAutoPromote}
-                  disabled={isLoading}
+                  checked={watch("auto_promote")}
+                  onCheckedChange={(checked) => setValue("auto_promote", checked)}
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -300,16 +368,16 @@ const CreateJam = () => {
                 <Button
                   type="submit"
                   className="flex-1 rounded-xl"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 >
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Salva come Bozza
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => navigate("/dashboard")}
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                   className="rounded-xl"
                 >
                   Annulla

@@ -42,14 +42,14 @@ const Index = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Button
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/auth?mode=signup")}
               size="lg"
               className="rounded-xl text-lg h-14 px-8"
             >
               Inizia ora
             </Button>
             <Button
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/auth?mode=login")}
               variant="outline"
               size="lg"
               className="rounded-xl text-lg h-14 px-8"
@@ -105,7 +105,7 @@ const Index = () => {
             Unisciti alla community Jamia e semplifica l'organizzazione dei tuoi eventi AcroYoga
           </p>
           <Button
-            onClick={() => navigate("/auth")}
+            onClick={() => navigate("/auth?mode=signup")}
             size="lg"
             variant="secondary"
             className="rounded-xl text-lg h-14 px-8 bg-white text-primary hover:bg-white/90"

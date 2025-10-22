@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,17 @@ const Auth = () => {
   const [name, setName] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  // Set initial mode based on URL parameter
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'signup') {
+      setIsSignUp(true);
+    } else if (mode === 'login') {
+      setIsSignUp(false);
+    }
+  }, [searchParams]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +44,11 @@ const Auth = () => {
         });
 
         if (error) throw error;
+
+
+
+        // Profile and role will be created by database trigger
+        // No need to create them manually here due to RLS restrictions
 
         toast({
           title: "Registrazione completata!",
@@ -55,10 +71,11 @@ const Auth = () => {
 
         navigate("/dashboard");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       toast({
         title: "Errore",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
