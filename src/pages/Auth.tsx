@@ -11,6 +11,7 @@ import { Loader2 } from "lucide-react";
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -27,6 +28,36 @@ const Auth = () => {
       setIsSignUp(false);
     }
   }, [searchParams]);
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email inviata!",
+        description: "Ti abbiamo inviato un'email con le istruzioni per reimpostare la password.",
+      });
+
+      setIsForgotPassword(false);
+      setEmail("");
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore';
+      toast({
+        title: "Errore",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +103,7 @@ const Auth = () => {
         navigate("/dashboard");
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      const errorMessage = error instanceof Error ? error.message : 'Si è verificato un errore';
       toast({
         title: "Errore",
         description: errorMessage,
@@ -89,12 +120,16 @@ const Auth = () => {
         <CardHeader className="space-y-2 text-center">
           <CardTitle className="text-3xl font-bold text-primary">Jamia</CardTitle>
           <CardDescription className="text-base">
-            {isSignUp ? "Crea il tuo account" : "Accedi al tuo account"}
+            {isForgotPassword 
+              ? "Reimposta la tua password" 
+              : isSignUp 
+              ? "Crea il tuo account" 
+              : "Accedi al tuo account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            {isSignUp && (
+          <form onSubmit={isForgotPassword ? handlePasswordReset : handleAuth} className="space-y-4">
+            {isSignUp && !isForgotPassword && (
               <div className="space-y-2">
                 <Label htmlFor="name">Nome</Label>
                 <Input
@@ -124,20 +159,34 @@ const Auth = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                minLength={6}
-                className="rounded-xl"
-              />
-            </div>
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPassword(true)}
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                      disabled={isLoading}
+                    >
+                      Hai dimenticato la password?
+                    </button>
+                  )}
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  minLength={6}
+                  className="rounded-xl"
+                />
+              </div>
+            )}
 
             <Button
               type="submit"
@@ -145,18 +194,36 @@ const Auth = () => {
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSignUp ? "Registrati" : "Accedi"}
+              {isForgotPassword 
+                ? "Invia email di reimpostazione" 
+                : isSignUp 
+                ? "Registrati" 
+                : "Accedi"}
             </Button>
 
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                disabled={isLoading}
-              >
-                {isSignUp ? "Hai già un account? Accedi" : "Non hai un account? Registrati"}
-              </button>
+            <div className="text-center space-y-2">
+              {isForgotPassword ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(false);
+                    setEmail("");
+                  }}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  disabled={isLoading}
+                >
+                  Torna al login
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  disabled={isLoading}
+                >
+                  {isSignUp ? "Hai già un account? Accedi" : "Non hai un account? Registrati"}
+                </button>
+              )}
             </div>
           </form>
         </CardContent>
