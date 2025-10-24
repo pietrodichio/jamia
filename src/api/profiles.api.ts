@@ -34,5 +34,10 @@ export const profilesApi = {
     const response = await apiClient.patch(`/profiles/${profileId}`, data);
     return response.data;
   },
+
+  searchUsers: async (query: string, limit: number = 10): Promise<{ id: string; name: string; email: string }[]> => {
+    const response = await apiClient.get(`/profiles/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+    return response.data;
+  },
 };
 

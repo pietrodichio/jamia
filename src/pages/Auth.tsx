@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -56,6 +58,36 @@ const Auth = () => {
       });
     } finally {
       setIsLoading(false);
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setIsGoogleLoading(true);
+
+    try {
+      const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
+      redirectUrl.searchParams.set("next", "/dashboard");
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl.toString(),
+          scopes: "openid email profile https://www.googleapis.com/auth/user.phonenumbers.read",
+        },
+      });
+
+      if (error) throw error;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Si è verificato un errore";
+      toast({
+        title: "Errore",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -111,6 +143,7 @@ const Auth = () => {
       });
     } finally {
       setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -129,6 +162,26 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={isForgotPassword ? handlePasswordReset : handleAuth} className="space-y-4">
+            {!isForgotPassword && (
+              <div className="space-y-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full rounded-xl"
+                  disabled={isLoading}
+                  onClick={handleGoogleSignIn}
+                >
+                  {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Continua con Google
+                </Button>
+                <div className="flex items-center gap-3 text-xs uppercase text-muted-foreground">
+                  <Separator className="flex-1" />
+                  <span className="tracking-wide">Oppure</span>
+                  <Separator className="flex-1" />
+                </div>
+              </div>
+            )}
+
             {isSignUp && !isForgotPassword && (
               <div className="space-y-2">
                 <Label htmlFor="name">Nome</Label>

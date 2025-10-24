@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format, formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import { Trash2, UserX } from "lucide-react";
@@ -8,6 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { participantsApi } from "@/api/participants.api";
 import { useToast } from "@/hooks/use-toast";
 import { UserAvatar } from "@/components/UserAvatar";
+import { useState } from "react";
 
 interface ParticipantsListProps {
   participants: any[];
@@ -19,6 +21,8 @@ interface ParticipantsListProps {
 export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemoved }: ParticipantsListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [participantToRemove, setParticipantToRemove] = useState<{ id: string; name: string } | null>(null);
 
   const removeParticipantMutation = useMutation({
     mutationFn: (participantId: string) => participantsApi.removeParticipant(participantId),
@@ -30,6 +34,8 @@ export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemo
       onParticipantRemoved?.();
       // Invalidate and refetch jam participants
       queryClient.invalidateQueries({ queryKey: ['jam-participants', jam.id] });
+      setDialogOpen(false);
+      setParticipantToRemove(null);
     },
     onError: (error: any) => {
       toast({
@@ -41,8 +47,13 @@ export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemo
   });
 
   const handleRemoveParticipant = (participantId: string, participantName: string) => {
-    if (confirm(`Sei sicuro di voler rimuovere ${participantName} dalla jam?`)) {
-      removeParticipantMutation.mutate(participantId);
+    setParticipantToRemove({ id: participantId, name: participantName });
+    setDialogOpen(true);
+  };
+
+  const confirmRemoveParticipant = () => {
+    if (participantToRemove) {
+      removeParticipantMutation.mutate(participantToRemove.id);
     }
   };
 
@@ -79,73 +90,98 @@ export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemo
   };
 
   return (
-    <Card className="border-primary/10 rounded-2xl mb-6">
-      <CardHeader>
-        <CardTitle>Partecipanti ({participants.length})</CardTitle>
-        <CardDescription>
-          {jam.status === "draft" 
-            ? "Le prenotazioni saranno disponibili dopo la pubblicazione" 
-            : "Lista dei partecipanti confermati"
-          }
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {participants.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-2">{getEmptyStateMessage()}</p>
-            {jam.status === "draft" && (
-              <p className="text-sm text-muted-foreground">
-                Una volta pubblicata, i partecipanti potranno prenotare il loro posto
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {participants.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl "
-              >
-                <div className="flex items-center gap-3">
-                  <UserAvatar
-                    photoUrl={p.profiles?.photo_url}
-                    firstName={p.profiles?.first_name}
-                    lastName={p.profiles?.last_name}
-                    size="md"
-                  />
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">
-                        {p.profiles?.first_name} {p.profiles?.last_name || ''}
-                      </p>
-                      <Badge className={getRoleBadgeColor(p.role)}>
-                        {p.role === "base" ? "Base" : p.role === "flyer" ? "Flyer" : "Both"}
-                      </Badge>
+    <>
+      <Card className="border-primary/10 rounded-2xl mb-6">
+        <CardHeader>
+          <CardTitle>Partecipanti ({participants.length})</CardTitle>
+          <CardDescription>
+            {jam.status === "draft" 
+              ? "Le prenotazioni saranno disponibili dopo la pubblicazione" 
+              : "Lista dei partecipanti confermati"
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {participants.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-2">{getEmptyStateMessage()}</p>
+              {jam.status === "draft" && (
+                <p className="text-sm text-muted-foreground">
+                  Una volta pubblicata, i partecipanti potranno prenotare il loro posto
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {participants.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl "
+                >
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      photoUrl={p.profiles?.photo_url}
+                      firstName={p.profiles?.first_name}
+                      lastName={p.profiles?.last_name}
+                      size="md"
+                    />
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">
+                          {p.profiles?.first_name} {p.profiles?.last_name || ''}
+                        </p>
+                        <Badge className={getRoleBadgeColor(p.role)}>
+                          {p.role === "base" ? "Base" : p.role === "flyer" ? "Flyer" : "Both"}
+                        </Badge>
+                      </div>
+                      {p.profiles?.phone && (
+                        <p className="text-sm text-muted-foreground">{p.profiles.phone}</p>
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {formatJoinedDate(p.joined_at)}
+                      </span>
                     </div>
-                    {p.profiles?.phone && (
-                      <p className="text-sm text-muted-foreground">{p.profiles.phone}</p>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      {formatJoinedDate(p.joined_at)}
-                    </span>
                   </div>
+                  {isOwner && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveParticipant(p.id, p.profiles?.first_name || 'questo partecipante')}
+                      disabled={removeParticipantMutation.isPending}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                {isOwner && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveParticipant(p.id, p.profiles?.first_name || 'questo partecipante')}
-                    disabled={removeParticipantMutation.isPending}
-                    className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rimuovi partecipante</DialogTitle>
+            <DialogDescription>
+              Sei sicuro di voler rimuovere {participantToRemove?.name} dalla jam? Questa azione non può essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmRemoveParticipant}
+              disabled={removeParticipantMutation.isPending}
+            >
+              {removeParticipantMutation.isPending ? "Rimozione..." : "Rimuovi"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

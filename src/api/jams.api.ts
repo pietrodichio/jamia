@@ -92,5 +92,10 @@ export const jamsApi = {
   deleteJam: async (jamId: string): Promise<void> => {
     await apiClient.delete(`/jams/${jamId}`);
   },
+
+  cloneJam: async (jamId: string): Promise<Jam> => {
+    const response = await apiClient.post(`/jams/${jamId}/clone`);
+    return response.data;
+  },
 };
 

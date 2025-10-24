@@ -1,13 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, Clock, Share2, Edit, Trash2, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, Share2, Edit, Trash2, Loader2, Copy, ShieldEllipsis } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { ManageManagersDialog } from "./ManageManagersDialog";
 
 interface JamHeaderProps {
   jam: any;
   isOwner: boolean;
+  isOwnerOrManager: boolean;
   participants: any[];
   waitingList: any[];
   isPublishing: boolean;
@@ -15,11 +17,14 @@ interface JamHeaderProps {
   onEdit: () => void;
   onDelete: () => void;
   onShare: () => void;
+  onClone: () => void;
+  onManageManagers: () => void;
 }
 
 export const JamHeader = ({
   jam,
   isOwner,
+  isOwnerOrManager,
   participants,
   waitingList,
   isPublishing,
@@ -27,6 +32,8 @@ export const JamHeader = ({
   onEdit,
   onDelete,
   onShare,
+  onClone,
+  onManageManagers,
 }: JamHeaderProps) => {
   return (
     <Card className="border-primary/10 shadow-lg rounded-2xl mb-6">
@@ -50,7 +57,7 @@ export const JamHeader = ({
           </div>
           
           <div className="flex gap-2">
-            {isOwner && (
+            {isOwnerOrManager && (
               <>
                 {jam.status === "draft" && (
                   <Button
@@ -71,11 +78,34 @@ export const JamHeader = ({
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={onDelete}
-                  className="rounded-xl text-destructive"
+                  onClick={onClone}
+                  className="rounded-xl"
+                  title="Clona jam"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Copy className="h-4 w-4" />
                 </Button>
+                <ManageManagersDialog
+                  jamId={jam.id}
+                  isOwner={isOwner}
+                  onManagersUpdated={onManageManagers}
+                >
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    title="Gestisci manager"
+                  >
+                    <ShieldEllipsis className="h-4 w-4" />
+                  </Button>
+                </ManageManagersDialog>
+                {isOwner && (
+                  <Button
+                    variant="outline"
+                    onClick={onDelete}
+                    className="rounded-xl text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </>
             )}
             {jam.status === "published" && (

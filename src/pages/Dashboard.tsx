@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesApi } from "@/api/profiles.api";
 import { jamsApi } from "@/api/jams.api";
+import { managersApi } from "@/api/managers.api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +16,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [myJams, setMyJams] = useState<any[]>([]);
   const [upcomingJams, setUpcomingJams] = useState<any[]>([]);
+  const [managersByJam, setManagersByJam] = useState<Record<string, any[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -74,6 +76,22 @@ const Dashboard = () => {
       // Load jams user is participating in
       const participatedJams = await jamsApi.getParticipatingJams();
       setUpcomingJams(participatedJams);
+
+      // Load managers for all jams to check permissions
+      const allJams = [...ownedJams, ...participatedJams];
+      const managersMap: Record<string, any[]> = {};
+      
+      for (const jam of allJams) {
+        try {
+          const managers = await managersApi.getJamManagers(jam.id);
+          managersMap[jam.id] = managers;
+        } catch (error) {
+          // If user can't access managers, they're not a manager
+          managersMap[jam.id] = [];
+        }
+      }
+      
+      setManagersByJam(managersMap);
     } catch (error: any) {
       toast({
         title: "Errore",
@@ -91,6 +109,43 @@ const Dashboard = () => {
       title: "Disconnesso",
       description: "Alla prossima!",
     });
+  };
+
+  const isOwnerOrManager = (jam: any) => {
+    if (!user) return false;
+    if (jam.owner_id === user.id) return true;
+    const managers = managersByJam[jam.id] || [];
+    return managers.some((manager) => manager.user_id === user.id);
+  };
+
+  const isOwner = (jam: any) => {
+    if (!user) return false;
+    return jam.owner_id === user.id;
+  };
+
+  const handleClone = async (jam: any) => {
+    try {
+      const clonedJam = await jamsApi.cloneJam(jam.id);
+      toast({
+        title: "Jam clonata!",
+        description: "La jam è stata clonata con successo",
+      });
+      navigate(`/jam/${clonedJam.id}/edit`);
+    } catch (error: any) {
+      toast({
+        title: "Errore",
+        description: error.response?.data?.message || error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleManageManagers = () => {
+    // This will be handled by the ManageManagersDialog component
+    // We just need to reload the managers when the dialog closes
+    if (user) {
+      loadJams(user.id);
+    }
   };
 
   if (!user || !profile) {
@@ -209,7 +264,14 @@ const Dashboard = () => {
                 ) : (
                   <div className="grid gap-4">
                     {upcomingJams.map((jam) => (
-                      <JamCard key={jam.id} jam={jam} />
+                      <JamCard 
+                        key={jam.id} 
+                        jam={jam} 
+                        isOwnerOrManager={isOwnerOrManager(jam)}
+                        isOwner={isOwner(jam)}
+                        onClone={() => handleClone(jam)}
+                        onManageManagers={handleManageManagers}
+                      />
                     ))}
                   </div>
                 )}
@@ -243,7 +305,15 @@ const Dashboard = () => {
                 ) : (
                   <div className="grid gap-4">
                     {myJams.map((jam) => (
-                      <JamCard key={jam.id} jam={jam} showStatus />
+                      <JamCard 
+                        key={jam.id} 
+                        jam={jam} 
+                        showStatus 
+                        isOwnerOrManager={isOwnerOrManager(jam)}
+                        isOwner={isOwner(jam)}
+                        onClone={() => handleClone(jam)}
+                        onManageManagers={handleManageManagers}
+                      />
                     ))}
                   </div>
                 )}

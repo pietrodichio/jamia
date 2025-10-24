@@ -42,15 +42,80 @@ const ProfileSetup = () => {
       }
 
       try {
+        const identityMetadata = user.identities?.find((identity) => identity.provider === "google")?.identity_data ?? {};
+        const userMetadata = user.user_metadata ?? {};
+        const metadataSource = { ...identityMetadata, ...userMetadata };
+
+        console.log("[ProfileSetup] identityMetadata:", identityMetadata);
+        console.log("[ProfileSetup] userMetadata:", userMetadata);
+        console.log("[ProfileSetup] merged metadataSource:", metadataSource);
+
+        const fullName = (metadataSource.full_name || metadataSource.name || "") as string;
+        const [fullFirstName, ...fullRest] = fullName ? fullName.trim().split(/\s+/) : ["", ""];
+
+        const inferredFirstName =
+          (metadataSource.given_name as string | undefined) ??
+          (metadataSource.first_name as string | undefined) ??
+          (fullFirstName || undefined);
+
+        const inferredLastName =
+          (metadataSource.family_name as string | undefined) ??
+          (metadataSource.last_name as string | undefined) ??
+          (fullRest.length ? fullRest.join(" ") : undefined);
+
+        const inferredAvatar = (metadataSource.avatar_url || metadataSource.picture) as string | undefined;
+
+        console.log("[ProfileSetup] fullName:", fullName);
+        console.log("[ProfileSetup] inferredFirstName:", inferredFirstName);
+        console.log("[ProfileSetup] inferredLastName:", inferredLastName);
+        console.log("[ProfileSetup] inferredAvatar:", inferredAvatar);
+
         const profile = await profilesApi.getProfile(user.id);
-        setFirstName(profile.first_name || "");
-        setLastName(profile.last_name || "");
-        setPhone(profile.phone || "");
+
+        console.log("[ProfileSetup] API profile:", profile);
+
+        const cleanedProfileFirstName = profile.first_name?.trim() ?? "";
+        const cleanedProfileLastName = profile.last_name?.trim() ?? "";
+
+        const inferredPhone =
+          (metadataSource.phone as string | undefined) ??
+          (metadataSource.phone_number as string | undefined) ??
+          (metadataSource.phoneNumber as string | undefined);
+
+        let resolvedFirstName = cleanedProfileFirstName || inferredFirstName || "";
+        let resolvedLastName = cleanedProfileLastName || inferredLastName || "";
+
+        if (cleanedProfileFirstName && cleanedProfileFirstName.includes(" ") && !cleanedProfileLastName) {
+          const [first, ...rest] = cleanedProfileFirstName.split(/\s+/);
+          resolvedFirstName = first;
+          if (!resolvedLastName && rest.length) {
+            resolvedLastName = rest.join(" ");
+          }
+        }
+
+        console.log("[ProfileSetup] resolvedFirstName:", resolvedFirstName);
+        console.log("[ProfileSetup] resolvedLastName:", resolvedLastName);
+        console.log("[ProfileSetup] inferredPhone:", inferredPhone);
+
+        setFirstName(resolvedFirstName);
+        setLastName(resolvedLastName);
+        setPhone(profile.phone || inferredPhone || "");
         setBio(profile.bio || "");
         setCity(profile.city || "");
         setMainRole(profile.main_role || "both");
-        if (profile.photo_url) {
-          setPhotoPreview(profile.photo_url);
+
+        const candidatePhoto = profile.photo_url?.trim();
+        const isPlaceholderPhoto = candidatePhoto
+          ? /(placeholder|default-avatar|anon)/i.test(candidatePhoto)
+          : false;
+        const resolvedPhoto = (!isPlaceholderPhoto && candidatePhoto) || inferredAvatar;
+
+        console.log("[ProfileSetup] candidatePhoto:", candidatePhoto);
+        console.log("[ProfileSetup] isPlaceholderPhoto:", isPlaceholderPhoto);
+        console.log("[ProfileSetup] resolvedPhoto:", resolvedPhoto);
+
+        if (resolvedPhoto) {
+          setPhotoPreview(resolvedPhoto);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
