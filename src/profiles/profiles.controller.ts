@@ -4,6 +4,7 @@ import {
   Patch,
   Param,
   Body,
+  Query,
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
@@ -16,6 +17,14 @@ import { User, AuthUser } from '../auth/user.decorator';
 @UseGuards(SupabaseAuthGuard)
 export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
+
+  @Get('search')
+  async searchUsers(
+    @Query('q') query: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.profilesService.searchUsers(query, limit);
+  }
 
   @Get(':id')
   async getProfile(@Param('id') id: string) {

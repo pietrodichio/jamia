@@ -65,5 +65,10 @@ export class JamsController {
   async deleteJam(@Param('id') id: string, @User() user: AuthUser) {
     return this.jamsService.deleteJam(id, user.id);
   }
+
+  @Post(':id/clone')
+  async cloneJam(@Param('id') id: string, @User() user: AuthUser) {
+    return this.jamsService.cloneJam(id, user.id);
+  }
 }
 

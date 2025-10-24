@@ -8,6 +8,7 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { JamsModule } from './jams/jams.module';
 import { ParticipantsModule } from './participants/participants.module';
 import { AuditModule } from './audit/audit.module';
+import { ManagersModule } from './managers/managers.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuditModule } from './audit/audit.module';
     JamsModule,
     ParticipantsModule,
     AuditModule,
+    ManagersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

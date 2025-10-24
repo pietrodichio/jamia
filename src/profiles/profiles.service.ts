@@ -63,5 +63,40 @@ export class ProfilesService {
 
     return data;
   }
+
+  async searchUsers(query: string, limit: number = 10) {
+    if (query.length < 2) {
+      return [];
+    }
+
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('id, name, email')
+      .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+      .limit(limit);
+
+    if (error) {
+      console.error('Search users error:', error);
+      // If name column doesn't exist, try with first_name and last_name
+      const { data: fallbackData, error: fallbackError } = await this.supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(limit);
+
+      if (fallbackError) {
+        throw new Error(`Failed to search users: ${fallbackError.message}`);
+      }
+
+      // Transform the data to match expected format
+      return (fallbackData || []).map(user => ({
+        id: user.id,
+        name: `${user.first_name} ${user.last_name || ''}`.trim(),
+        email: user.email
+      }));
+    }
+
+    return data || [];
+  }
 }
 

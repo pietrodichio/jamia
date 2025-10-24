@@ -97,9 +97,19 @@ export class JamsService {
 
     // Check if user has permission to view this jam
     if (data.status !== 'published' && data.owner_id !== userId) {
-      throw new ForbiddenException(
-        'You do not have permission to view this jam',
-      );
+      // Check if user is a manager
+      if (userId) {
+        const isManager = await this.isManagerOrOwner(jamId, userId);
+        if (!isManager) {
+          throw new ForbiddenException(
+            'You do not have permission to view this jam',
+          );
+        }
+      } else {
+        throw new ForbiddenException(
+          'You do not have permission to view this jam',
+        );
+      }
     }
 
     return data;
@@ -141,11 +151,12 @@ export class JamsService {
   }
 
   async updateJam(jamId: string, userId: string, updateJamDto: UpdateJamDto) {
-    // Check ownership
+    // Check ownership or management
     const jam = await this.getJamById(jamId);
 
-    if (jam.owner_id !== userId) {
-      throw new ForbiddenException('You can only update your own jams');
+    const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
+    if (!isOwnerOrManager) {
+      throw new ForbiddenException('You can only update jams you own or manage');
     }
 
     // Validate dates if provided
@@ -181,8 +192,10 @@ export class JamsService {
     const jam = await this.getJamById(jamId, userId);
     console.log('jam:', jam);
     console.log('userId:', userId);
-    if (jam.owner_id !== userId) {
-      throw new ForbiddenException('You can only publish your own jams');
+    
+    const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
+    if (!isOwnerOrManager) {
+      throw new ForbiddenException('You can only publish jams you own or manage');
     }
 
     await this.ensureOwnerParticipation(jamId, userId);
@@ -207,8 +220,9 @@ export class JamsService {
   async deleteJam(jamId: string, userId: string) {
     const jam = await this.getJamById(jamId);
 
-    if (jam.owner_id !== userId) {
-      throw new ForbiddenException('You can only delete your own jams');
+    const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
+    if (!isOwnerOrManager) {
+      throw new ForbiddenException('You can only delete jams you own or manage');
     }
 
     const { error } = await this.supabase.from('jams').delete().eq('id', jamId);
@@ -270,6 +284,70 @@ export class JamsService {
         jam.jam_participants?.filter((p: any) => p.state === 'waiting')
           .length || 0,
     }));
+  }
+
+  async cloneJam(jamId: string, userId: string) {
+    // Get the original jam
+    const originalJam = await this.getJamById(jamId, userId);
+    
+    // Check if user has permission to clone this jam
+    const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
+    if (!isOwnerOrManager) {
+      throw new ForbiddenException('You can only clone jams you own or manage');
+    }
+
+    // Create new jam with basic details (no dates, no participants)
+    const { data, error } = await this.supabase
+      .from('jams')
+      .insert({
+        owner_id: userId,
+        name: `${originalJam.name} (Copia)`,
+        location_text: originalJam.location_text,
+        gmaps_link: originalJam.gmaps_link,
+        description: originalJam.description,
+        capacity: originalJam.capacity,
+        desired_bases_min: originalJam.desired_bases_min,
+        desired_bases_max: originalJam.desired_bases_max,
+        desired_flyers_min: originalJam.desired_flyers_min,
+        desired_flyers_max: originalJam.desired_flyers_max,
+        auto_promote: originalJam.auto_promote,
+        status: 'draft',
+        // Note: starts_at and ends_at are required but will be set by user when editing
+        starts_at: new Date().toISOString(),
+        ends_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now as placeholder
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to clone jam: ${error.message}`);
+    }
+
+    // Add owner as participant
+    await this.ensureOwnerParticipation(data.id, userId);
+
+    // Log the clone action
+    await this.auditService.log(data.id, userId, 'cloned', {
+      original_jam_id: jamId,
+      original_jam_name: originalJam.name,
+    });
+
+    return data;
+  }
+
+  async isManagerOrOwner(jamId: string, userId: string): Promise<boolean> {
+    const { data, error } = await this.supabase
+      .rpc('is_owner_or_manager', {
+        jam_id: jamId,
+        user_id: userId,
+      });
+
+    if (error) {
+      console.error('Error checking owner/manager status:', error);
+      return false;
+    }
+
+    return data || false;
   }
 
   private async ensureOwnerParticipation(

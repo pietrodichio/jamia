@@ -11,7 +11,10 @@ type AuditAction =
   | 'joined'
   | 'cancelled'
   | 'promoted'
-  | 'removed';
+  | 'removed'
+  | 'manager_added'
+  | 'manager_removed'
+  | 'cloned';
 
 @Injectable()
 export class AuditService {
