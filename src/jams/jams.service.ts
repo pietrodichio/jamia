@@ -87,7 +87,13 @@ export class JamsService {
     console.log('userId:', userId);
     const { data, error } = await this.supabase
       .from('jams')
-      .select('*')
+      .select(`
+        *,
+        jam_participants (
+          id,
+          state
+        )
+      `)
       .eq('id', jamId)
       .single();
 
@@ -112,7 +118,91 @@ export class JamsService {
       }
     }
 
-    return data;
+    // Calculate participant counts
+    const participantCount = data.jam_participants?.filter((p: any) => p.state === 'participant').length || 0;
+    const waitingCount = data.jam_participants?.filter((p: any) => p.state === 'waiting').length || 0;
+
+    return {
+      ...data,
+      participant_count: participantCount,
+      waiting_count: waitingCount,
+    };
+  }
+
+  async getPublicJamParticipants(jamId: string) {
+    // First check if jam exists and is published
+    const { data: jam, error: jamError } = await this.supabase
+      .from('jams')
+      .select('id, status')
+      .eq('id', jamId)
+      .single();
+
+    if (jamError || !jam) {
+      throw new NotFoundException('Jam not found');
+    }
+
+    if (jam.status !== 'published') {
+      throw new ForbiddenException('Jam is not published');
+    }
+
+    // Get participants with profile information using explicit join
+    const { data, error } = await this.supabase
+      .from('jam_participants')
+      .select(`
+        id,
+        role,
+        state,
+        joined_at,
+        user_id
+      `)
+      .eq('jam_id', jamId)
+      .eq('state', 'participant')
+      .order('joined_at', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch participants: ${error.message}`);
+    }
+
+    // Get profile information separately to avoid relationship issues
+    const participantIds = (data || []).map(p => p.user_id);
+    
+    if (participantIds.length === 0) {
+      return { participants: [] };
+    }
+
+    const { data: profiles, error: profilesError } = await this.supabase
+      .from('profiles')
+      .select('id, first_name, last_name, photo_url')
+      .in('id', participantIds);
+
+    if (profilesError) {
+      throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
+    }
+
+    // Create a map of profiles by user_id for easy lookup
+    const profileMap = new Map();
+    (profiles || []).forEach(profile => {
+      profileMap.set(profile.id, profile);
+    });
+
+    // Return participants with privacy-protected information
+    const participants = (data || []).map((participant: any) => {
+      const profile = profileMap.get(participant.user_id);
+      return {
+        id: participant.id,
+        role: participant.role,
+        state: participant.state,
+        joined_at: participant.joined_at,
+        profiles: profile ? {
+          first_name: profile.first_name,
+          last_name: profile.last_name ? profile.last_name.charAt(0) + '.' : '',
+          photo_url: profile.photo_url,
+          // No phone number for public access
+        } : null,
+      };
+    });
+
+    return { participants };
   }
 
   async createJam(userId: string, createJamDto: CreateJamDto) {
