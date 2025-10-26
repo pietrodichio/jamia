@@ -28,11 +28,14 @@ const EmailConfirmation = () => {
 
     setIsResending(true);
     try {
+      const jamUrl = localStorage.getItem('jamia_redirect_url');
+      const redirectTo = jamUrl ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(jamUrl)}` : `${window.location.origin}/`;
+      
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: redirectTo,
         },
       });
 
@@ -42,10 +45,10 @@ const EmailConfirmation = () => {
         title: "Email inviata!",
         description: "Controlla la tua casella di posta e la cartella spam.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Errore",
-        description: error.message || "Impossibile inviare l'email di conferma",
+        description: error instanceof Error ? error.message : "Impossibile inviare l'email di conferma",
         variant: "destructive",
       });
     } finally {

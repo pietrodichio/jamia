@@ -2,14 +2,23 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { UserCheck, UserX, Loader2 } from "lucide-react";
 
 interface BookingSectionProps {
-  jam: any;
+  jam: {
+    status: string;
+    [key: string]: unknown;
+  };
   isOwner: boolean;
-  userParticipation: any;
+  userParticipation: {
+    id: string;
+    state: string;
+    [key: string]: unknown;
+  } | null;
   selectedRole: "base" | "flyer" | "both";
   isBooking: boolean;
+  isAuthenticated: boolean;
   onRoleChange: (role: "base" | "flyer" | "both") => void;
   onBook: () => void;
   onCancelParticipation: () => void;
@@ -21,6 +30,7 @@ export const BookingSection = ({
   userParticipation,
   selectedRole,
   isBooking,
+  isAuthenticated,
   onRoleChange,
   onBook,
   onCancelParticipation,
@@ -31,7 +41,36 @@ export const BookingSection = ({
 
   return (
     <div className="pt-4 border-t">
-      {!userParticipation ? (
+      {!isAuthenticated ? (
+        <div className="space-y-3">
+          <p className="text-center text-muted-foreground">
+            Accedi o registrati per prenotare il tuo posto
+          </p>
+          <div className="flex gap-2">
+            <Button 
+              className="flex-1 rounded-xl" 
+              size="lg"
+              onClick={() => {
+                localStorage.setItem('jamia_redirect_url', window.location.pathname);
+                window.location.href = '/auth?mode=login';
+              }}
+            >
+              Accedi
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex-1 rounded-xl" 
+              size="lg"
+              onClick={() => {
+                localStorage.setItem('jamia_redirect_url', window.location.pathname);
+                window.location.href = '/auth?mode=signup';
+              }}
+            >
+              Registrati
+            </Button>
+          </div>
+        </div>
+      ) : !userParticipation ? (
         <Dialog>
           <DialogTrigger asChild>
             <Button className="w-full rounded-xl" size="lg">
@@ -73,17 +112,17 @@ export const BookingSection = ({
         </Dialog>
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-primary">
-            <UserCheck className="h-5 w-5" />
-            <span className="font-medium">
+          <div className={cn("flex items-center gap-2 text-primary w-full justify-center p-8 rounded-xl", userParticipation.state === "participant" ? "bg-green-500" : "bg-yellow-500")}>
+            <UserCheck className={cn("h-5 w-5", userParticipation.state === "participant" ? "text-white" : "text-black")} />
+            <span className={cn("font-medium", userParticipation.state === "participant" ? "text-white" : "text-black")}>
               {userParticipation.state === "participant" 
-                ? "Sei iscritto a questo jam" 
+                ? "Sei iscritto a questa jam" 
                 : "Sei in lista d'attesa"}
             </span>
           </div>
           <Button
             onClick={onCancelParticipation}
-            variant="outline"
+            variant="destructive"
             className="w-full rounded-xl"
           >
             <UserX className="mr-2 h-4 w-4" />

@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, publicApiClient } from './client';
 
 export interface Jam {
   id: string;
@@ -71,6 +71,11 @@ export const jamsApi = {
 
   getJamById: async (jamId: string): Promise<Jam> => {
     const response = await apiClient.get(`/jams/${jamId}`);
+    return response.data;
+  },
+
+  getPublicJamById: async (jamId: string): Promise<Jam> => {
+    const response = await publicApiClient.get(`/public/jams/${jamId}`);
     return response.data;
   },
 

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { profilesApi } from "@/api/profiles.api";
 import { useToast } from "@/hooks/use-toast";
 
 const AuthCallback = () => {
@@ -9,12 +10,26 @@ const AuthCallback = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    const isProfileComplete = (profile: any): boolean => {
+      return !!(
+        profile?.first_name?.trim() && 
+        profile?.phone?.trim()
+      );
+    };
     const searchParams = new URLSearchParams(window.location.search);
     const error = searchParams.get("error");
     const errorDescription = searchParams.get("error_description");
     const next = searchParams.get("next") ?? "/dashboard";
     const code = searchParams.get("code");
-    const nextPath = next.startsWith("/") ? next : "/dashboard";
+    
+    // Check for jam URL in localStorage as fallback
+    const jamUrl = localStorage.getItem('jamia_redirect_url');
+    const nextPath = next.startsWith("/") ? next : (jamUrl || "/dashboard");
+    
+    // Clean up the stored jam URL after using it
+    if (jamUrl) {
+      localStorage.removeItem('jamia_redirect_url');
+    }
 
     let failureTimer: ReturnType<typeof setTimeout> | undefined;
     let unsubscribe: (() => void) | undefined;
@@ -42,9 +57,41 @@ const AuthCallback = () => {
       navigate("/auth", { replace: true });
     };
 
-    const redirectToNext = () => {
-      cleanup();
-      navigate(nextPath, { replace: true });
+    const redirectToNext = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          // Check if profile is complete
+          try {
+            const profile = await profilesApi.getProfile(user.id);
+            if (!isProfileComplete(profile)) {
+              // Profile incomplete - redirect to profile setup and preserve jam URL
+              if (nextPath.startsWith('/jam/')) {
+                localStorage.setItem('jamia_redirect_url', nextPath);
+              }
+              cleanup();
+              navigate("/profile-setup", { replace: true });
+              return;
+            }
+          } catch (error) {
+            // Profile doesn't exist or error fetching - redirect to profile setup
+            if (nextPath.startsWith('/jam/')) {
+              localStorage.setItem('jamia_redirect_url', nextPath);
+            }
+            cleanup();
+            navigate("/profile-setup", { replace: true });
+            return;
+          }
+        }
+        
+        // Profile is complete or not a jam redirect - proceed normally
+        cleanup();
+        navigate(nextPath, { replace: true });
+      } catch (error) {
+        console.error('Error checking profile:', error);
+        cleanup();
+        navigate(nextPath, { replace: true });
+      }
     };
 
     if (error) {

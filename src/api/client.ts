@@ -10,6 +10,14 @@ export const apiClient = axios.create({
   },
 });
 
+// Public API client without authentication
+export const publicApiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 // Add request interceptor to attach Supabase JWT token
 apiClient.interceptors.request.use(
   async (config) => {

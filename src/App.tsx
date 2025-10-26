@@ -34,6 +34,7 @@ const AuthListener = () => {
     };
   }, [navigate]);
 
+
   return null;
 };
 

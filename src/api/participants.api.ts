@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, publicApiClient } from './client';
 
 export interface Participant {
   id: string;
@@ -49,6 +49,11 @@ export const participantsApi = {
 
   removeParticipant: async (participantId: string): Promise<void> => {
     await apiClient.delete(`/participants/${participantId}`);
+  },
+
+  getPublicJamParticipants: async (jamId: string): Promise<{ participants: Participant[] }> => {
+    const response = await publicApiClient.get(`/public/jams/${jamId}/participants`);
+    return response.data;
   },
 };
 

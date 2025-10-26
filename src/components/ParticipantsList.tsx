@@ -15,10 +15,11 @@ interface ParticipantsListProps {
   participants: any[];
   jam: any;
   isOwner: boolean;
+  isAuthenticated: boolean;
   onParticipantRemoved?: () => void;
 }
 
-export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemoved }: ParticipantsListProps) => {
+export const ParticipantsList = ({ participants, jam, isOwner, isAuthenticated, onParticipantRemoved }: ParticipantsListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -89,6 +90,62 @@ export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemo
     }
   };
 
+  if (!isAuthenticated) {
+    // Show blurred view for unauthenticated users
+    return (
+      <Card className="border-primary/10 rounded-2xl mb-6 relative">
+        <CardHeader>
+          <CardTitle>Partecipanti ({participants.length || '?'})</CardTitle>
+          <CardDescription>
+            Lista dei partecipanti confermati
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="relative">
+            {/* Blurred content */}
+            <div className="blur-sm pointer-events-none">
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-300" />
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-20 bg-gray-300 rounded" />
+                          <div className="h-5 w-12 bg-gray-300 rounded" />
+                        </div>
+                        <div className="h-3 w-16 bg-gray-300 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Overlay with register button */}
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+              <div className="text-center space-y-4">
+                <p className="text-lg font-medium">Registrati per vedere i partecipanti</p>
+                <Button 
+                  onClick={() => {
+                    localStorage.setItem('jamia_redirect_url', window.location.pathname);
+                    window.location.href = '/auth?mode=signup';
+                  }}
+                  className="rounded-xl"
+                >
+                  Registrati
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <>
       <Card className="border-primary/10 rounded-2xl mb-6">
@@ -134,7 +191,8 @@ export const ParticipantsList = ({ participants, jam, isOwner, onParticipantRemo
                           {p.role === "base" ? "Base" : p.role === "flyer" ? "Flyer" : "Both"}
                         </Badge>
                       </div>
-                      {p.profiles?.phone && (
+                      {/* Only show phone number to owners */}
+                      {isOwner && p.profiles?.phone && (
                         <p className="text-sm text-muted-foreground">{p.profiles.phone}</p>
                       )}
                       <span className="text-xs text-muted-foreground">

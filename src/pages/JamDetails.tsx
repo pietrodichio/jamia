@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { jamsApi } from "@/api/jams.api";
 import { participantsApi } from "@/api/participants.api";
 import { managersApi } from "@/api/managers.api";
+import { profilesApi } from "@/api/profiles.api";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -16,6 +17,13 @@ const JamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const isProfileComplete = (profile: any): boolean => {
+    return !!(
+      profile?.first_name?.trim() && 
+      profile?.phone?.trim()
+    );
+  };
   const [jam, setJam] = useState<any>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   const [waitingList, setWaitingList] = useState<any[]>([]);
@@ -36,40 +44,86 @@ const JamDetails = () => {
   const loadJamDetails = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-
+      
       setCurrentUser(user);
 
-      // Load jam
-      const jamData = await jamsApi.getJamById(id!);
+      // Load jam - use public API if user is not authenticated
+      let jamData;
+      if (user) {
+        jamData = await jamsApi.getJamById(id!);
+      } else {
+        jamData = await jamsApi.getPublicJamById(id!);
+      }
+      
       setJam(jamData);
-      const isOwnerCheck = jamData.owner_id === user.id;
+      const isOwnerCheck = user ? jamData.owner_id === user.id : false;
       setIsOwner(isOwnerCheck);
 
-      // Load managers to check if user is a manager
-      try {
-        const managersData = await managersApi.getJamManagers(id!);
-        setManagers(managersData);
-        const isManager = managersData.some((manager) => manager.user_id === user.id);
-        setIsOwnerOrManager(isOwnerCheck || isManager);
-      } catch (error) {
-        // If user can't access managers, they're not a manager
-        setIsOwnerOrManager(isOwnerCheck);
-      }
+      // Load managers to check if user is a manager (only if authenticated)
+      let managersData: any[] = [];
+      if (user) {
+        try {
+          managersData = await managersApi.getJamManagers(id!);
+          setManagers(managersData);
+          const isManager = managersData.some((manager) => manager.user_id === user.id);
+          setIsOwnerOrManager(isOwnerCheck || isManager);
+        } catch (error) {
+          // If user can't access managers (403), they're not a manager or owner
+          // This is expected for regular participants - don't log as error
+          setIsOwnerOrManager(isOwnerCheck);
+          setManagers([]);
+        }
 
-      // Load participants and waiting list (only if owner or manager)
-      if (isOwnerCheck || (managers.length > 0 && managers.some((m) => m.user_id === user.id))) {
-        const participantsData = await participantsApi.getJamParticipants(id!);
-        setParticipants(participantsData.participants || []);
-        setWaitingList(participantsData.waitingList || []);
-      }
+        // Load participants and waiting list
+        const isManagerCheck = managersData.some((m) => m.user_id === user.id);
+        if (isOwnerCheck || isManagerCheck) {
+          // Owners and managers get full participant data
+          try {
+            const participantsData = await participantsApi.getJamParticipants(id!);
+            setParticipants(participantsData.participants || []);
+            setWaitingList(participantsData.waitingList || []);
+          } catch (error) {
+            // If can't access participants, set empty arrays
+            setParticipants([]);
+            setWaitingList([]);
+          }
+        } else {
+          // Regular authenticated users get public participant data
+          try {
+            const publicParticipantsData = await participantsApi.getPublicJamParticipants(id!);
+            setParticipants(publicParticipantsData.participants || []);
+            setWaitingList([]); // Waiting list not shown to regular users
+          } catch (error) {
+            // If can't access public participants, set empty arrays
+            setParticipants([]);
+            setWaitingList([]);
+          }
+        }
 
-      // Check if current user is participating
-      const userParticipationData = await participantsApi.getUserParticipation(id!);
-      setUserParticipation(userParticipationData);
+        // Check if current user is participating
+        try {
+          const userParticipationData = await participantsApi.getUserParticipation(id!);
+          setUserParticipation(userParticipationData);
+        } catch (error) {
+          // User not participating or error fetching participation
+          setUserParticipation(null);
+        }
+      } else {
+        // Unauthenticated user - set defaults but still try to get public participant data
+        setIsOwnerOrManager(false);
+        setManagers([]);
+        setWaitingList([]);
+        setUserParticipation(null);
+        
+        // Try to get public participant data for display count
+        try {
+          const publicParticipantsData = await participantsApi.getPublicJamParticipants(id!);
+          setParticipants(publicParticipantsData.participants || []);
+        } catch (error) {
+          // If can't access public participants, set empty array
+          setParticipants([]);
+        }
+      }
 
     } catch (error: any) {
       toast({
@@ -87,6 +141,21 @@ const JamDetails = () => {
     
     setIsBooking(true);
     try {
+      // Check if profile is complete before booking
+      const profile = await profilesApi.getProfile(currentUser.id);
+      if (!isProfileComplete(profile)) {
+        toast({
+          title: "Profilo incompleto",
+          description: "Completa il tuo profilo prima di prenotare una jam.",
+          variant: "destructive",
+        });
+        
+        // Store jam URL and redirect to profile setup
+        localStorage.setItem('jamia_redirect_url', window.location.pathname);
+        navigate("/profile-setup");
+        return;
+      }
+
       const result = await participantsApi.joinJam(jam.id, {
         role: selectedRole,
       });
@@ -231,11 +300,11 @@ const JamDetails = () => {
       <div className="container mx-auto p-4 max-w-5xl">
         <Button
           variant="ghost"
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate(currentUser ? "/dashboard" : "/")}
           className="mb-6 rounded-xl"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Torna alla Dashboard
+          {currentUser ? "Torna alla Dashboard" : "Torna alla Home"}
         </Button>
 
         <JamHeader
@@ -259,26 +328,28 @@ const JamDetails = () => {
           userParticipation={userParticipation}
           selectedRole={selectedRole}
           isBooking={isBooking}
+          isAuthenticated={!!currentUser}
           onRoleChange={setSelectedRole}
           onBook={handleBook}
           onCancelParticipation={handleCancelParticipation}
         />
 
-        {/* Participants List (Owner or Manager only) */}
+        {/* Participants List - Show for all authenticated users */}
+        <ParticipantsList 
+          participants={participants} 
+          jam={jam} 
+          isOwner={isOwner}
+          isAuthenticated={!!currentUser}
+          onParticipantRemoved={loadJamDetails}
+        />
+        
+        {/* Waiting List (Owner or Manager only) */}
         {isOwnerOrManager && (
-          <>
-            <ParticipantsList 
-              participants={participants} 
-              jam={jam} 
-              isOwner={isOwner}
-              onParticipantRemoved={loadJamDetails}
-            />
-            <WaitingList 
-              waitingList={waitingList} 
-              jamId={jam.id}
-              onParticipantRemoved={loadJamDetails}
-            />
-          </>
+          <WaitingList 
+            waitingList={waitingList} 
+            jamId={jam.id}
+            onParticipantRemoved={loadJamDetails}
+          />
         )}
       </div>
     </div>

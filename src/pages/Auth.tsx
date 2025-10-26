@@ -31,6 +31,14 @@ const Auth = () => {
     }
   }, [searchParams]);
 
+  // Store jam URL if user came from a jam link
+  useEffect(() => {
+    const jamUrl = searchParams.get('jam');
+    if (jamUrl) {
+      localStorage.setItem('jamia_redirect_url', jamUrl);
+    }
+  }, [searchParams]);
+
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -68,7 +76,8 @@ const Auth = () => {
 
     try {
       const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
-      redirectUrl.searchParams.set("next", "/dashboard");
+      const jamUrl = localStorage.getItem('jamia_redirect_url');
+      redirectUrl.searchParams.set("next", jamUrl || "/dashboard");
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -97,12 +106,15 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
+        const jamUrl = localStorage.getItem('jamia_redirect_url');
+        const redirectTo = jamUrl ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(jamUrl)}` : `${window.location.origin}/`;
+        
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: { name },
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: redirectTo,
           },
         });
 

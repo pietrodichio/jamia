@@ -85,7 +85,7 @@ const ProfileSetup = () => {
         let resolvedFirstName = cleanedProfileFirstName || inferredFirstName || "";
         let resolvedLastName = cleanedProfileLastName || inferredLastName || "";
 
-        if (cleanedProfileFirstName && cleanedProfileFirstName.includes(" ") && !cleanedProfileLastName) {
+        if (cleanedProfileFirstName?.includes(" ") && !cleanedProfileLastName) {
           const [first, ...rest] = cleanedProfileFirstName.split(/\s+/);
           resolvedFirstName = first;
           if (!resolvedLastName && rest.length) {
@@ -255,7 +255,14 @@ const ProfileSetup = () => {
         description: "Il tuo profilo è stato salvato con successo.",
       });
 
-      navigate("/dashboard");
+      // Check if there's a jam URL to redirect to
+      const jamUrl = localStorage.getItem('jamia_redirect_url');
+      if (jamUrl) {
+        localStorage.removeItem('jamia_redirect_url');
+        navigate(jamUrl);
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error: any) {
       toast({
         title: "Errore",
