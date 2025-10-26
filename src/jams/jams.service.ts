@@ -83,8 +83,6 @@ export class JamsService {
   }
 
   async getJamById(jamId: string, userId?: string) {
-    console.log('jamId:', jamId);
-    console.log('userId:', userId);
     const { data, error } = await this.supabase
       .from('jams')
       .select(`
@@ -308,7 +306,11 @@ export class JamsService {
   }
 
   async deleteJam(jamId: string, userId: string) {
-    const jam = await this.getJamById(jamId);
+    const jam = await this.getJamById(jamId, userId);
+
+    if (!jam) {
+      throw new NotFoundException('Jam not found');
+    }
 
     const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
     if (!isOwnerOrManager) {
