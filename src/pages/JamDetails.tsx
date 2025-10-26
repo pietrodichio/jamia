@@ -297,7 +297,7 @@ const JamDetails = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
-      <div className="container mx-auto p-4 max-w-5xl">
+      <div className="container mx-auto p-4 max-w-5xl flex flex-col gap-4">
         <Button
           variant="ghost"
           onClick={() => navigate(currentUser ? "/dashboard" : "/")}
