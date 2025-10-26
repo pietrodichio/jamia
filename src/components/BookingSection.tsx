@@ -1,9 +1,17 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Loader2, UserCheck, UserX } from "lucide-react";
+import { Loader2, UserCheck, UserX, AlertTriangle } from "lucide-react";
 import { type Jam } from "@/api/jams.api";
 import { type Participant } from "@/api/participants.api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const redirectToAuth = (mode: "login" | "signup") => {
   localStorage.setItem("jamia_redirect_url", window.location.pathname);
@@ -54,32 +62,82 @@ const ParticipationBanner = ({
   userParticipation: Participant;
   onCancelParticipation: () => void;
   isCancelling: boolean;
-}) => (
-  <div className="space-y-3">
-    <div
-      className={cn(
-        "flex items-center gap-2 text-primary w-full justify-center p-8 rounded-xl",
-        userParticipation.state === "participant" ? "bg-green-500" : "bg-yellow-500",
-      )}
-    >
-      <UserCheck
-        className={cn("h-5 w-5", userParticipation.state === "participant" ? "text-white" : "text-black")}
-      />
-      <span className={cn("font-medium", userParticipation.state === "participant" ? "text-white" : "text-black")}>
-        {userParticipation.state === "participant" ? "Sei iscritto a questa jam" : "Sei in lista d'attesa"}
-      </span>
+}) => {
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+
+  const handleCancelClick = () => {
+    setIsCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setIsCancelDialogOpen(false);
+    onCancelParticipation();
+  };
+
+  const CancelParticipationDialog = () => (
+    <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+      <DialogContent className="rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Annulla partecipazione
+          </DialogTitle>
+          <DialogDescription>
+            Sei sicuro di voler annullare la tua partecipazione a questa jam? 
+            Potresti perdere il tuo posto e non essere in grado di rientrare se la jam è piena.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsCancelDialogOpen(false)}
+            className="rounded-xl"
+          >
+            Mantieni partecipazione
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirmCancel}
+            disabled={isCancelling}
+            className="rounded-xl"
+          >
+            {isCancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Annulla partecipazione
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  return (
+    <div className="space-y-3">
+      <div
+        className={cn(
+          "flex items-center gap-2 text-primary w-full justify-center p-8 rounded-xl",
+          userParticipation.state === "participant" ? "bg-green-500" : "bg-yellow-500",
+        )}
+      >
+        <UserCheck
+          className={cn("h-5 w-5", userParticipation.state === "participant" ? "text-white" : "text-black")}
+        />
+        <span className={cn("font-medium", userParticipation.state === "participant" ? "text-white" : "text-black")}>
+          {userParticipation.state === "participant" ? "Sei iscritto a questa jam" : "Sei in lista d'attesa"}
+        </span>
+      </div>
+      <Button
+        onClick={handleCancelClick}
+        variant="destructive"
+        className="w-full rounded-xl"
+        disabled={isCancelling}
+      >
+        <UserX className="mr-2 h-4 w-4" />
+        {isCancelling ? "Annullamento..." : "Annulla partecipazione"}
+      </Button>
+      
+      <CancelParticipationDialog />
     </div>
-    <Button
-      onClick={onCancelParticipation}
-      variant="destructive"
-      className="w-full rounded-xl"
-      disabled={isCancelling}
-    >
-      <UserX className="mr-2 h-4 w-4" />
-      {isCancelling ? "Annullamento..." : "Annulla partecipazione"}
-    </Button>
-  </div>
-);
+  );
+};
 
 export const BookingSection = ({
   jam,
