@@ -282,8 +282,8 @@ const JamDetails = () => {
     },
     onSuccess: () => {
       toast({
-        title: "Jam eliminato",
-        description: "La jam è stato eliminato con successo",
+        title: "Jam eliminata",
+        description: "La jam è stata eliminata con successo",
       });
 
       navigate("/dashboard");
