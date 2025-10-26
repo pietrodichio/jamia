@@ -1,147 +1,185 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { jamsApi } from "@/api/jams.api";
-import { participantsApi } from "@/api/participants.api";
-import { managersApi } from "@/api/managers.api";
-import { profilesApi } from "@/api/profiles.api";
+import { jamsApi, type Jam } from "@/api/jams.api";
+import { participantsApi, type Participant } from "@/api/participants.api";
+import { profilesApi, type Profile } from "@/api/profiles.api";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { JamHeader } from "@/components/JamHeader";
 import { BookingSection } from "@/components/BookingSection";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { WaitingList } from "@/components/WaitingList";
 
+type ApiError = {
+  response?: {
+    status?: number;
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+};
+
+type JamParticipant = Participant;
+
+type ParticipantsQueryResult = {
+  participants: JamParticipant[];
+  waitingList: JamParticipant[];
+  hasManagementAccess: boolean;
+};
+
+class IncompleteProfileError extends Error {
+  constructor() {
+    super("INCOMPLETE_PROFILE");
+    this.name = "IncompleteProfileError";
+  }
+}
+
+const mapParticipants = (list: Participant[] = []): JamParticipant[] => list ?? [];
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error && typeof error === "object") {
+    const apiError = error as ApiError;
+    return apiError.response?.data?.message || apiError.message || fallback;
+  }
+
+  return fallback;
+};
+
+const isForbiddenError = (error: unknown): boolean => {
+  if (error && typeof error === "object") {
+    const apiError = error as ApiError;
+    return apiError.response?.status === 403;
+  }
+  return false;
+};
+
+const isProfileComplete = (profile: Profile | null | undefined): boolean => {
+  return Boolean(profile?.first_name?.trim() && profile?.phone?.trim());
+};
+
 const JamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const isProfileComplete = (profile: any): boolean => {
-    return !!(
-      profile?.first_name?.trim() && 
-      profile?.phone?.trim()
-    );
-  };
-  const [jam, setJam] = useState<any>(null);
-  const [participants, setParticipants] = useState<any[]>([]);
-  const [waitingList, setWaitingList] = useState<any[]>([]);
-  const [managers, setManagers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isOwner, setIsOwner] = useState(false);
-  const [isOwnerOrManager, setIsOwnerOrManager] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [userParticipation, setUserParticipation] = useState<any>(null);
-  const [isBooking, setIsBooking] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<"base" | "flyer" | "both">("both");
-  const [isPublishing, setIsPublishing] = useState(false);
+  const currentUserQuery = useQuery<User | null>({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return user ?? null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    loadJamDetails();
-  }, [id]);
+  const currentUser = currentUserQuery.data ?? null;
 
-  const loadJamDetails = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      setCurrentUser(user);
-
-      // Load jam - use public API if user is not authenticated
-      let jamData;
-      if (user) {
-        jamData = await jamsApi.getJamById(id!);
-      } else {
-        jamData = await jamsApi.getPublicJamById(id!);
-      }
-      
-      setJam(jamData);
-      const isOwnerCheck = user ? jamData.owner_id === user.id : false;
-      setIsOwner(isOwnerCheck);
-
-      // Load managers to check if user is a manager (only if authenticated)
-      let managersData: any[] = [];
-      if (user) {
-        try {
-          managersData = await managersApi.getJamManagers(id!);
-          setManagers(managersData);
-          const isManager = managersData.some((manager) => manager.user_id === user.id);
-          setIsOwnerOrManager(isOwnerCheck || isManager);
-        } catch (error) {
-          // If user can't access managers (403), they're not a manager or owner
-          // This is expected for regular participants - don't log as error
-          setIsOwnerOrManager(isOwnerCheck);
-          setManagers([]);
-        }
-
-        // Load participants and waiting list
-        const isManagerCheck = managersData.some((m) => m.user_id === user.id);
-        if (isOwnerCheck || isManagerCheck) {
-          // Owners and managers get full participant data
-          try {
-            const participantsData = await participantsApi.getJamParticipants(id!);
-            setParticipants(participantsData.participants || []);
-            setWaitingList(participantsData.waitingList || []);
-          } catch (error) {
-            // If can't access participants, set empty arrays
-            setParticipants([]);
-            setWaitingList([]);
-          }
-        } else {
-          // Regular authenticated users get public participant data
-          try {
-            const publicParticipantsData = await participantsApi.getPublicJamParticipants(id!);
-            setParticipants(publicParticipantsData.participants || []);
-            setWaitingList([]); // Waiting list not shown to regular users
-          } catch (error) {
-            // If can't access public participants, set empty arrays
-            setParticipants([]);
-            setWaitingList([]);
-          }
-        }
-
-        // Check if current user is participating
-        try {
-          const userParticipationData = await participantsApi.getUserParticipation(id!);
-          setUserParticipation(userParticipationData);
-        } catch (error) {
-          // User not participating or error fetching participation
-          setUserParticipation(null);
-        }
-      } else {
-        // Unauthenticated user - set defaults but still try to get public participant data
-        setIsOwnerOrManager(false);
-        setManagers([]);
-        setWaitingList([]);
-        setUserParticipation(null);
-        
-        // Try to get public participant data for display count
-        try {
-          const publicParticipantsData = await participantsApi.getPublicJamParticipants(id!);
-          setParticipants(publicParticipantsData.participants || []);
-        } catch (error) {
-          // If can't access public participants, set empty array
-          setParticipants([]);
-        }
+  const jamQuery = useQuery<Jam>({
+    queryKey: ["jam", id, currentUser?.id],
+    enabled: Boolean(id),
+    retry: false,
+    queryFn: async () => {
+      if (!id) {
+        throw new Error("Jam id non valido");
       }
 
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.response?.data?.message || error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      if (currentUser) {
+        return jamsApi.getJamById(id);
+      }
+
+      return jamsApi.getPublicJamById(id);
+    },
+  });
+
+  const jam = jamQuery.data ?? null;
+  const isOwner = Boolean(jam && currentUser && jam.owner_id === currentUser.id);
+
+  const participantsQuery = useQuery<ParticipantsQueryResult>({
+    queryKey: ["jam-participants", id, currentUser?.id],
+    enabled: Boolean(id),
+    retry: false,
+    queryFn: async () => {
+      if (!id) {
+        throw new Error("Jam id non valido");
+      }
+
+      if (!currentUser) {
+        const publicData = await participantsApi.getPublicJamParticipants(id);
+        return {
+          participants: mapParticipants(publicData.participants ?? []),
+          waitingList: [],
+          hasManagementAccess: false,
+        };
+      }
+
+      try {
+        const data = await participantsApi.getJamParticipants(id);
+        return {
+          participants: mapParticipants(data.participants ?? []),
+          waitingList: mapParticipants(data.waitingList ?? []),
+          hasManagementAccess: true,
+        };
+      } catch (error) {
+        if (isForbiddenError(error)) {
+          const publicData = await participantsApi.getPublicJamParticipants(id);
+          return {
+            participants: mapParticipants(publicData.participants ?? []),
+            waitingList: [],
+            hasManagementAccess: false,
+          };
+        }
+
+        throw error;
+      }
+    },
+  });
+
+  const userParticipationQuery = useQuery<JamParticipant | null>({
+    queryKey: ["jam-user-participation", id, currentUser?.id],
+    enabled: Boolean(id && currentUser),
+    retry: false,
+    queryFn: async () => {
+      const data = await participantsApi.getUserParticipation(id!);
+      return data ? (data as JamParticipant) : null;
+    },
+  });
+
+  const participantData: ParticipantsQueryResult =
+    participantsQuery.data ?? { participants: [], waitingList: [], hasManagementAccess: false };
+  const participants: JamParticipant[] = participantData.participants;
+  const waitingList: JamParticipant[] = participantData.waitingList;
+  const hasManagementAccess = participantData.hasManagementAccess;
+  const userParticipation = userParticipationQuery.data ?? null;
+  const isOwnerOrManager = isOwner || hasManagementAccess;
+
+  const invalidateJamQueries = () => {
+    if (!id) {
+      return;
     }
+    queryClient.invalidateQueries({ queryKey: ["jam-participants", id] });
+    queryClient.invalidateQueries({ queryKey: ["jam-user-participation", id] });
+    queryClient.invalidateQueries({ queryKey: ["jam", id] });
   };
 
-  const handleBook = async () => {
-    if (!currentUser || !jam) return;
-    
-    setIsBooking(true);
-    try {
-      // Check if profile is complete before booking
+  const bookMutation = useMutation<JamParticipant, unknown, void>({
+    mutationFn: async () => {
+      if (!currentUser || !jam) {
+        throw new Error("Utente o jam non trovati");
+      }
+
       const profile = await profilesApi.getProfile(currentUser.id);
       if (!isProfileComplete(profile)) {
         toast({
@@ -149,98 +187,167 @@ const JamDetails = () => {
           description: "Completa il tuo profilo prima di prenotare una jam.",
           variant: "destructive",
         });
-        
-        // Store jam URL and redirect to profile setup
-        localStorage.setItem('jamia_redirect_url', window.location.pathname);
+
+        localStorage.setItem("jamia_redirect_url", window.location.pathname);
         navigate("/profile-setup");
+        throw new IncompleteProfileError();
+      }
+
+      const role = profile.main_role ?? "both";
+      const result = await participantsApi.joinJam(jam.id, { role });
+      return result as JamParticipant;
+    },
+    onSuccess: (result) => {
+      toast({
+        title: result.state === "waiting" ? "Aggiunto alla lista d'attesa" : "Prenotazione confermata!",
+        description:
+          result.state === "waiting"
+            ? "Ti avviseremo se si libera un posto"
+            : "Ci vediamo alla jam!",
+      });
+
+      invalidateJamQueries();
+    },
+    onError: (error) => {
+      if (error instanceof IncompleteProfileError) {
         return;
       }
 
-      const result = await participantsApi.joinJam(jam.id, {
-        role: selectedRole,
-      });
-
-      toast({
-        title: result.state === "waiting" ? "Aggiunto alla lista d'attesa" : "Prenotazione confermata!",
-        description: result.state === "waiting"
-          ? "Ti avviseremo se si libera un posto"
-          : "Ci vediamo alla jam!",
-      });
-
-      loadJamDetails();
-    } catch (error: any) {
       toast({
         title: "Errore",
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error, "Impossibile completare la prenotazione"),
         variant: "destructive",
       });
-    } finally {
-      setIsBooking(false);
-    }
-  };
+    },
+  });
 
-  const handleCancelParticipation = async () => {
-    if (!userParticipation) return;
+  const cancelParticipationMutation = useMutation<void>({
+    mutationFn: async () => {
+      if (!userParticipation) {
+        throw new Error("Partecipazione non trovata");
+      }
 
-    try {
       await participantsApi.cancelParticipation(userParticipation.id);
-
+    },
+    onSuccess: () => {
       toast({
         title: "Prenotazione annullata",
         description: "La tua partecipazione è stata cancellata",
       });
 
-      loadJamDetails();
-    } catch (error: any) {
+      invalidateJamQueries();
+    },
+    onError: (error) => {
       toast({
         title: "Errore",
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error, "Impossibile annullare la prenotazione"),
         variant: "destructive",
       });
-    }
-  };
+    },
+  });
 
-  const handlePublish = async () => {
-    setIsPublishing(true);
-    try {
-      await jamsApi.publishJam(jam.id);
+  const publishMutation = useMutation<Jam>({
+    mutationFn: async () => {
+      if (!jam) {
+        throw new Error("Jam non trovata");
+      }
 
+      return jamsApi.publishJam(jam.id);
+    },
+    onSuccess: () => {
       toast({
         title: "Jam pubblicato!",
         description: "La tua jam è ora visibile e prenotabile",
       });
-
-      loadJamDetails();
-    } catch (error: any) {
+      if (id) {
+        queryClient.invalidateQueries({ queryKey: ["jam", id] });
+      }
+    },
+    onError: (error) => {
       toast({
         title: "Errore",
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error, "Impossibile pubblicare la jam"),
         variant: "destructive",
       });
-    } finally {
-      setIsPublishing(false);
-    }
-  };
+    },
+  });
 
-  const handleDelete = async () => {
-    if (!confirm("Sei sicuro di voler eliminare questa jam?")) return;
+  const deleteMutation = useMutation<void>({
+    mutationFn: async () => {
+      if (!jam) {
+        throw new Error("Jam non trovata");
+      }
 
-    try {
       await jamsApi.deleteJam(jam.id);
-
+    },
+    onSuccess: () => {
       toast({
         title: "Jam eliminato",
         description: "La jam è stato eliminato con successo",
       });
 
       navigate("/dashboard");
-    } catch (error: any) {
+    },
+    onError: (error) => {
       toast({
         title: "Errore",
-        description: error.response?.data?.message || error.message,
+        description: getApiErrorMessage(error, "Impossibile eliminare la jam"),
         variant: "destructive",
       });
-    }
+    },
+  });
+
+  const cloneMutation = useMutation<Jam>({
+    mutationFn: async () => {
+      if (!jam) {
+        throw new Error("Jam non trovata");
+      }
+
+      return jamsApi.cloneJam(jam.id);
+    },
+    onSuccess: (clonedJam) => {
+      toast({
+        title: "Jam clonata!",
+        description: "La jam è stata clonata con successo",
+      });
+      navigate(`/jam/${clonedJam.id}/edit`);
+    },
+    onError: (error) => {
+      toast({
+        title: "Errore",
+        description: getApiErrorMessage(error, "Impossibile clonare la jam"),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleBook = () => {
+    bookMutation.mutate();
+  };
+
+  const handleCancelParticipation = () => {
+    cancelParticipationMutation.mutate();
+  };
+
+  const handlePublish = () => {
+    publishMutation.mutate();
+  };
+
+  const handleDelete = () => {
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setIsDeleteDialogOpen(false);
+    deleteMutation.mutate();
+  };
+
+  const handleClone = () => {
+    cloneMutation.mutate();
+  };
+
+  const handleManageManagers = () => {
+    queryClient.invalidateQueries({ queryKey: ["jam-managers", id] });
   };
 
   const copyShareLink = () => {
@@ -253,33 +360,34 @@ const JamDetails = () => {
   };
 
   const handleEdit = () => {
-    navigate(`/jam/${jam.id}/edit`);
-  };
-
-  const handleClone = async () => {
-    try {
-      const clonedJam = await jamsApi.cloneJam(jam.id);
-      toast({
-        title: "Jam clonata!",
-        description: "La jam è stata clonata con successo",
-      });
-      navigate(`/jam/${clonedJam.id}/edit`);
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.response?.data?.message || error.message,
-        variant: "destructive",
-      });
+    if (jam) {
+      navigate(`/jam/${jam.id}/edit`);
     }
   };
 
-  const handleManageManagers = () => {
-    // This will be handled by the ManageManagersDialog component
-    // We just need to reload the managers when the dialog closes
-    loadJamDetails();
-  };
+  useEffect(() => {
+    if (jamQuery.error) {
+      toast({
+        title: "Errore",
+        description: getApiErrorMessage(jamQuery.error, "Impossibile caricare la jam"),
+        variant: "destructive",
+      });
+    }
+  }, [jamQuery.error, toast]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (participantsQuery.error) {
+      toast({
+        title: "Errore",
+        description: getApiErrorMessage(participantsQuery.error, "Impossibile caricare i partecipanti"),
+        variant: "destructive",
+      });
+    }
+  }, [participantsQuery.error, toast]);
+
+  const isLoadingPage = currentUserQuery.isLoading || jamQuery.isLoading;
+
+  if (isLoadingPage) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -295,14 +403,46 @@ const JamDetails = () => {
     );
   }
 
+  const DeleteConfirmDialog = () => (
+    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <DialogContent className="rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Elimina jam
+          </DialogTitle>
+          <DialogDescription>
+            Sei sicuro di voler eliminare questa jam? Questa azione non può essere annullata.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsDeleteDialogOpen(false)}
+            className="rounded-xl"
+          >
+            Annulla
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirmDelete}
+            disabled={deleteMutation.isPending}
+            className="rounded-xl"
+          >
+            {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Elimina
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const backDestination = currentUser ? "/dashboard" : "/";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       <div className="container mx-auto p-4 max-w-5xl flex flex-col gap-4">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(currentUser ? "/dashboard" : "/")}
-          className="mb-6 rounded-xl"
-        >
+        <Button variant="ghost" onClick={() => navigate(backDestination)} className="mb-6 rounded-xl">
           <ArrowLeft className="mr-2 h-4 w-4" />
           {currentUser ? "Torna alla Dashboard" : "Torna alla Home"}
         </Button>
@@ -312,8 +452,8 @@ const JamDetails = () => {
           isOwner={isOwner}
           isOwnerOrManager={isOwnerOrManager}
           participants={participants}
-          waitingList={waitingList}
-          isPublishing={isPublishing}
+          waitingList={isOwnerOrManager ? waitingList : []}
+          isPublishing={publishMutation.isPending}
           onPublish={handlePublish}
           onEdit={handleEdit}
           onDelete={handleDelete}
@@ -326,34 +466,57 @@ const JamDetails = () => {
           jam={jam}
           isOwner={isOwner}
           userParticipation={userParticipation}
-          selectedRole={selectedRole}
-          isBooking={isBooking}
-          isAuthenticated={!!currentUser}
-          onRoleChange={setSelectedRole}
+          isBooking={bookMutation.isPending}
+          isCancelling={cancelParticipationMutation.isPending}
+          isAuthenticated={Boolean(currentUser)}
           onBook={handleBook}
           onCancelParticipation={handleCancelParticipation}
         />
 
-        {/* Participants List - Show for all authenticated users */}
-        <ParticipantsList 
-          participants={participants} 
-          jam={jam} 
+        <ParticipantsSection
+          jam={jam}
+          participants={participants}
           isOwner={isOwner}
-          isAuthenticated={!!currentUser}
-          onParticipantRemoved={loadJamDetails}
+          isAuthenticated={Boolean(currentUser)}
+          onParticipantRemoved={invalidateJamQueries}
         />
-        
-        {/* Waiting List (Owner or Manager only) */}
+
         {isOwnerOrManager && (
-          <WaitingList 
-            waitingList={waitingList} 
+          <WaitingList
+            waitingList={waitingList}
             jamId={jam.id}
-            onParticipantRemoved={loadJamDetails}
+            onParticipantRemoved={invalidateJamQueries}
           />
         )}
       </div>
+      
+      <DeleteConfirmDialog />
     </div>
   );
 };
+
+interface ParticipantsSectionProps {
+  jam: Jam;
+  participants: JamParticipant[];
+  isOwner: boolean;
+  isAuthenticated: boolean;
+  onParticipantRemoved: () => void;
+}
+
+const ParticipantsSection = ({
+  jam,
+  participants,
+  isOwner,
+  isAuthenticated,
+  onParticipantRemoved,
+}: ParticipantsSectionProps) => (
+  <ParticipantsList
+    participants={participants}
+    jam={jam}
+    isOwner={isOwner}
+    isAuthenticated={isAuthenticated}
+    onParticipantRemoved={onParticipantRemoved}
+  />
+);
 
 export default JamDetails;

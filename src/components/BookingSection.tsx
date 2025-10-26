@@ -1,37 +1,93 @@
+import { type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { UserCheck, UserX, Loader2 } from "lucide-react";
+import { Loader2, UserCheck, UserX } from "lucide-react";
+import { type Jam } from "@/api/jams.api";
+import { type Participant } from "@/api/participants.api";
+
+const redirectToAuth = (mode: "login" | "signup") => {
+  localStorage.setItem("jamia_redirect_url", window.location.pathname);
+  window.location.href = `/auth?mode=${mode}`;
+};
 
 interface BookingSectionProps {
-  jam: {
-    status: string;
-    [key: string]: unknown;
-  };
+  jam: Jam;
   isOwner: boolean;
-  userParticipation: {
-    id: string;
-    state: string;
-    [key: string]: unknown;
-  } | null;
-  selectedRole: "base" | "flyer" | "both";
+  userParticipation: Participant | null;
   isBooking: boolean;
+  isCancelling: boolean;
   isAuthenticated: boolean;
-  onRoleChange: (role: "base" | "flyer" | "both") => void;
   onBook: () => void;
   onCancelParticipation: () => void;
 }
+
+const SectionContainer = ({ children }: { children: ReactNode }) => (
+  <div className="pt-4 border-t">{children}</div>
+);
+
+const AuthPrompt = () => (
+  <div className="space-y-3">
+    <p className="text-center text-muted-foreground">Accedi o registrati per prenotare il tuo posto</p>
+    <div className="flex gap-2">
+      <Button className="flex-1 rounded-xl" size="lg" onClick={() => redirectToAuth("login")}>
+        Accedi
+      </Button>
+      <Button variant="outline" className="flex-1 rounded-xl" size="lg" onClick={() => redirectToAuth("signup")}>
+        Registrati
+      </Button>
+    </div>
+  </div>
+);
+
+const BookingButton = ({ isBooking, onBook }: { isBooking: boolean; onBook: () => void }) => (
+  <Button className="w-full rounded-xl" size="lg" onClick={onBook} disabled={isBooking}>
+    {isBooking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+    Prenota il tuo posto
+  </Button>
+);
+
+const ParticipationBanner = ({
+  userParticipation,
+  onCancelParticipation,
+  isCancelling,
+}: {
+  userParticipation: Participant;
+  onCancelParticipation: () => void;
+  isCancelling: boolean;
+}) => (
+  <div className="space-y-3">
+    <div
+      className={cn(
+        "flex items-center gap-2 text-primary w-full justify-center p-8 rounded-xl",
+        userParticipation.state === "participant" ? "bg-green-500" : "bg-yellow-500",
+      )}
+    >
+      <UserCheck
+        className={cn("h-5 w-5", userParticipation.state === "participant" ? "text-white" : "text-black")}
+      />
+      <span className={cn("font-medium", userParticipation.state === "participant" ? "text-white" : "text-black")}>
+        {userParticipation.state === "participant" ? "Sei iscritto a questa jam" : "Sei in lista d'attesa"}
+      </span>
+    </div>
+    <Button
+      onClick={onCancelParticipation}
+      variant="destructive"
+      className="w-full rounded-xl"
+      disabled={isCancelling}
+    >
+      <UserX className="mr-2 h-4 w-4" />
+      {isCancelling ? "Annullamento..." : "Annulla partecipazione"}
+    </Button>
+  </div>
+);
 
 export const BookingSection = ({
   jam,
   isOwner,
   userParticipation,
-  selectedRole,
   isBooking,
+  isCancelling,
   isAuthenticated,
-  onRoleChange,
   onBook,
   onCancelParticipation,
 }: BookingSectionProps) => {
@@ -40,96 +96,18 @@ export const BookingSection = ({
   }
 
   return (
-    <div className="pt-4 border-t">
-      {!isAuthenticated ? (
-        <div className="space-y-3">
-          <p className="text-center text-muted-foreground">
-            Accedi o registrati per prenotare il tuo posto
-          </p>
-          <div className="flex gap-2">
-            <Button 
-              className="flex-1 rounded-xl" 
-              size="lg"
-              onClick={() => {
-                localStorage.setItem('jamia_redirect_url', window.location.pathname);
-                window.location.href = '/auth?mode=login';
-              }}
-            >
-              Accedi
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex-1 rounded-xl" 
-              size="lg"
-              onClick={() => {
-                localStorage.setItem('jamia_redirect_url', window.location.pathname);
-                window.location.href = '/auth?mode=signup';
-              }}
-            >
-              Registrati
-            </Button>
-          </div>
-        </div>
-      ) : !userParticipation ? (
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="w-full rounded-xl" size="lg">
-              <UserCheck className="mr-2 h-5 w-5" />
-              Prenota il tuo posto
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="rounded-2xl">
-            <DialogHeader>
-              <DialogTitle>Prenota la tua jam</DialogTitle>
-              <DialogDescription>
-                Seleziona il tuo ruolo per la tua jam
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Ruolo</Label>
-                <Select value={selectedRole} onValueChange={onRoleChange}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="base">Base</SelectItem>
-                    <SelectItem value="flyer">Flyer</SelectItem>
-                    <SelectItem value="both">Entrambi</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                onClick={onBook}
-                disabled={isBooking}
-                className="w-full rounded-xl"
-              >
-                {isBooking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Conferma prenotazione
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : (
-        <div className="space-y-3">
-          <div className={cn("flex items-center gap-2 text-primary w-full justify-center p-8 rounded-xl", userParticipation.state === "participant" ? "bg-green-500" : "bg-yellow-500")}>
-            <UserCheck className={cn("h-5 w-5", userParticipation.state === "participant" ? "text-white" : "text-black")} />
-            <span className={cn("font-medium", userParticipation.state === "participant" ? "text-white" : "text-black")}>
-              {userParticipation.state === "participant" 
-                ? "Sei iscritto a questa jam" 
-                : "Sei in lista d'attesa"}
-            </span>
-          </div>
-          <Button
-            onClick={onCancelParticipation}
-            variant="destructive"
-            className="w-full rounded-xl"
-          >
-            <UserX className="mr-2 h-4 w-4" />
-            Annulla partecipazione
-          </Button>
-        </div>
+    <SectionContainer>
+      {!isAuthenticated && <AuthPrompt />}
+      {isAuthenticated && !userParticipation && (
+        <BookingButton isBooking={isBooking} onBook={onBook} />
       )}
-    </div>
+      {isAuthenticated && userParticipation && (
+        <ParticipationBanner
+          userParticipation={userParticipation}
+          onCancelParticipation={onCancelParticipation}
+          isCancelling={isCancelling}
+        />
+      )}
+    </SectionContainer>
   );
 };

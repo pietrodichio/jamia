@@ -1,5 +1,14 @@
 import { apiClient, publicApiClient } from './client';
 
+export interface ParticipantProfile {
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  main_role?: string;
+  phone?: string;
+  photo_url?: string;
+}
+
 export interface Participant {
   id: string;
   jam_id: string;
@@ -10,11 +19,7 @@ export interface Participant {
   promoted_at?: string;
   cancelled_at?: string;
   source?: string;
-  profiles?: {
-    name: string;
-    main_role: string;
-    phone?: string;
-  };
+  profiles?: ParticipantProfile;
 }
 
 export interface JoinJamDto {
@@ -56,4 +61,3 @@ export const participantsApi = {
     return response.data;
   },
 };
-
