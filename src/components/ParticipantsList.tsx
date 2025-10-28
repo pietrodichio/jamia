@@ -175,7 +175,7 @@ const ParticipantRow = ({
           </Badge>
         </div>
         {isOwner && participant.profiles?.phone && (
-          <p className="text-sm text-muted-foreground">{participant.profiles.phone}</p>
+          <a href={`https://api.whatsapp.com/send/?phone=${participant.profiles.phone.replace(/^\+/, '')}&text&type=phone_number&app_absent=0`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground underline cursor-pointer">{participant.profiles.phone}</a>
         )}
         <span className="text-xs text-muted-foreground">
           {participant.joined_at ? formatJoinedDate(participant.joined_at) : "-"}
