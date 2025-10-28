@@ -8,24 +8,57 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Upload, X } from "lucide-react";
 import imageCompression from "browser-image-compression";
 
+const phoneNumberRegex = /^\+?[0-9\s\-().]{7,20}$/;
+
+const profileSchema = z.object({
+  firstName: z
+    .string()
+    .trim()
+    .min(1, "Il nome è obbligatorio."),
+  lastName: z.string().trim().optional(),
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Il telefono è obbligatorio.")
+    .refine((value) => phoneNumberRegex.test(value), {
+      message: "Inserisci un numero di telefono valido.",
+    }),
+  city: z.string().trim().optional(),
+  bio: z.string().trim().optional(),
+  mainRole: z.enum(["base", "flyer", "both"]),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
 const ProfileSetup = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [bio, setBio] = useState("");
-  const [city, setCity] = useState("");
-  const [mainRole, setMainRole] = useState<"base" | "flyer" | "both">("both");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phone: "",
+      bio: "",
+      city: "",
+      mainRole: "both",
+    },
+  });
+  const { control, handleSubmit, reset } = form;
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -35,7 +68,6 @@ const ProfileSetup = () => {
         return;
       }
 
-      // Check if email is confirmed
       if (!user.email_confirmed_at) {
         navigate("/email-confirmation");
         return;
@@ -45,10 +77,6 @@ const ProfileSetup = () => {
         const identityMetadata = user.identities?.find((identity) => identity.provider === "google")?.identity_data ?? {};
         const userMetadata = user.user_metadata ?? {};
         const metadataSource = { ...identityMetadata, ...userMetadata };
-
-        console.log("[ProfileSetup] identityMetadata:", identityMetadata);
-        console.log("[ProfileSetup] userMetadata:", userMetadata);
-        console.log("[ProfileSetup] merged metadataSource:", metadataSource);
 
         const fullName = (metadataSource.full_name || metadataSource.name || "") as string;
         const [fullFirstName, ...fullRest] = fullName ? fullName.trim().split(/\s+/) : ["", ""];
@@ -65,14 +93,7 @@ const ProfileSetup = () => {
 
         const inferredAvatar = (metadataSource.avatar_url || metadataSource.picture) as string | undefined;
 
-        console.log("[ProfileSetup] fullName:", fullName);
-        console.log("[ProfileSetup] inferredFirstName:", inferredFirstName);
-        console.log("[ProfileSetup] inferredLastName:", inferredLastName);
-        console.log("[ProfileSetup] inferredAvatar:", inferredAvatar);
-
         const profile = await profilesApi.getProfile(user.id);
-
-        console.log("[ProfileSetup] API profile:", profile);
 
         const cleanedProfileFirstName = profile.first_name?.trim() ?? "";
         const cleanedProfileLastName = profile.last_name?.trim() ?? "";
@@ -93,16 +114,14 @@ const ProfileSetup = () => {
           }
         }
 
-        console.log("[ProfileSetup] resolvedFirstName:", resolvedFirstName);
-        console.log("[ProfileSetup] resolvedLastName:", resolvedLastName);
-        console.log("[ProfileSetup] inferredPhone:", inferredPhone);
-
-        setFirstName(resolvedFirstName);
-        setLastName(resolvedLastName);
-        setPhone(profile.phone || inferredPhone || "");
-        setBio(profile.bio || "");
-        setCity(profile.city || "");
-        setMainRole(profile.main_role || "both");
+        reset({
+          firstName: resolvedFirstName,
+          lastName: resolvedLastName,
+          phone: profile.phone || inferredPhone || "",
+          bio: profile.bio || "",
+          city: profile.city || "",
+          mainRole: profile.main_role || "both",
+        });
 
         const candidatePhoto = profile.photo_url?.trim();
         const isPlaceholderPhoto = candidatePhoto
@@ -110,27 +129,26 @@ const ProfileSetup = () => {
           : false;
         const resolvedPhoto = (!isPlaceholderPhoto && candidatePhoto) || inferredAvatar;
 
-        console.log("[ProfileSetup] candidatePhoto:", candidatePhoto);
-        console.log("[ProfileSetup] isPlaceholderPhoto:", isPlaceholderPhoto);
-        console.log("[ProfileSetup] resolvedPhoto:", resolvedPhoto);
-
         if (resolvedPhoto) {
           setPhotoPreview(resolvedPhoto);
         }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
+      } catch {
+        toast({
+          title: "Errore",
+          description: "Impossibile recuperare il profilo.",
+          variant: "destructive",
+        });
       }
     };
 
     checkProfile();
-  }, [navigate]);
+  }, [navigate, reset, toast]);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
       toast({
         title: "Formato non valido",
         description: "Carica solo immagini JPG o PNG.",
@@ -139,7 +157,6 @@ const ProfileSetup = () => {
       return;
     }
 
-    // Validate file size (2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "File troppo grande",
@@ -150,25 +167,22 @@ const ProfileSetup = () => {
     }
 
     try {
-      // Compress image
       const options = {
         maxSizeMB: 1,
         maxWidthOrHeight: 800,
         useWebWorker: true,
         fileType: file.type,
       };
-      
+
       const compressedFile = await imageCompression(file, options);
       setPhotoFile(compressedFile);
 
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(compressedFile);
-    } catch (error) {
-      console.error("Error compressing image:", error);
+    } catch {
       toast({
         title: "Errore",
         description: "Impossibile elaborare l'immagine.",
@@ -190,27 +204,24 @@ const ProfileSetup = () => {
 
     setIsUploadingPhoto(true);
     try {
-      const fileExt = photoFile.type.split('/')[1];
+      const fileExt = photoFile.type.split("/")[1];
       const fileName = `${userId}/avatar.${fileExt}`;
 
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
-        .from('profile-photos')
+        .from("profile-photos")
         .upload(fileName, photoFile, {
-          cacheControl: '3600',
+          cacheControl: "3600",
           upsert: true,
         });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('profile-photos')
+        .from("profile-photos")
         .getPublicUrl(fileName);
 
       return publicUrl;
-    } catch (error: any) {
-      console.error("Error uploading photo:", error);
+    } catch {
       toast({
         title: "Errore upload",
         description: "Impossibile caricare la foto profilo.",
@@ -222,8 +233,7 @@ const ProfileSetup = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = handleSubmit(async (values) => {
     setIsLoading(true);
 
     try {
@@ -232,7 +242,6 @@ const ProfileSetup = () => {
 
       let photoUrl = photoPreview;
 
-      // Upload photo if a new one was selected
       if (photoFile) {
         const uploadedUrl = await uploadPhoto(user.id);
         if (uploadedUrl) {
@@ -241,12 +250,12 @@ const ProfileSetup = () => {
       }
 
       await profilesApi.updateProfile(user.id, {
-        first_name: firstName,
-        last_name: lastName,
-        phone,
-        bio,
-        city,
-        main_role: mainRole,
+        first_name: values.firstName,
+        last_name: values.lastName || "",
+        phone: values.phone,
+        bio: values.bio || "",
+        city: values.city || "",
+        main_role: values.mainRole,
         photo_url: photoUrl || undefined,
       });
 
@@ -255,10 +264,9 @@ const ProfileSetup = () => {
         description: "Il tuo profilo è stato salvato con successo.",
       });
 
-      // Check if there's a jam URL to redirect to
-      const jamUrl = localStorage.getItem('jamia_redirect_url');
+      const jamUrl = localStorage.getItem("jamia_redirect_url");
       if (jamUrl) {
-        localStorage.removeItem('jamia_redirect_url');
+        localStorage.removeItem("jamia_redirect_url");
         navigate(jamUrl);
       } else {
         navigate("/dashboard");
@@ -272,6 +280,11 @@ const ProfileSetup = () => {
     } finally {
       setIsLoading(false);
     }
+  });
+
+  const triggerFilePicker = () => {
+    if (isLoading || isUploadingPhoto) return;
+    fileInputRef.current?.click();
   };
 
   return (
@@ -284,144 +297,204 @@ const ProfileSetup = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Profile Photo Upload */}
-            <div className="space-y-2">
-              <Label>Foto profilo</Label>
-              <div className="flex items-center gap-4">
-                {photoPreview ? (
-                  <div className="relative">
-                    <img
-                      src={photoPreview}
-                      alt="Preview"
-                      className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
-                    />
-                    <Button
+          <Form {...form}>
+            <form onSubmit={onSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label>Foto profilo</Label>
+                <div className="flex items-center gap-4">
+                  {photoPreview ? (
+                    <div className="relative">
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={handleRemovePhoto}
+                        disabled={isLoading || isUploadingPhoto}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
                       type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                      onClick={handleRemovePhoto}
+                      onClick={triggerFilePicker}
+                      className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-primary/20 transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       disabled={isLoading || isUploadingPhoto}
                     >
-                      <X className="h-3 w-3" />
-                    </Button>
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                    </button>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      onChange={handlePhotoChange}
+                      disabled={isLoading || isUploadingPhoto}
+                      className="rounded-xl"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      JPG o PNG, max 2MB
+                    </p>
                   </div>
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-primary/20">
-                    <Upload className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="flex-1">
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    onChange={handlePhotoChange}
-                    disabled={isLoading || isUploadingPhoto}
-                    className="rounded-xl"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    JPG o PNG, max 2MB
-                  </p>
                 </div>
               </div>
-            </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nome *</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Mario"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="rounded-xl"
+              <div className="grid gap-6 md:grid-cols-2">
+                <FormField
+                  control={control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel htmlFor="firstName">Nome *</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="firstName"
+                          type="text"
+                          placeholder="Mario"
+                          disabled={isLoading}
+                          className="rounded-xl"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel htmlFor="lastName">Cognome</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="lastName"
+                          type="text"
+                          placeholder="Rossi"
+                          disabled={isLoading}
+                          className="rounded-xl"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Cognome</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Rossi"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  disabled={isLoading}
-                  className="rounded-xl"
+              <div className="grid gap-6 md:grid-cols-2">
+                <FormField
+                  control={control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel htmlFor="phone">Telefono *</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="+39 123 456 7890"
+                          disabled={isLoading}
+                          className="rounded-xl"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel htmlFor="city">Città</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="city"
+                          type="text"
+                          placeholder="Milano, Roma, Torino..."
+                          disabled={isLoading}
+                          className="rounded-xl"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefono *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  required
-                  placeholder="+39 123 456 7890"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={isLoading}
-                  className="rounded-xl"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="city">Città</Label>
-                <Input
-                  id="city"
-                  type="text"
-                  placeholder="Milano, Roma, Torino..."
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  disabled={isLoading}
-                  className="rounded-xl"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="mainRole">Ruolo principale *</Label>
-              <Select value={mainRole} onValueChange={(value: any) => setMainRole(value)} disabled={isLoading}>
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="base">Base</SelectItem>
-                  <SelectItem value="flyer">Flyer</SelectItem>
-                  <SelectItem value="both">Entrambi</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                placeholder="Raccontaci qualcosa di te, la tua esperienza con l'AcroYoga..."
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                disabled={isLoading}
-                rows={4}
-                className="rounded-xl resize-none"
+              <FormField
+                control={control}
+                name="mainRole"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel htmlFor="mainRole">Ruolo principale *</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger id="mainRole" className="rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="base">Base</SelectItem>
+                        <SelectItem value="flyer">Flyer</SelectItem>
+                        <SelectItem value="both">Entrambi</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <Button
-              type="submit"
-              className="w-full rounded-xl"
-              disabled={isLoading || isUploadingPhoto}
-            >
-              {(isLoading || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isUploadingPhoto ? "Caricamento foto..." : "Salva profilo"}
-            </Button>
-          </form>
+              <FormField
+                control={control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel htmlFor="bio">Bio</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="bio"
+                        placeholder="Raccontaci qualcosa di te, la tua esperienza con l'AcroYoga..."
+                        disabled={isLoading}
+                        rows={4}
+                        className="rounded-xl resize-none"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full rounded-xl"
+                disabled={isLoading || isUploadingPhoto}
+              >
+                {(isLoading || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isUploadingPhoto ? "Caricamento foto..." : "Salva profilo"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
