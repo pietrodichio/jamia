@@ -26,6 +26,7 @@ interface ParticipantsListProps {
   jam: Jam;
   isOwner: boolean;
   isAuthenticated: boolean;
+  isManager: boolean;
   onParticipantRemoved?: () => void;
 }
 
@@ -95,7 +96,7 @@ const ParticipantsCard = ({ title, description, children }: { title: string; des
   </Card>
 );
 
-const UnauthenticatedParticipantsView = () => (
+const UnauthenticatedParticipantsView = ({ isPublic = false }: { isPublic: boolean }) => (
   <div className="relative">
     <div className="blur-sm pointer-events-none">
       <div className="space-y-3">
@@ -118,7 +119,7 @@ const UnauthenticatedParticipantsView = () => (
 
     <div className="absolute inset-0 flex items-center justify-center bg-background/80">
       <div className="text-center space-y-4">
-        <p className="text-lg font-medium">Registrati per vedere i partecipanti</p>
+        <p className="text-lg font-medium">{isPublic ? "Registrati per vedere i partecipanti" : "La lista dei partecipanti di questa jam non è pubblica."}</p>
         <Button
           onClick={() => {
             localStorage.setItem("jamia_redirect_url", window.location.pathname);
@@ -235,6 +236,7 @@ export const ParticipantsList = ({
   jam,
   isOwner,
   isAuthenticated,
+  isManager,
   onParticipantRemoved,
 }: ParticipantsListProps) => {
   const { toast } = useToast();
@@ -278,15 +280,29 @@ export const ParticipantsList = ({
   };
 
   if (!isAuthenticated) {
+    const participantCount = jam.participant_count ?? participants.length ?? "?";
     return (
       <ParticipantsCard
-        title={`Partecipanti (${participants.length || "?"})`}
+        title={`Partecipanti (${participantCount})`}
         description="Lista dei partecipanti confermati"
       >
-        <UnauthenticatedParticipantsView />
+        <UnauthenticatedParticipantsView isPublic={jam.public_participants ?? false} />
       </ParticipantsCard>
     );
   }
+
+  if (!jam.public_participants && (!isOwner || !isManager)) {
+      return (
+        <ParticipantsCard
+          title={`Partecipanti`}
+          description="Lista dei partecipanti non pubblica"
+        >
+          <div className="text-sm text-muted-foreground py-4">
+            La lista dei partecipanti di questa jam non è pubblica.
+          </div>
+        </ParticipantsCard>
+      );
+    }
 
   return (
     <>

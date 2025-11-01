@@ -5,6 +5,10 @@ import { Calendar, MapPin, Users, Clock, Share2, Edit, Trash2, Loader2, Copy, Sh
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { ManageManagersDialog } from "./ManageManagersDialog";
+import { Switch } from "@/components/ui/switch";
+import { jamsApi } from "@/api/jams.api";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface JamHeaderProps {
   jam: any;
@@ -35,6 +39,23 @@ export const JamHeader = ({
   onClone,
   onManageManagers,
 }: JamHeaderProps) => {
+  const { toast } = useToast();
+  const [updatingVisibility, setUpdatingVisibility] = useState(false);
+
+  const handleTogglePublicParticipants = async (checked: boolean) => {
+    try {
+      setUpdatingVisibility(true);
+      await jamsApi.updateJam(jam.id, { public_participants: checked });
+      toast({ title: "Impostazione aggiornata" });
+      // Optimistic update
+      jam.public_participants = checked;
+    } catch (e: any) {
+      toast({ title: "Errore", description: e.response?.data?.message || e.message, variant: "destructive" });
+    } finally {
+      setUpdatingVisibility(false);
+    }
+  };
+
   return (
     <Card className="border-primary/10 shadow-lg rounded-2xl mb-6">
       <CardHeader>
@@ -143,6 +164,21 @@ export const JamHeader = ({
             </span>
           </div>
         </div>
+
+        {isOwnerOrManager && (
+          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl">
+            <div className="space-y-0.5">
+              <span className="font-medium text-sm">Partecipanti visibili pubblicamente</span>
+              <p className="text-xs text-muted-foreground">Consenti ad altri di vedere chi partecipa</p>
+            </div>
+            <Switch
+              id="toggle-public-participants"
+              checked={jam.public_participants !== false}
+              onCheckedChange={handleTogglePublicParticipants}
+              disabled={updatingVisibility}
+            />
+          </div>
+        )}
 
         {jam.description && (
           <div className="pt-4 border-t">

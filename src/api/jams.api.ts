@@ -20,6 +20,7 @@ export interface Jam {
   updated_at?: string;
   participant_count?: number;
   waiting_count?: number;
+  public_participants?: boolean;
 }
 
 export interface CreateJamDto {
@@ -35,6 +36,7 @@ export interface CreateJamDto {
   desired_flyers_min?: number;
   desired_flyers_max?: number;
   auto_promote?: boolean;
+  public_participants?: boolean;
 }
 
 export interface UpdateJamDto {
@@ -51,6 +53,7 @@ export interface UpdateJamDto {
   desired_flyers_max?: number;
   auto_promote?: boolean;
   status?: 'draft' | 'published' | 'archived';
+  public_participants?: boolean;
 }
 
 export const jamsApi = {

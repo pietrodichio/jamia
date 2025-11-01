@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import Dashboard from "./pages/Dashboard";
 import CreateJam from "./pages/CreateJam";
 import JamDetails from "./pages/JamDetails";
+import EditJam from "./pages/EditJam";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
@@ -55,6 +56,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create-jam" element={<CreateJam />} />
           <Route path="/jam/:id" element={<JamDetails />} />
+          <Route path="/jam/:id/edit" element={<EditJam />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/og-image" element={<OGImage />} />

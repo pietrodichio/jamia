@@ -1,8 +1,10 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { jamsApi } from "@/api/jams.api";
+import { managersApi } from "@/api/managers.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, MapPin, Calendar as CalendarIcon } from "lucide-react";
 
-interface CreateJamFormData {
+interface EditJamFormData {
   name: string;
   location_text: string;
   gmaps_link: string;
@@ -28,17 +30,65 @@ interface CreateJamFormData {
   public_participants: boolean;
 }
 
-const CreateJam = () => {
+const EditJam = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+  const queryClient = useQueryClient();
+
+  // Load jam data
+  const jamQuery = useQuery({
+    queryKey: ["jam", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      if (!id) throw new Error("Jam id non valido");
+      return jamsApi.getJamById(id);
+    },
+  });
+
+  const jam = jamQuery.data;
+
+  // Check if user is owner or manager
+  const managersQuery = useQuery({
+    queryKey: ["jam-managers", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      if (!id) throw new Error("Jam id non valido");
+      try {
+        return await managersApi.getJamManagers(id);
+      } catch (error) {
+        // If user can't access managers, they're not a manager
+        return [];
+      }
+    },
+  });
+
+  const currentUserQuery = useQuery({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      return user;
+    },
+  });
+
+  const isOwner = Boolean(jam && currentUserQuery.data && jam.owner_id === currentUserQuery.data.id);
+  const managers = managersQuery.data || [];
+  const isManager = Boolean(
+    currentUserQuery.data &&
+      managers.some((manager) => manager.user_id === currentUserQuery.data.id)
+  );
+  const canEdit = isOwner || isManager;
+
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { isSubmitting, errors },
-  } = useForm<CreateJamFormData>({
+  } = useForm<EditJamFormData>({
     defaultValues: {
       name: "",
       location_text: "",
@@ -61,29 +111,21 @@ const CreateJam = () => {
   const capacity = watch("capacity");
 
   // Auto-fill end date whenever start date changes
-  // Debounced to wait for user to finish selecting both date and time
   useEffect(() => {
     if (startsAt) {
       const timer = setTimeout(() => {
-        // Validate that we have a complete datetime (YYYY-MM-DDTHH:MM format)
         if (startsAt.length === 16) {
           const start = new Date(startsAt);
-          // Add 1 hour
           start.setHours(start.getHours() + 5);
-          // Format to datetime-local input format (YYYY-MM-DDTHH:mm)
           const formattedEnd = start.toISOString().slice(0, 16);
           setValue("ends_at", formattedEnd);
         }
-      }, 500); // Wait 500ms after user stops typing
-
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [startsAt, setValue]);
 
   // Auto-fill capacity fields whenever capacity changes
-  // Golden rule: 2 flyers for each base (capacity = bases + flyers, flyers = 2 * bases)
-  // So: capacity = bases + 2*bases = 3*bases → bases = capacity/3
-  // Debounced to wait for user to finish typing
   useEffect(() => {
     if (capacity && capacity > 0) {
       const timer = setTimeout(() => {
@@ -91,16 +133,12 @@ const CreateJam = () => {
         const idealBases = Math.floor(totalCapacity / 3);
         const idealFlyers = totalCapacity - idealBases;
 
-        // Bases: add flexibility ±1
         const basesMin = Math.max(0, idealBases - 1);
         const basesMax = idealBases + 1;
-        
-        // Flyers: add flexibility ±2
+
         let flyersMin = Math.max(0, idealFlyers - 2);
         const flyersMax = idealFlyers + 2;
 
-        // Ensure that basesMax + flyersMin >= capacity
-        // This guarantees we can always reach full capacity
         if (basesMax + flyersMin < totalCapacity) {
           flyersMin = totalCapacity - basesMax;
         }
@@ -109,26 +147,59 @@ const CreateJam = () => {
         setValue("desired_bases_max", basesMax);
         setValue("desired_flyers_min", flyersMin);
         setValue("desired_flyers_max", flyersMax);
-      }, 500); // Wait 500ms after user stops typing
-
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [capacity, setValue]);
 
+  // Load jam data into form when it's ready
+  useEffect(() => {
+    if (jam) {
+      reset({
+        name: jam.name,
+        location_text: jam.location_text,
+        gmaps_link: jam.gmaps_link || "",
+        starts_at: jam.starts_at ? new Date(jam.starts_at).toISOString().slice(0, 16) : "",
+        ends_at: jam.ends_at ? new Date(jam.ends_at).toISOString().slice(0, 16) : "",
+        description: jam.description || "",
+        capacity: jam.capacity || "",
+        desired_bases_min: jam.desired_bases_min || "",
+        desired_bases_max: jam.desired_bases_max || "",
+        desired_flyers_min: jam.desired_flyers_min || "",
+        desired_flyers_max: jam.desired_flyers_max || "",
+        auto_promote: jam.auto_promote ?? true,
+        public_participants: jam.public_participants ?? true,
+      });
+    }
+  }, [jam, reset]);
+
+  // Auth check
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
+        return;
       }
     };
     checkAuth();
   }, [navigate]);
 
-  const onSubmit = async (data: CreateJamFormData) => {
+  // Permission check
+  useEffect(() => {
+    if (jamQuery.isSuccess && !canEdit) {
+      toast({
+        title: "Accesso negato",
+        description: "Non hai i permessi per modificare questa jam",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+    }
+  }, [jamQuery.isSuccess, canEdit, navigate, toast]);
+
+  const onSubmit = async (data: EditJamFormData) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non autenticato");
+      if (!id) throw new Error("Jam id non valido");
 
       // Validate dates
       const start = new Date(data.starts_at);
@@ -137,7 +208,7 @@ const CreateJam = () => {
         throw new Error("La data di fine deve essere successiva alla data di inizio");
       }
 
-      const jam = await jamsApi.createJam({
+      await jamsApi.updateJam(id, {
         name: data.name,
         location_text: data.location_text,
         gmaps_link: data.gmaps_link || undefined,
@@ -154,11 +225,13 @@ const CreateJam = () => {
       });
 
       toast({
-        title: "Jam creata!",
-        description: "La tua jam è stata salvata come bozza. Pubblicala quando sei pronto.",
+        title: "Jam aggiornata!",
+        description: "Le modifiche sono state salvate",
       });
 
-      navigate(`/jam/${jam.id}`);
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["jam", id] });
+      navigate(`/jam/${id}`);
     } catch (error: any) {
       toast({
         title: "Errore",
@@ -168,23 +241,39 @@ const CreateJam = () => {
     }
   };
 
+  if (jamQuery.isLoading || currentUserQuery.isLoading || managersQuery.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!jam) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Jam non trovata</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       <div className="container mx-auto p-4 max-w-3xl">
         <Button
           variant="ghost"
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate(`/jam/${id}`)}
           className="mb-6 rounded-xl"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Torna alla Dashboard
+          Torna alla Jam
         </Button>
 
         <Card className="border-primary/10 shadow-lg rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-2xl">Crea una nuova Jam</CardTitle>
+            <CardTitle className="text-2xl">Modifica Jam</CardTitle>
             <CardDescription>
-              Compila i dettagli della tua jam di AcroYoga
+              Aggiorna i dettagli della tua jam di AcroYoga
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -392,12 +481,12 @@ const CreateJam = () => {
                   disabled={isSubmitting}
                 >
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Salva come Bozza
+                  Salva modifiche
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={() => navigate(`/jam/${id}`)}
                   disabled={isSubmitting}
                   className="rounded-xl"
                 >
@@ -412,4 +501,5 @@ const CreateJam = () => {
   );
 };
 
-export default CreateJam;
+export default EditJam;
+

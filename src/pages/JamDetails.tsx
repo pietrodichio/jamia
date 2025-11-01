@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { jamsApi, type Jam } from "@/api/jams.api";
 import { participantsApi, type Participant } from "@/api/participants.api";
 import { profilesApi, type Profile } from "@/api/profiles.api";
+import { managersApi } from "@/api/managers.api";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
@@ -107,9 +108,47 @@ const JamDetails = () => {
   const jam = jamQuery.data ?? null;
   const isOwner = Boolean(jam && currentUser && jam.owner_id === currentUser.id);
 
+  // Check if user is a manager
+  const managersQuery = useQuery({
+    queryKey: ["jam-managers", id],
+    enabled: Boolean(id && currentUser && !currentUserQuery.isLoading && jamQuery.isSuccess),
+    retry: false,
+    queryFn: async () => {
+      if (!id) throw new Error("Jam id non valido");
+      try {
+        return await managersApi.getJamManagers(id);
+      } catch (error) {
+        // If user can't access managers, they're not a manager
+        return [];
+      }
+    },
+  });
+
+  const managers = managersQuery.data || [];
+  const isManager = Boolean(
+    currentUser &&
+      managers.some((manager) => manager.user_id === currentUser.id)
+  );
+  const isOwnerOrManagerAccess = isOwner || isManager;
+
+  // Determine if we should fetch participants
+  // Only fetch if jam is public OR user has owner/manager access
+  const shouldFetchParticipants = Boolean(
+    jam &&
+      (jam.public_participants || isOwnerOrManagerAccess)
+  );
+  
+  // If jam is public, we don't need to wait for managers check
+  const isPublic = Boolean(jam?.public_participants);
+
   const participantsQuery = useQuery<ParticipantsQueryResult>({
     queryKey: ["jam-participants", id, currentUser?.id],
-    enabled: Boolean(id),
+    enabled: Boolean(
+      id && 
+      jamQuery.isSuccess && 
+      shouldFetchParticipants &&
+      (isPublic || managersQuery.isSuccess || managersQuery.isError)
+    ),
     retry: false,
     queryFn: async () => {
       if (!id) {
@@ -117,12 +156,19 @@ const JamDetails = () => {
       }
 
       if (!currentUser) {
-        const publicData = await participantsApi.getPublicJamParticipants(id);
-        return {
-          participants: mapParticipants(publicData.participants ?? []),
-          waitingList: [],
-          hasManagementAccess: false,
-        };
+        try {
+          const publicData = await participantsApi.getPublicJamParticipants(id);
+          return {
+            participants: mapParticipants(publicData.participants ?? []),
+            waitingList: [],
+            hasManagementAccess: false,
+          };
+        } catch (error) {
+          if (isForbiddenError(error)) {
+            return { participants: [], waitingList: [], hasManagementAccess: false };
+          }
+          throw error as Error;
+        }
       }
 
       try {
@@ -163,7 +209,9 @@ const JamDetails = () => {
   const waitingList: JamParticipant[] = participantData.waitingList;
   const hasManagementAccess = participantData.hasManagementAccess;
   const userParticipation = userParticipationQuery.data ?? null;
-  const isOwnerOrManager = isOwner || hasManagementAccess;
+  
+  // Use owner/manager check from managers query, fallback to hasManagementAccess from participants query
+  const isOwnerOrManager = isOwnerOrManagerAccess || hasManagementAccess;
 
   const invalidateJamQueries = () => {
     if (!id) {
@@ -477,6 +525,7 @@ const JamDetails = () => {
           jam={jam}
           participants={participants}
           isOwner={isOwner}
+          isManager={hasManagementAccess}
           isAuthenticated={Boolean(currentUser)}
           onParticipantRemoved={invalidateJamQueries}
         />
@@ -500,6 +549,7 @@ interface ParticipantsSectionProps {
   participants: JamParticipant[];
   isOwner: boolean;
   isAuthenticated: boolean;
+  isManager: boolean;
   onParticipantRemoved: () => void;
 }
 
@@ -508,6 +558,7 @@ const ParticipantsSection = ({
   participants,
   isOwner,
   isAuthenticated,
+  isManager,
   onParticipantRemoved,
 }: ParticipantsSectionProps) => (
   <ParticipantsList
@@ -515,7 +566,9 @@ const ParticipantsSection = ({
     jam={jam}
     isOwner={isOwner}
     isAuthenticated={isAuthenticated}
+    isManager={isManager}
     onParticipantRemoved={onParticipantRemoved}
+  
   />
 );
 
