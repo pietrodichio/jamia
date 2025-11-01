@@ -40,10 +40,7 @@ export class JamsController {
   }
 
   @Post()
-  async createJam(
-    @User() user: AuthUser,
-    @Body() createJamDto: CreateJamDto,
-  ) {
+  async createJam(@User() user: AuthUser, @Body() createJamDto: CreateJamDto) {
     return this.jamsService.createJam(user.id, createJamDto);
   }
 
@@ -71,4 +68,3 @@ export class JamsController {
     return this.jamsService.cloneJam(id, user.id);
   }
 }
-

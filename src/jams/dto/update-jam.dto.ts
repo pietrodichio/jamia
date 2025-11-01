@@ -65,5 +65,8 @@ export class UpdateJamDto {
   @IsEnum(['draft', 'published', 'archived'])
   @IsOptional()
   status?: 'draft' | 'published' | 'archived';
-}
 
+  @IsBoolean()
+  @IsOptional()
+  public_participants?: boolean;
+}

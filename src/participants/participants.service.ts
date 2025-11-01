@@ -4,11 +4,13 @@ import {
   ForbiddenException,
   BadRequestException,
   Inject,
+  Logger,
 } from '@nestjs/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
 import { JoinJamDto } from './dto/join-jam.dto';
 import { AuditService } from '../audit/audit.service';
+import { EmailService } from '../email/email.service';
 
 type ParticipantRole = 'base' | 'flyer' | 'both';
 
@@ -24,11 +26,29 @@ type JamRoleConfig = {
   capacity?: number | null;
 };
 
+type ParticipantNotificationPayload = {
+  userId: string;
+  jamId: string;
+  jamName: string;
+  jamStartsAt?: string | null;
+  jamLocation?: string | null;
+  jamUrl?: string | null;
+};
+
+type ParticipantContact = {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+};
+
 @Injectable()
 export class ParticipantsService {
+  private readonly logger = new Logger(ParticipantsService.name);
+
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly auditService: AuditService,
+    private readonly emailService: EmailService,
   ) {}
 
   async getJamParticipants(jamId: string, userId: string) {
@@ -45,9 +65,7 @@ export class ParticipantsService {
 
     // Only jam owner can view all participants
     if (jam.owner_id !== userId) {
-      throw new ForbiddenException(
-        'Only the jam owner can view participants',
-      );
+      throw new ForbiddenException('Only the jam owner can view participants');
     }
 
     // Get participants
@@ -78,8 +96,8 @@ export class ParticipantsService {
     }
 
     // Get profile data for participants
-    const participantIds = participantsData?.map(p => p.user_id) || [];
-    const waitingIds = waitingData?.map(w => w.user_id) || [];
+    const participantIds = participantsData?.map((p) => p.user_id) || [];
+    const waitingIds = waitingData?.map((w) => w.user_id) || [];
     const allUserIds = [...participantIds, ...waitingIds];
 
     let profilesData: any[] = [];
@@ -97,16 +115,18 @@ export class ParticipantsService {
     }
 
     // Combine participants with profile data
-    const participants = participantsData?.map(participant => ({
-      ...participant,
-      profiles: profilesData.find(p => p.id === participant.user_id)
-    })) || [];
+    const participants =
+      participantsData?.map((participant) => ({
+        ...participant,
+        profiles: profilesData.find((p) => p.id === participant.user_id),
+      })) || [];
 
     // Combine waiting list with profile data
-    const waitingList = waitingData?.map(waiting => ({
-      ...waiting,
-      profiles: profilesData.find(p => p.id === waiting.user_id)
-    })) || [];
+    const waitingList =
+      waitingData?.map((waiting) => ({
+        ...waiting,
+        profiles: profilesData.find((p) => p.id === waiting.user_id),
+      })) || [];
 
     return {
       participants: participants || [],
@@ -140,14 +160,20 @@ export class ParticipantsService {
       .maybeSingle();
 
     if (existingParticipation) {
-      throw new BadRequestException('You are already participating in this jam');
+      throw new BadRequestException(
+        'You are already participating in this jam',
+      );
     }
 
     const activeParticipants = await this.fetchActiveParticipants(jamId);
     const roleCounts = this.calculateRoleCounts(activeParticipants);
     const effectiveRole = this.resolveEffectiveRole(joinJamDto.role);
 
-    const hasReachedRoleLimit = this.isRoleAtMax(effectiveRole, roleCounts, jam);
+    const hasReachedRoleLimit = this.isRoleAtMax(
+      effectiveRole,
+      roleCounts,
+      jam,
+    );
     const totalCapacityReached =
       jam.capacity !== null &&
       jam.capacity !== undefined &&
@@ -180,11 +206,22 @@ export class ParticipantsService {
       state: newState,
     });
 
+    if (newState === 'participant') {
+      await this.notifyParticipantConfirmed({
+        userId,
+        jamId,
+        jamName: jam.name || 'la jam',
+        jamStartsAt: jam.starts_at,
+        jamLocation: jam.location_text,
+      });
+    }
+
     return {
       ...data,
-      message: newState === 'waiting'
-        ? 'Added to waiting list'
-        : 'Successfully joined the jam',
+      message:
+        newState === 'waiting'
+          ? 'Added to waiting list'
+          : 'Successfully joined the jam',
     };
   }
 
@@ -239,7 +276,7 @@ export class ParticipantsService {
     // Get participation
     const { data: participation, error: fetchError } = await this.supabase
       .from('jam_participants')
-      .select('jam_id')
+      .select('jam_id, user_id')
       .eq('id', participantId)
       .single();
 
@@ -250,12 +287,14 @@ export class ParticipantsService {
     // Check if user is jam owner
     const { data: jam } = await this.supabase
       .from('jams')
-      .select('owner_id, auto_promote')
+      .select('owner_id, auto_promote, name, starts_at, location_text')
       .eq('id', participation.jam_id)
       .single();
 
     if (!jam || jam.owner_id !== userId) {
-      throw new ForbiddenException('Only the jam owner can remove participants');
+      throw new ForbiddenException(
+        'Only the jam owner can remove participants',
+      );
     }
 
     // Delete participation
@@ -271,6 +310,14 @@ export class ParticipantsService {
     // Log removal
     await this.auditService.log(participation.jam_id, userId, 'removed');
 
+    await this.notifyParticipantRemoved({
+      userId: participation.user_id,
+      jamId: participation.jam_id,
+      jamName: jam.name || 'la jam',
+      jamStartsAt: jam.starts_at,
+      jamLocation: jam.location_text,
+    });
+
     // If auto-promote is enabled, promote from waiting list
     if (jam.auto_promote) {
       await this.promoteFromWaitingList(participation.jam_id);
@@ -283,7 +330,9 @@ export class ParticipantsService {
     // Get jam details
     const { data: jam } = await this.supabase
       .from('jams')
-      .select('capacity, auto_promote, desired_bases_max, desired_flyers_max')
+      .select(
+        'capacity, auto_promote, desired_bases_max, desired_flyers_max, name, starts_at, location_text',
+      )
       .eq('id', jamId)
       .single();
 
@@ -312,9 +361,7 @@ export class ParticipantsService {
       .order('joined_at', { ascending: true });
 
     if (waitingError) {
-      throw new Error(
-        `Failed to fetch waiting list: ${waitingError.message}`,
-      );
+      throw new Error(`Failed to fetch waiting list: ${waitingError.message}`);
     }
 
     if (!waitingList || waitingList.length === 0) {
@@ -357,6 +404,14 @@ export class ParticipantsService {
 
       // Log promotion
       await this.auditService.log(jamId, waitingPerson.user_id, 'promoted');
+
+      await this.notifyParticipantPromoted({
+        userId: waitingPerson.user_id,
+        jamId,
+        jamName: jam.name || 'la jam',
+        jamStartsAt: jam.starts_at,
+        jamLocation: jam.location_text,
+      });
       break;
     }
   }
@@ -371,12 +426,104 @@ export class ParticipantsService {
       .maybeSingle();
 
     if (error) {
-      throw new Error(
-        `Failed to fetch user participation: ${error.message}`,
-      );
+      throw new Error(`Failed to fetch user participation: ${error.message}`);
     }
 
     return data;
+  }
+
+  private async notifyParticipantConfirmed(
+    payload: ParticipantNotificationPayload,
+  ) {
+    await this.sendParticipantEmail(payload, (context) =>
+      this.emailService.sendParticipantConfirmationEmail(context),
+    );
+  }
+
+  private async notifyParticipantPromoted(
+    payload: ParticipantNotificationPayload,
+  ) {
+    await this.sendParticipantEmail(payload, (context) =>
+      this.emailService.sendPromotionEmail(context),
+    );
+  }
+
+  private async notifyParticipantRemoved(
+    payload: ParticipantNotificationPayload,
+  ) {
+    await this.sendParticipantEmail(payload, (context) =>
+      this.emailService.sendRemovalEmail(context),
+    );
+  }
+
+  private async sendParticipantEmail(
+    payload: ParticipantNotificationPayload,
+    sender: (context: {
+      to: string;
+      recipientName?: string | null;
+      jamId?: string | null;
+      jamUrl?: string | null;
+      jamName: string;
+      jamStartsAt?: string | null;
+      jamLocation?: string | null;
+    }) => Promise<void>,
+  ) {
+    const contact = await this.getParticipantContact(payload.userId);
+    if (!contact?.email) {
+      this.logger.warn(
+        `Cannot send email to participant ${payload.userId}: missing email address.`,
+      );
+      return;
+    }
+
+    try {
+      await sender({
+        to: contact.email,
+        recipientName: this.buildRecipientName(contact),
+        jamId: payload.jamId,
+        jamUrl: payload.jamUrl,
+        jamName: payload.jamName,
+        jamStartsAt: payload.jamStartsAt,
+        jamLocation: payload.jamLocation,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Failed to send participant email for jam ${payload.jamName} and user ${payload.userId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+
+  private async getParticipantContact(
+    userId: string,
+  ): Promise<ParticipantContact | null> {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('first_name, last_name, email')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.warn(
+        `Failed to fetch participant contact ${userId}: ${error.message}`,
+      );
+      return null;
+    }
+
+    return data || null;
+  }
+
+  private buildRecipientName(contact: ParticipantContact): string | null {
+    if (contact.first_name) {
+      return contact.first_name;
+    }
+
+    if (contact.last_name) {
+      return contact.last_name;
+    }
+
+    return null;
   }
 
   private async fetchActiveParticipants(jamId: string) {
@@ -387,14 +534,10 @@ export class ParticipantsService {
       .eq('state', 'participant');
 
     if (error) {
-      throw new Error(
-        `Failed to fetch active participants: ${error.message}`,
-      );
+      throw new Error(`Failed to fetch active participants: ${error.message}`);
     }
 
-    return (
-      data || []
-    ) as Array<{
+    return (data || []) as Array<{
       id: string;
       role: ParticipantRole;
     }>;

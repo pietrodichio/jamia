@@ -45,7 +45,8 @@ export class ManagersService {
 
     const { data, error } = await this.supabase
       .from('jam_managers')
-      .select(`
+      .select(
+        `
         id,
         jam_id,
         user_id,
@@ -57,7 +58,8 @@ export class ManagersService {
           last_name,
           email
         )
-      `)
+      `,
+      )
       .eq('jam_id', jamId)
       .order('created_at', { ascending: true });
 
@@ -134,7 +136,11 @@ export class ManagersService {
     return data;
   }
 
-  async removeJamManager(jamId: string, ownerId: string, managerUserId: string) {
+  async removeJamManager(
+    jamId: string,
+    ownerId: string,
+    managerUserId: string,
+  ) {
     // Check if ownerId is actually the owner of the jam
     const { data: jam, error: jamError } = await this.supabase
       .from('jams')
@@ -168,11 +174,10 @@ export class ManagersService {
   }
 
   async isOwnerOrManager(jamId: string, userId: string): Promise<boolean> {
-    const { data, error } = await this.supabase
-      .rpc('is_owner_or_manager', {
-        jam_id: jamId,
-        user_id: userId,
-      });
+    const { data, error } = await this.supabase.rpc('is_owner_or_manager', {
+      jam_id: jamId,
+      user_id: userId,
+    });
 
     if (error) {
       console.error('Error checking owner/manager status:', error);

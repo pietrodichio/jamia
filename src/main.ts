@@ -1,5 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { BadRequestException, ValidationError, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  ValidationError,
+  ValidationPipe,
+} from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -23,15 +27,17 @@ async function bootstrap() {
       whitelist: true,
       transform: true,
       exceptionFactory: (errors: ValidationError[]) => {
-          // Optionally, format the errors to make them more readable or to return a custom error response
-          const formattedErrors: Record<string, string> = {};
-          errors.forEach((error) => {
-              // Assuming you only want the first error message per property for simplicity
-              const firstConstraintKey = Object.keys(error?.constraints || {})[0];
-              const firstErrorMessage = error.constraints ? error.constraints[firstConstraintKey] : "";
-              formattedErrors[error.property] = firstErrorMessage;
-          });
-          return new BadRequestException(formattedErrors);
+        // Optionally, format the errors to make them more readable or to return a custom error response
+        const formattedErrors: Record<string, string> = {};
+        errors.forEach((error) => {
+          // Assuming you only want the first error message per property for simplicity
+          const firstConstraintKey = Object.keys(error?.constraints || {})[0];
+          const firstErrorMessage = error.constraints
+            ? error.constraints[firstConstraintKey]
+            : '';
+          formattedErrors[error.property] = firstErrorMessage;
+        });
+        return new BadRequestException(formattedErrors);
       },
     }),
   );

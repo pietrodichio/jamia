@@ -85,13 +85,15 @@ export class JamsService {
   async getJamById(jamId: string, userId?: string) {
     const { data, error } = await this.supabase
       .from('jams')
-      .select(`
+      .select(
+        `
         *,
         jam_participants (
           id,
           state
         )
-      `)
+      `,
+      )
       .eq('id', jamId)
       .single();
 
@@ -117,8 +119,12 @@ export class JamsService {
     }
 
     // Calculate participant counts
-    const participantCount = data.jam_participants?.filter((p: any) => p.state === 'participant').length || 0;
-    const waitingCount = data.jam_participants?.filter((p: any) => p.state === 'waiting').length || 0;
+    const participantCount =
+      data.jam_participants?.filter((p: any) => p.state === 'participant')
+        .length || 0;
+    const waitingCount =
+      data.jam_participants?.filter((p: any) => p.state === 'waiting').length ||
+      0;
 
     return {
       ...data,
@@ -131,7 +137,7 @@ export class JamsService {
     // First check if jam exists and is published
     const { data: jam, error: jamError } = await this.supabase
       .from('jams')
-      .select('id, status')
+      .select('id, status, public_participants')
       .eq('id', jamId)
       .single();
 
@@ -143,16 +149,22 @@ export class JamsService {
       throw new ForbiddenException('Jam is not published');
     }
 
+    if (jam.public_participants === false) {
+      throw new ForbiddenException('Participants are not publicly visible');
+    }
+
     // Get participants with profile information using explicit join
     const { data, error } = await this.supabase
       .from('jam_participants')
-      .select(`
+      .select(
+        `
         id,
         role,
         state,
         joined_at,
         user_id
-      `)
+      `,
+      )
       .eq('jam_id', jamId)
       .eq('state', 'participant')
       .order('joined_at', { ascending: true });
@@ -162,8 +174,8 @@ export class JamsService {
     }
 
     // Get profile information separately to avoid relationship issues
-    const participantIds = (data || []).map(p => p.user_id);
-    
+    const participantIds = (data || []).map((p) => p.user_id);
+
     if (participantIds.length === 0) {
       return { participants: [] };
     }
@@ -179,7 +191,7 @@ export class JamsService {
 
     // Create a map of profiles by user_id for easy lookup
     const profileMap = new Map();
-    (profiles || []).forEach(profile => {
+    (profiles || []).forEach((profile) => {
       profileMap.set(profile.id, profile);
     });
 
@@ -191,12 +203,16 @@ export class JamsService {
         role: participant.role,
         state: participant.state,
         joined_at: participant.joined_at,
-        profiles: profile ? {
-          first_name: profile.first_name,
-          last_name: profile.last_name ? profile.last_name.charAt(0) + '.' : '',
-          photo_url: profile.photo_url,
-          // No phone number for public access
-        } : null,
+        profiles: profile
+          ? {
+              first_name: profile.first_name,
+              last_name: profile.last_name
+                ? profile.last_name.charAt(0) + '.'
+                : '',
+              photo_url: profile.photo_url,
+              // No phone number for public access
+            }
+          : null,
       };
     });
 
@@ -209,9 +225,7 @@ export class JamsService {
     const end = new Date(createJamDto.ends_at);
 
     if (end <= start) {
-      throw new BadRequestException(
-        'End date must be after start date',
-      );
+      throw new BadRequestException('End date must be after start date');
     }
 
     const { data, error } = await this.supabase
@@ -244,7 +258,9 @@ export class JamsService {
 
     const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
     if (!isOwnerOrManager) {
-      throw new ForbiddenException('You can only update jams you own or manage');
+      throw new ForbiddenException(
+        'You can only update jams you own or manage',
+      );
     }
 
     // Validate dates if provided
@@ -253,9 +269,7 @@ export class JamsService {
       const end = new Date(updateJamDto.ends_at || jam.ends_at);
 
       if (end <= start) {
-        throw new BadRequestException(
-          'End date must be after start date',
-        );
+        throw new BadRequestException('End date must be after start date');
       }
     }
 
@@ -271,7 +285,12 @@ export class JamsService {
     }
 
     // Log update
-    await this.auditService.log(jamId, userId, 'updated', updateJamDto as Record<string, unknown>);
+    await this.auditService.log(
+      jamId,
+      userId,
+      'updated',
+      updateJamDto as Record<string, unknown>,
+    );
 
     return data;
   }
@@ -280,10 +299,12 @@ export class JamsService {
     const jam = await this.getJamById(jamId, userId);
     console.log('jam:', jam);
     console.log('userId:', userId);
-    
+
     const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
     if (!isOwnerOrManager) {
-      throw new ForbiddenException('You can only publish jams you own or manage');
+      throw new ForbiddenException(
+        'You can only publish jams you own or manage',
+      );
     }
 
     await this.ensureOwnerParticipation(jamId, userId);
@@ -314,7 +335,9 @@ export class JamsService {
 
     const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
     if (!isOwnerOrManager) {
-      throw new ForbiddenException('You can only delete jams you own or manage');
+      throw new ForbiddenException(
+        'You can only delete jams you own or manage',
+      );
     }
 
     const { error } = await this.supabase.from('jams').delete().eq('id', jamId);
@@ -381,7 +404,7 @@ export class JamsService {
   async cloneJam(jamId: string, userId: string) {
     // Get the original jam
     const originalJam = await this.getJamById(jamId, userId);
-    
+
     // Check if user has permission to clone this jam
     const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
     if (!isOwnerOrManager) {
@@ -428,11 +451,10 @@ export class JamsService {
   }
 
   async isManagerOrOwner(jamId: string, userId: string): Promise<boolean> {
-    const { data, error } = await this.supabase
-      .rpc('is_owner_or_manager', {
-        jam_id: jamId,
-        user_id: userId,
-      });
+    const { data, error } = await this.supabase.rpc('is_owner_or_manager', {
+      jam_id: jamId,
+      user_id: userId,
+    });
 
     if (error) {
       console.error('Error checking owner/manager status:', error);

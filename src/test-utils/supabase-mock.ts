@@ -11,12 +11,10 @@ type QueryConfig = {
 type TableConfigs = Record<string, QueryConfig[]>;
 
 const createQueryBuilder = (config: QueryConfig = {}) => {
-  let currentResponse =
-    config.response ??
-    {
-      data: null,
-      error: null,
-    };
+  let currentResponse = config.response ?? {
+    data: null,
+    error: null,
+  };
 
   const builder: any = {
     select: (fields?: unknown, options?: unknown) => {
@@ -64,8 +62,10 @@ const createQueryBuilder = (config: QueryConfig = {}) => {
     limit: () => builder,
     single: () => Promise.resolve(currentResponse),
     maybeSingle: () => Promise.resolve(currentResponse),
-    then: (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
-      Promise.resolve(currentResponse).then(resolve, reject),
+    then: (
+      resolve: (value: unknown) => unknown,
+      reject?: (reason: unknown) => unknown,
+    ) => Promise.resolve(currentResponse).then(resolve, reject),
     catch: (reject: (reason: unknown) => unknown) =>
       Promise.resolve(currentResponse).catch(reject),
   };
@@ -81,7 +81,9 @@ export const createSupabaseMock = (tableConfigs: TableConfigs) => {
     const configs = tableConfigs[table] || [];
 
     if (index >= configs.length) {
-      throw new Error(`No mock configuration for table "${table}" call #${index + 1}`);
+      throw new Error(
+        `No mock configuration for table "${table}" call #${index + 1}`,
+      );
     }
 
     callCounters.set(table, index + 1);
@@ -89,8 +91,9 @@ export const createSupabaseMock = (tableConfigs: TableConfigs) => {
   });
 
   return {
-    client: { from } as unknown as import('@supabase/supabase-js').SupabaseClient,
+    client: {
+      from,
+    } as unknown as import('@supabase/supabase-js').SupabaseClient,
     from,
   };
 };
-

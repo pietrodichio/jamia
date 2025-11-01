@@ -25,6 +25,11 @@ This NestJS backend provides a REST API for the Jamia AcroYoga jam management pl
    SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_SERVICE_KEY=your_service_role_key_here
    SUPABASE_JWT_SECRET=your_jwt_secret_here
+
+   # Email (Resend)
+   RESEND_API_KEY=your_resend_api_key
+   RESEND_FROM_EMAIL="Jamia <noreply@jamia.it>"
+   FRONTEND_BASE_URL=https://app.jamia.it
    ```
 
 ### Where to find Supabase credentials:
@@ -175,4 +180,3 @@ pnpm run test
 - Add file upload for profile photos
 - Implement admin dashboard
 - Add real-time updates with websockets
-

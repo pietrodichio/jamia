@@ -1,11 +1,5 @@
-import {
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import type {
-  CanActivate,
-  ExecutionContext,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 
@@ -48,4 +42,3 @@ export class SupabaseAuthGuard implements CanActivate {
     }
   }
 }
-

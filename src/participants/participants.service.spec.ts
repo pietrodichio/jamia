@@ -21,16 +21,12 @@ describe('ParticipantsService', () => {
     const insertedRecords: unknown[] = [];
 
     const supabase = createSupabaseMock({
-      jams: [
-        { response: { data: jam, error: null } },
-      ],
+      jams: [{ response: { data: jam, error: null } }],
       jam_participants: [
         { response: { data: null, error: null } },
         {
           response: {
-            data: [
-              { id: 'participant-1', role: 'flyer' },
-            ],
+            data: [{ id: 'participant-1', role: 'flyer' }],
             error: null,
           },
         },
@@ -48,9 +44,14 @@ describe('ParticipantsService', () => {
       ],
     });
 
-    const service = new ParticipantsService(supabase.client, auditService as any);
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
 
-    const result = await service.joinJam('jam-1', 'user-both', { role: 'both' });
+    const result = await service.joinJam('jam-1', 'user-both', {
+      role: 'both',
+    });
 
     expect(result.state).toBe('waiting');
     expect(result.message).toBe('Added to waiting list');
@@ -79,16 +80,12 @@ describe('ParticipantsService', () => {
     const insertedRecords: unknown[] = [];
 
     const supabase = createSupabaseMock({
-      jams: [
-        { response: { data: jam, error: null } },
-      ],
+      jams: [{ response: { data: jam, error: null } }],
       jam_participants: [
         { response: { data: null, error: null } },
         {
           response: {
-            data: [
-              { id: 'participant-1', role: 'base' },
-            ],
+            data: [{ id: 'participant-1', role: 'base' }],
             error: null,
           },
         },
@@ -106,9 +103,14 @@ describe('ParticipantsService', () => {
       ],
     });
 
-    const service = new ParticipantsService(supabase.client, auditService as any);
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
 
-    const result = await service.joinJam('jam-2', 'user-both', { role: 'both' });
+    const result = await service.joinJam('jam-2', 'user-both', {
+      role: 'both',
+    });
 
     expect(result.state).toBe('participant');
     expect(result.message).toBe('Successfully joined the jam');
@@ -203,7 +205,10 @@ describe('ParticipantsService', () => {
       ],
     });
 
-    const service = new ParticipantsService(supabase.client, auditService as any);
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
 
     await service.cancelParticipation('participant-1', 'user-original');
 
@@ -225,16 +230,16 @@ describe('ParticipantsService', () => {
     };
 
     const supabase = createSupabaseMock({
-      jams: [
-        { response: { data: jam, error: null } },
-      ],
+      jams: [{ response: { data: jam, error: null } }],
     });
 
-    const service = new ParticipantsService(supabase.client, auditService as any);
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
 
     await expect(
       service.joinJam('jam-unpublished', 'user', { role: 'both' }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
-

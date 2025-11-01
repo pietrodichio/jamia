@@ -1,9 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  createSupabaseClient,
-  SUPABASE_CLIENT,
-} from './supabase.config';
+import { createSupabaseClient, SUPABASE_CLIENT } from './supabase.config';
 
 @Global()
 @Module({
@@ -18,4 +15,3 @@ import {
   exports: [SUPABASE_CLIENT],
 })
 export class SupabaseModule {}
-

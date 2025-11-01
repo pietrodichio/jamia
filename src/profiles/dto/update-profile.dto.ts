@@ -29,4 +29,3 @@ export class UpdateProfileDto {
   @IsOptional()
   photo_url?: string;
 }
-

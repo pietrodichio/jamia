@@ -16,7 +16,7 @@ export class ProfilesService {
 
   async getProfile(profileId: string) {
     console.log('Fetching profile for ID:', profileId);
-    
+
     const { data, error } = await this.supabase
       .from('profiles')
       .select('*')
@@ -81,7 +81,9 @@ export class ProfilesService {
       const { data: fallbackData, error: fallbackError } = await this.supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
-        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .or(
+          `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`,
+        )
         .limit(limit);
 
       if (fallbackError) {
@@ -89,14 +91,13 @@ export class ProfilesService {
       }
 
       // Transform the data to match expected format
-      return (fallbackData || []).map(user => ({
+      return (fallbackData || []).map((user) => ({
         id: user.id,
         name: `${user.first_name} ${user.last_name || ''}`.trim(),
-        email: user.email
+        email: user.email,
       }));
     }
 
     return data || [];
   }
 }
-

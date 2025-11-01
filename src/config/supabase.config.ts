@@ -28,9 +28,8 @@ export const createSupabaseClient = (
   });
 
   console.log('✅ Supabase client created successfully');
-  
+
   return client;
 };
 
 export const SUPABASE_CLIENT = 'SUPABASE_CLIENT';
-

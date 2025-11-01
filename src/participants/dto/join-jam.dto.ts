@@ -4,4 +4,3 @@ export class JoinJamDto {
   @IsEnum(['base', 'flyer', 'both'])
   role: 'base' | 'flyer' | 'both';
 }
-

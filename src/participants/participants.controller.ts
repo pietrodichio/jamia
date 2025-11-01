@@ -44,10 +44,7 @@ export class ParticipantsController {
   }
 
   @Patch(':id/cancel')
-  async cancelParticipation(
-    @Param('id') id: string,
-    @User() user: AuthUser,
-  ) {
+  async cancelParticipation(@Param('id') id: string, @User() user: AuthUser) {
     return this.participantsService.cancelParticipation(id, user.id);
   }
 
@@ -56,4 +53,3 @@ export class ParticipantsController {
     return this.participantsService.removeParticipant(id, user.id);
   }
 }
-

@@ -19,10 +19,7 @@ export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 
   @Get('search')
-  async searchUsers(
-    @Query('q') query: string,
-    @Query('limit') limit?: number,
-  ) {
+  async searchUsers(@Query('q') query: string, @Query('limit') limit?: number) {
     return this.profilesService.searchUsers(query, limit);
   }
 
@@ -35,9 +32,9 @@ export class ProfilesController {
   async updateProfile(
     @Param('id') id: string,
     @User() user: AuthUser,
-    @Body(new ValidationPipe({ transform: true })) updateProfileDto: UpdateProfileDto,
+    @Body(new ValidationPipe({ transform: true }))
+    updateProfileDto: UpdateProfileDto,
   ) {
     return this.profilesService.updateProfile(id, user.id, updateProfileDto);
   }
 }
-

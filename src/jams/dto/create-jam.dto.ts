@@ -56,5 +56,8 @@ export class CreateJamDto {
   @IsBoolean()
   @IsOptional()
   auto_promote?: boolean;
-}
 
+  @IsBoolean()
+  @IsOptional()
+  public_participants?: boolean;
+}

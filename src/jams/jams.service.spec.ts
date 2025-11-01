@@ -107,7 +107,10 @@ describe('JamsService', () => {
     await service.publishJam('jam-publish', 'owner-2');
 
     expect(supabase.from).toHaveBeenCalledWith('jam_participants');
-    expect(auditService.log).toHaveBeenCalledWith('jam-publish', 'owner-2', 'published');
+    expect(auditService.log).toHaveBeenCalledWith(
+      'jam-publish',
+      'owner-2',
+      'published',
+    );
   });
 });
-
