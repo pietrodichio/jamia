@@ -137,12 +137,16 @@ const CreateJam = () => {
         throw new Error("La data di fine deve essere successiva alla data di inizio");
       }
 
+      // Convert datetime-local strings (local time) to UTC ISO strings
+      const startsAtUTC = start.toISOString();
+      const endsAtUTC = end.toISOString();
+
       const jam = await jamsApi.createJam({
         name: data.name,
         location_text: data.location_text,
         gmaps_link: data.gmaps_link || undefined,
-        starts_at: data.starts_at,
-        ends_at: data.ends_at,
+        starts_at: startsAtUTC,
+        ends_at: endsAtUTC,
         description: data.description || undefined,
         capacity: data.capacity || undefined,
         desired_bases_min: data.desired_bases_min || undefined,
