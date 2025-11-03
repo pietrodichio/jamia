@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { jamsApi } from "@/api/jams.api";
 import { Button } from "@/components/ui/button";
@@ -12,21 +14,46 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, MapPin, Calendar as CalendarIcon } from "lucide-react";
 
-interface CreateJamFormData {
-  name: string;
-  location_text: string;
-  gmaps_link: string;
-  starts_at: string;
-  ends_at: string;
-  description: string;
-  capacity: number | "";
-  desired_bases_min: number | "";
-  desired_bases_max: number | "";
-  desired_flyers_min: number | "";
-  desired_flyers_max: number | "";
-  auto_promote: boolean;
-  public_participants: boolean;
-}
+const createJamSchema = z.object({
+  name: z.string().trim().min(1, "Il nome è obbligatorio."),
+  location_text: z.string().trim().min(1, "Il luogo è obbligatorio."),
+  gmaps_link: z.string().trim().url("Inserisci un URL valido.").optional().or(z.literal("")),
+  starts_at: z.string().min(1, "La data di inizio è obbligatoria."),
+  ends_at: z.string().min(1, "La data di fine è obbligatoria."),
+  description: z.string().trim().optional(),
+  capacity: z.union([
+    z.coerce.number().positive("Deve essere maggiore di 0"),
+    z.nan().transform(() => undefined),
+  ]).optional(),
+  desired_bases_min: z.union([
+    z.coerce.number().min(0),
+    z.nan().transform(() => undefined),
+  ]).optional(),
+  desired_bases_max: z.union([
+    z.coerce.number().min(0),
+    z.nan().transform(() => undefined),
+  ]).optional(),
+  desired_flyers_min: z.union([
+    z.coerce.number().min(0),
+    z.nan().transform(() => undefined),
+  ]).optional(),
+  desired_flyers_max: z.union([
+    z.coerce.number().min(0),
+    z.nan().transform(() => undefined),
+  ]).optional(),
+  auto_promote: z.boolean(),
+  public_participants: z.boolean(),
+}).refine((data) => {
+  if (!data.starts_at || !data.ends_at) return true;
+  const start = new Date(data.starts_at);
+  const end = new Date(data.ends_at);
+  return end > start;
+}, {
+  message: "La data di fine deve essere successiva alla data di inizio.",
+  path: ["ends_at"],
+});
+
+type CreateJamFormData = z.infer<typeof createJamSchema>;
 
 const CreateJam = () => {
   const navigate = useNavigate();
@@ -39,6 +66,7 @@ const CreateJam = () => {
     setValue,
     formState: { isSubmitting, errors },
   } = useForm<CreateJamFormData>({
+    resolver: zodResolver(createJamSchema),
     defaultValues: {
       name: "",
       location_text: "",
@@ -46,11 +74,11 @@ const CreateJam = () => {
       starts_at: "",
       ends_at: "",
       description: "",
-      capacity: "",
-      desired_bases_min: "",
-      desired_bases_max: "",
-      desired_flyers_min: "",
-      desired_flyers_max: "",
+      capacity: undefined,
+      desired_bases_min: undefined,
+      desired_bases_max: undefined,
+      desired_flyers_min: undefined,
+      desired_flyers_max: undefined,
       auto_promote: true,
       public_participants: true,
     },
@@ -130,14 +158,9 @@ const CreateJam = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non autenticato");
 
-      // Validate dates
+      // Convert datetime-local strings (local time) to UTC ISO strings
       const start = new Date(data.starts_at);
       const end = new Date(data.ends_at);
-      if (end <= start) {
-        throw new Error("La data di fine deve essere successiva alla data di inizio");
-      }
-
-      // Convert datetime-local strings (local time) to UTC ISO strings
       const startsAtUTC = start.toISOString();
       const endsAtUTC = end.toISOString();
 
@@ -200,10 +223,13 @@ const CreateJam = () => {
                   <Input
                     id="name"
                     placeholder="es. Jam di AcroYoga a Milano"
-                    {...register("name", { required: true })}
+                    {...register("name")}
                     disabled={isSubmitting}
                     className="rounded-xl"
                   />
+                  {errors.name && (
+                    <p className="text-xs text-destructive mt-1">{String(errors.name.message || "")}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -214,10 +240,13 @@ const CreateJam = () => {
                   <Input
                     id="location"
                     placeholder="es. Parco Sempione, Milano"
-                    {...register("location_text", { required: true })}
+                    {...register("location_text")}
                     disabled={isSubmitting}
                     className="rounded-xl"
                   />
+                  {errors.location_text && (
+                    <p className="text-xs text-destructive mt-1">{String(errors.location_text.message || "")}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -230,6 +259,9 @@ const CreateJam = () => {
                     disabled={isSubmitting}
                     className="rounded-xl"
                   />
+                  {errors.gmaps_link && (
+                    <p className="text-xs text-destructive mt-1">{String(errors.gmaps_link.message || "")}</p>
+                  )}
                 </div>
               </div>
 
@@ -243,10 +275,13 @@ const CreateJam = () => {
                   <Input
                     id="starts"
                     type="datetime-local"
-                    {...register("starts_at", { required: true })}
+                    {...register("starts_at")}
                     disabled={isSubmitting}
                     className="rounded-xl"
                   />
+                  {errors.starts_at && (
+                    <p className="text-xs text-destructive mt-1">{String(errors.starts_at.message || "")}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -254,10 +289,13 @@ const CreateJam = () => {
                   <Input
                     id="ends"
                     type="datetime-local"
-                    {...register("ends_at", { required: true })}
+                    {...register("ends_at")}
                     disabled={isSubmitting}
                     className="rounded-xl"
                   />
+                  {errors.ends_at && (
+                    <p className="text-xs text-destructive mt-1">{String(errors.ends_at.message || "")}</p>
+                  )}
                 </div>
               </div>
 
@@ -285,13 +323,13 @@ const CreateJam = () => {
                     type="number"
                     min="1"
                     placeholder="Lascia vuoto per nessun limite"
-                    {...register("capacity", { 
-                      valueAsNumber: true,
-                      validate: value => value === "" || value > 0 || "Deve essere maggiore di 0"
-                    })}
+                    {...register("capacity", { valueAsNumber: true })}
                     disabled={isSubmitting}
                     className="rounded-xl"
                   />
+                  {errors.capacity && (
+                    <p className="text-xs text-destructive mt-1">{String(errors.capacity.message || "")}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Se omesso, la jam avrà posti illimitati. I campi sotto si aggiorneranno automaticamente con ratio 2:1 (flyer:base).
                   </p>
