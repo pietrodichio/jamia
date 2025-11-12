@@ -41,6 +41,8 @@ export const JamHeader = ({
 }: JamHeaderProps) => {
   const { toast } = useToast();
   const [updatingVisibility, setUpdatingVisibility] = useState(false);
+  const participantDisplayCount = jam.participant_count ?? participants.length ?? 0;
+  const waitingDisplayCount = jam.waiting_count ?? waitingList.length ?? 0;
 
   const handleTogglePublicParticipants = async (checked: boolean) => {
     try {
@@ -159,8 +161,8 @@ export const JamHeader = ({
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
             <span>
-              {participants.length}{jam.capacity ? `/${jam.capacity}` : ""} partecipanti
-              {waitingList.length > 0 && ` • ${waitingList.length} in attesa`}
+              {participantDisplayCount}{jam.capacity ? `/${jam.capacity}` : ""} partecipanti
+              {waitingDisplayCount > 0 && ` • ${waitingDisplayCount} in attesa`}
             </span>
           </div>
         </div>
