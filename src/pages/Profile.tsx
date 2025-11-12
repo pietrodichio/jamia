@@ -12,6 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, ArrowLeft } from "lucide-react";
 import imageCompression from "browser-image-compression";
 
+const ROLE_OPTIONS = ["base", "flyer"] as const;
+type MainRole = (typeof ROLE_OPTIONS)[number];
+
+const sanitizeMainRole = (role?: string | null): MainRole =>
+  role === "flyer" ? "flyer" : "base";
+
 const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -20,7 +26,7 @@ const Profile = () => {
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
-  const [mainRole, setMainRole] = useState<"base" | "flyer" | "both">("both");
+  const [mainRole, setMainRole] = useState<MainRole>(sanitizeMainRole());
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -43,7 +49,7 @@ const Profile = () => {
         setPhone(profile.phone || "");
         setBio(profile.bio || "");
         setCity(profile.city || "");
-        setMainRole(profile.main_role || "both");
+        setMainRole(sanitizeMainRole(profile.main_role));
         if (profile.photo_url) {
           setPhotoPreview(profile.photo_url);
         }
@@ -336,14 +342,17 @@ const Profile = () => {
 
             <div className="space-y-2">
               <Label htmlFor="mainRole">Ruolo principale *</Label>
-              <Select value={mainRole} onValueChange={(value: any) => setMainRole(value)} disabled={isLoading}>
+              <Select
+                value={mainRole}
+                onValueChange={(value) => setMainRole(value as MainRole)}
+                disabled={isLoading}
+              >
                 <SelectTrigger className="rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="base">Base</SelectItem>
                   <SelectItem value="flyer">Flyer</SelectItem>
-                  <SelectItem value="both">Entrambi</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -388,4 +397,3 @@ const Profile = () => {
 };
 
 export default Profile;
-

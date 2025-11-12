@@ -17,6 +17,11 @@ import { Loader2, Upload, X } from "lucide-react";
 import imageCompression from "browser-image-compression";
 
 const phoneNumberRegex = /^\+?[0-9\s\-().]{7,20}$/;
+const ROLE_OPTIONS = ["base", "flyer"] as const;
+type MainRole = (typeof ROLE_OPTIONS)[number];
+
+const sanitizeMainRole = (role?: string | null): MainRole =>
+  role === "flyer" ? "flyer" : "base";
 
 const profileSchema = z.object({
   firstName: z
@@ -33,7 +38,7 @@ const profileSchema = z.object({
     }),
   city: z.string().trim().optional(),
   bio: z.string().trim().optional(),
-  mainRole: z.enum(["base", "flyer", "both"]),
+  mainRole: z.enum(ROLE_OPTIONS),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -55,7 +60,7 @@ const ProfileSetup = () => {
       phone: "",
       bio: "",
       city: "",
-      mainRole: "both",
+      mainRole: sanitizeMainRole(),
     },
   });
   const { control, handleSubmit, reset } = form;
@@ -120,7 +125,7 @@ const ProfileSetup = () => {
           phone: profile.phone || inferredPhone || "",
           bio: profile.bio || "",
           city: profile.city || "",
-          mainRole: profile.main_role || "both",
+          mainRole: sanitizeMainRole(profile.main_role),
         });
 
         const candidatePhoto = profile.photo_url?.trim();
@@ -455,7 +460,6 @@ const ProfileSetup = () => {
                       <SelectContent>
                         <SelectItem value="base">Base</SelectItem>
                         <SelectItem value="flyer">Flyer</SelectItem>
-                        <SelectItem value="both">Entrambi</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
