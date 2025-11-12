@@ -165,6 +165,14 @@ export class ParticipantsService {
       );
     }
 
+    const { data: cancelledParticipation } = await this.supabase
+      .from('jam_participants')
+      .select('*')
+      .eq('jam_id', jamId)
+      .eq('user_id', userId)
+      .eq('state', 'cancelled')
+      .maybeSingle();
+
     const activeParticipants = await this.fetchActiveParticipants(jamId);
     const roleCounts = this.calculateRoleCounts(activeParticipants);
     const effectiveRole = this.resolveEffectiveRole(joinJamDto.role);
@@ -183,21 +191,48 @@ export class ParticipantsService {
     const newState =
       totalCapacityReached || hasReachedRoleLimit ? 'waiting' : 'participant';
 
-    // Add participant
-    const { data, error } = await this.supabase
-      .from('jam_participants')
-      .insert({
-        jam_id: jamId,
-        user_id: userId,
-        role: joinJamDto.role,
-        state: newState,
-        source: 'direct',
-      })
-      .select()
-      .single();
+    const participationPayload = {
+      role: joinJamDto.role,
+      state: newState,
+      source: 'direct',
+    };
 
-    if (error) {
-      throw new Error(`Failed to join jam: ${error.message}`);
+    let participationRecord;
+
+    if (cancelledParticipation) {
+      const { data, error } = await this.supabase
+        .from('jam_participants')
+        .update({
+          ...participationPayload,
+          cancelled_at: null,
+          promoted_at: null,
+          joined_at: new Date().toISOString(),
+        })
+        .eq('id', cancelledParticipation.id)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to rejoin jam: ${error.message}`);
+      }
+
+      participationRecord = data;
+    } else {
+      const { data, error } = await this.supabase
+        .from('jam_participants')
+        .insert({
+          jam_id: jamId,
+          user_id: userId,
+          ...participationPayload,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to join jam: ${error.message}`);
+      }
+
+      participationRecord = data;
     }
 
     // Log action
@@ -217,7 +252,7 @@ export class ParticipantsService {
     }
 
     return {
-      ...data,
+      ...participationRecord,
       message:
         newState === 'waiting'
           ? 'Added to waiting list'
@@ -435,6 +470,13 @@ export class ParticipantsService {
   private async notifyParticipantConfirmed(
     payload: ParticipantNotificationPayload,
   ) {
+    if (!this.emailService) {
+      this.logger.warn(
+        'Email service not configured. Skipping participant confirmation email.',
+      );
+      return;
+    }
+
     await this.sendParticipantEmail(payload, (context) =>
       this.emailService.sendParticipantConfirmationEmail(context),
     );
@@ -443,6 +485,13 @@ export class ParticipantsService {
   private async notifyParticipantPromoted(
     payload: ParticipantNotificationPayload,
   ) {
+    if (!this.emailService) {
+      this.logger.warn(
+        'Email service not configured. Skipping participant promotion email.',
+      );
+      return;
+    }
+
     await this.sendParticipantEmail(payload, (context) =>
       this.emailService.sendPromotionEmail(context),
     );
@@ -451,6 +500,13 @@ export class ParticipantsService {
   private async notifyParticipantRemoved(
     payload: ParticipantNotificationPayload,
   ) {
+    if (!this.emailService) {
+      this.logger.warn(
+        'Email service not configured. Skipping participant removal email.',
+      );
+      return;
+    }
+
     await this.sendParticipantEmail(payload, (context) =>
       this.emailService.sendRemovalEmail(context),
     );

@@ -121,6 +121,79 @@ describe('ParticipantsService', () => {
     });
   });
 
+  it('allows a previously cancelled participant to rejoin the jam', async () => {
+    const jam = {
+      id: 'jam-3',
+      status: 'published',
+      capacity: 5,
+    };
+
+    const updatedRecords: unknown[] = [];
+
+    const supabase = createSupabaseMock({
+      jams: [{ response: { data: jam, error: null } }],
+      jam_participants: [
+        { response: { data: null, error: null } },
+        {
+          response: {
+            data: {
+              id: 'cancelled-participant',
+              jam_id: 'jam-3',
+              user_id: 'user-cancelled',
+              role: 'flyer',
+              state: 'cancelled',
+            },
+            error: null,
+          },
+        },
+        { response: { data: [], error: null } },
+        {
+          response: {
+            data: {
+              id: 'cancelled-participant',
+              role: 'flyer',
+              state: 'participant',
+            },
+            error: null,
+          },
+          updateResponse: {
+            data: {
+              id: 'cancelled-participant',
+              role: 'flyer',
+              state: 'participant',
+            },
+            error: null,
+          },
+          onUpdate: (payload) => updatedRecords.push(payload),
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    const result = await service.joinJam('jam-3', 'user-cancelled', {
+      role: 'flyer',
+    });
+
+    expect(result.state).toBe('participant');
+    expect(result.role).toBe('flyer');
+    expect(updatedRecords).toHaveLength(1);
+    expect(updatedRecords[0]).toMatchObject({
+      state: 'participant',
+      role: 'flyer',
+      source: 'direct',
+    });
+    expect(auditService.log).toHaveBeenCalledWith(
+      'jam-3',
+      'user-cancelled',
+      'joined',
+      expect.objectContaining({ state: 'participant', role: 'flyer' }),
+    );
+  });
+
   it('promotes the first waiting participant whose role fits remaining capacity', async () => {
     const insertedUpdates: unknown[] = [];
 
