@@ -24,6 +24,7 @@ describe('ParticipantsService', () => {
       jams: [{ response: { data: jam, error: null } }],
       jam_participants: [
         { response: { data: null, error: null } },
+        { response: { data: null, error: null } },
         {
           response: {
             data: [{ id: 'participant-1', role: 'flyer' }],
@@ -82,6 +83,7 @@ describe('ParticipantsService', () => {
     const supabase = createSupabaseMock({
       jams: [{ response: { data: jam, error: null } }],
       jam_participants: [
+        { response: { data: null, error: null } },
         { response: { data: null, error: null } },
         {
           response: {
@@ -191,6 +193,84 @@ describe('ParticipantsService', () => {
       'user-cancelled',
       'joined',
       expect.objectContaining({ state: 'participant', role: 'flyer' }),
+    );
+  });
+
+  it('returns a rejoining participant to the waiting list when capacity is still full', async () => {
+    const jam = {
+      id: 'jam-4',
+      status: 'published',
+      capacity: 1,
+    };
+
+    const updatedRecords: unknown[] = [];
+
+    const supabase = createSupabaseMock({
+      jams: [{ response: { data: jam, error: null } }],
+      jam_participants: [
+        { response: { data: null, error: null } },
+        {
+          response: {
+            data: {
+              id: 'cancelled-waiting',
+              jam_id: 'jam-4',
+              user_id: 'user-waiting',
+              role: 'flyer',
+              state: 'cancelled',
+            },
+            error: null,
+          },
+        },
+        {
+          response: {
+            data: [{ id: 'active-participant', role: 'base' }],
+            error: null,
+          },
+        },
+        {
+          response: {
+            data: {
+              id: 'cancelled-waiting',
+              role: 'flyer',
+              state: 'waiting',
+            },
+            error: null,
+          },
+          updateResponse: {
+            data: {
+              id: 'cancelled-waiting',
+              role: 'flyer',
+              state: 'waiting',
+            },
+            error: null,
+          },
+          onUpdate: (payload) => updatedRecords.push(payload),
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    const result = await service.joinJam('jam-4', 'user-waiting', {
+      role: 'flyer',
+    });
+
+    expect(result.state).toBe('waiting');
+    expect(result.role).toBe('flyer');
+    expect(updatedRecords).toHaveLength(1);
+    expect(updatedRecords[0]).toMatchObject({
+      state: 'waiting',
+      role: 'flyer',
+      source: 'direct',
+    });
+    expect(auditService.log).toHaveBeenCalledWith(
+      'jam-4',
+      'user-waiting',
+      'joined',
+      expect.objectContaining({ state: 'waiting', role: 'flyer' }),
     );
   });
 

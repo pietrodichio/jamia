@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ParticipantsService } from './participants.service';
 import { JoinJamDto } from './dto/join-jam.dto';
+import { AddParticipantDto } from './dto/add-participant.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User, AuthUser } from '../auth/user.decorator';
 
@@ -41,6 +42,19 @@ export class ParticipantsController {
     @Body() joinJamDto: JoinJamDto,
   ) {
     return this.participantsService.joinJam(jamId, user.id, joinJamDto);
+  }
+
+  @Post('jams/:jamId/manage')
+  async addParticipantAsManager(
+    @Param('jamId') jamId: string,
+    @User() user: AuthUser,
+    @Body() addParticipantDto: AddParticipantDto,
+  ) {
+    return this.participantsService.addParticipantAsManager(
+      jamId,
+      user.id,
+      addParticipantDto,
+    );
   }
 
   @Patch(':id/cancel')

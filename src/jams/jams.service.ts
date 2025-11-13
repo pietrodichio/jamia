@@ -383,7 +383,7 @@ export class JamsService {
       `,
       )
       .in('id', jamIds)
-      .eq('status', 'published')
+      .in('status', ['draft', 'published'])
       .order('starts_at', { ascending: true });
 
     if (error) {

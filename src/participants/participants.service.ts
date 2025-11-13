@@ -5,10 +5,13 @@ import {
   BadRequestException,
   Inject,
   Logger,
+  Optional,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
 import { JoinJamDto } from './dto/join-jam.dto';
+import { AddParticipantDto } from './dto/add-participant.dto';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
 
@@ -41,15 +44,33 @@ type ParticipantContact = {
   email?: string | null;
 };
 
+type JamWithConfig = {
+  id: string;
+  owner_id: string;
+  status: string;
+  desired_bases_max?: number | null;
+  desired_flyers_max?: number | null;
+  capacity?: number | null;
+  auto_promote?: boolean | null;
+  name?: string | null;
+  starts_at?: string | null;
+  location_text?: string | null;
+};
+
 @Injectable()
 export class ParticipantsService {
   private readonly logger = new Logger(ParticipantsService.name);
+  private readonly frontendBaseUrl: string | null;
 
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly auditService: AuditService,
     private readonly emailService: EmailService,
-  ) {}
+    @Optional() configService?: ConfigService,
+  ) {
+    this.frontendBaseUrl =
+      configService?.get<string>('FRONTEND_BASE_URL') || null;
+  }
 
   async getJamParticipants(jamId: string, userId: string) {
     // Check if user has permission (owner or participant)
@@ -63,9 +84,29 @@ export class ParticipantsService {
       throw new NotFoundException('Jam not found');
     }
 
-    // Only jam owner can view all participants
-    if (jam.owner_id !== userId) {
-      throw new ForbiddenException('Only the jam owner can view participants');
+    let hasManagementAccess = jam.owner_id === userId;
+
+    if (!hasManagementAccess) {
+      const { data: managerRecord, error: managerError } = await this.supabase
+        .from('jam_managers')
+        .select('id')
+        .eq('jam_id', jamId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (managerError) {
+        throw new Error(
+          `Failed to verify jam manager permissions: ${managerError.message}`,
+        );
+      }
+
+      hasManagementAccess = Boolean(managerRecord);
+    }
+
+    if (!hasManagementAccess) {
+      throw new ForbiddenException(
+        'Only the jam owner or managers can view participants',
+      );
     }
 
     // Get participants
@@ -134,11 +175,12 @@ export class ParticipantsService {
     };
   }
 
-  async joinJam(jamId: string, userId: string, joinJamDto: JoinJamDto) {
-    // Check if jam exists and is published
+  private async fetchJamWithConfig(jamId: string): Promise<JamWithConfig> {
     const { data: jam, error: jamError } = await this.supabase
       .from('jams')
-      .select('*')
+      .select(
+        'id, owner_id, status, capacity, desired_bases_max, desired_flyers_max, auto_promote, name, starts_at, location_text',
+      )
       .eq('id', jamId)
       .single();
 
@@ -146,36 +188,65 @@ export class ParticipantsService {
       throw new NotFoundException('Jam not found');
     }
 
+    return jam as JamWithConfig;
+  }
+
+  async joinJam(jamId: string, userId: string, joinJamDto: JoinJamDto) {
+    const jam = await this.fetchJamWithConfig(jamId);
+
     if (jam.status !== 'published') {
       throw new BadRequestException('This jam is not available for booking');
     }
 
+    return this.createParticipationRecord({
+      jam,
+      userId,
+      role: joinJamDto.role,
+      source: 'direct',
+      actorUserId: userId,
+      alreadyParticipatingMessage: 'You are already participating in this jam',
+    });
+  }
+
+  private async createParticipationRecord({
+    jam,
+    userId,
+    role,
+    source,
+    actorUserId,
+    alreadyParticipatingMessage = 'This user is already participating in this jam',
+  }: {
+    jam: JamWithConfig;
+    userId: string;
+    role: ParticipantRole;
+    source: string;
+    actorUserId: string;
+    alreadyParticipatingMessage?: string;
+  }) {
     // Check if user already participating
     const { data: existingParticipation } = await this.supabase
       .from('jam_participants')
       .select('*')
-      .eq('jam_id', jamId)
+      .eq('jam_id', jam.id)
       .eq('user_id', userId)
       .neq('state', 'cancelled')
       .maybeSingle();
 
     if (existingParticipation) {
-      throw new BadRequestException(
-        'You are already participating in this jam',
-      );
+      throw new BadRequestException(alreadyParticipatingMessage);
     }
 
     const { data: cancelledParticipation } = await this.supabase
       .from('jam_participants')
       .select('*')
-      .eq('jam_id', jamId)
+      .eq('jam_id', jam.id)
       .eq('user_id', userId)
       .eq('state', 'cancelled')
       .maybeSingle();
 
-    const activeParticipants = await this.fetchActiveParticipants(jamId);
+    const activeParticipants = await this.fetchActiveParticipants(jam.id);
     const roleCounts = this.calculateRoleCounts(activeParticipants);
-    const effectiveRole = this.resolveEffectiveRole(joinJamDto.role);
+    const effectiveRole = this.resolveEffectiveRole(role);
 
     const hasReachedRoleLimit = this.isRoleAtMax(
       effectiveRole,
@@ -192,9 +263,9 @@ export class ParticipantsService {
       totalCapacityReached || hasReachedRoleLimit ? 'waiting' : 'participant';
 
     const participationPayload = {
-      role: joinJamDto.role,
+      role,
       state: newState,
-      source: 'direct',
+      source,
     };
 
     let participationRecord;
@@ -221,7 +292,7 @@ export class ParticipantsService {
       const { data, error } = await this.supabase
         .from('jam_participants')
         .insert({
-          jam_id: jamId,
+          jam_id: jam.id,
           user_id: userId,
           ...participationPayload,
         })
@@ -235,16 +306,19 @@ export class ParticipantsService {
       participationRecord = data;
     }
 
-    // Log action
-    await this.auditService.log(jamId, userId, 'joined', {
-      role: joinJamDto.role,
+    // Log action with actor information
+    await this.auditService.log(jam.id, actorUserId, 'joined', {
+      role,
       state: newState,
+      source,
+      target_user_id: userId,
+      actor_user_id: actorUserId,
     });
 
     if (newState === 'participant') {
       await this.notifyParticipantConfirmed({
         userId,
-        jamId,
+        jamId: jam.id,
         jamName: jam.name || 'la jam',
         jamStartsAt: jam.starts_at,
         jamLocation: jam.location_text,
@@ -257,6 +331,110 @@ export class ParticipantsService {
         newState === 'waiting'
           ? 'Added to waiting list'
           : 'Successfully joined the jam',
+    };
+  }
+
+  async addParticipantAsManager(
+    jamId: string,
+    actorUserId: string,
+    addParticipantDto: AddParticipantDto,
+  ) {
+    const jam = await this.fetchJamWithConfig(jamId);
+
+    if (jam.owner_id !== actorUserId) {
+      const { data: managerRecord, error: managerError } = await this.supabase
+        .from('jam_managers')
+        .select('id')
+        .eq('jam_id', jamId)
+        .eq('user_id', actorUserId)
+        .maybeSingle();
+
+      if (managerError) {
+        throw new Error(
+          `Failed to verify manager permissions: ${managerError.message}`,
+        );
+      }
+
+      if (!managerRecord) {
+        throw new ForbiddenException(
+          'Only the jam owner or managers can add participants',
+        );
+      }
+    }
+
+    const normalizedEmail = this.normalizeEmail(addParticipantDto.email);
+
+    const { data: existingProfile, error: profileError } = await this.supabase
+      .from('profiles')
+      .select('id, email')
+      .ilike('email', normalizedEmail)
+      .maybeSingle();
+
+    if (profileError) {
+      throw new Error(`Failed to look up user: ${profileError.message}`);
+    }
+
+    let targetUserId: string;
+    let wasInvited = false;
+
+    if (existingProfile) {
+      targetUserId = existingProfile.id;
+    } else {
+      const inviteOptions: {
+        data?: { name?: string; invite_jam_id?: string; invite_jam_name?: string | null };
+        redirectTo?: string;
+      } = {
+        data: {
+          name: this.buildDisplayName(
+            addParticipantDto.firstName,
+            addParticipantDto.lastName,
+          ),
+          invite_jam_id: jamId,
+          invite_jam_name: jam.name || null,
+        },
+      };
+
+      const redirectTo = this.buildInviteRedirectUrl(jamId, jam.name);
+      if (redirectTo) {
+        inviteOptions.redirectTo = redirectTo;
+      }
+
+      const inviteResult = await this.supabase.auth.admin.inviteUserByEmail(
+        normalizedEmail,
+        inviteOptions,
+      );
+
+      if (inviteResult.error || !inviteResult.data?.user) {
+        throw new Error(
+          `Failed to invite participant: ${
+            inviteResult.error?.message || 'unknown error'
+          }`,
+        );
+      }
+
+      targetUserId = inviteResult.data.user.id;
+      wasInvited = true;
+
+      await this.upsertInvitedProfile(targetUserId, {
+        email: normalizedEmail,
+        firstName: addParticipantDto.firstName,
+        lastName: addParticipantDto.lastName,
+        phone: addParticipantDto.phone,
+        role: addParticipantDto.role,
+      });
+    }
+
+    const participation = await this.createParticipationRecord({
+      jam,
+      userId: targetUserId,
+      role: addParticipantDto.role,
+      source: wasInvited ? 'manager_invite' : 'manager_manual',
+      actorUserId,
+    });
+
+    return {
+      ...participation,
+      invited: wasInvited,
     };
   }
 
@@ -319,16 +497,39 @@ export class ParticipantsService {
       throw new NotFoundException('Participation not found');
     }
 
-    // Check if user is jam owner
+    // Check if user is jam owner or manager
     const { data: jam } = await this.supabase
       .from('jams')
       .select('owner_id, auto_promote, name, starts_at, location_text')
       .eq('id', participation.jam_id)
       .single();
 
-    if (!jam || jam.owner_id !== userId) {
+    if (!jam) {
+      throw new NotFoundException('Jam not found');
+    }
+
+    let hasPermission = jam.owner_id === userId;
+
+    if (!hasPermission) {
+      const { data: managerRecord, error: managerError } = await this.supabase
+        .from('jam_managers')
+        .select('id')
+        .eq('jam_id', participation.jam_id)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (managerError) {
+        throw new Error(
+          `Failed to verify manager permissions: ${managerError.message}`,
+        );
+      }
+
+      hasPermission = Boolean(managerRecord);
+    }
+
+    if (!hasPermission) {
       throw new ForbiddenException(
-        'Only the jam owner can remove participants',
+        'Only the jam owner or managers can remove participants',
       );
     }
 
@@ -582,6 +783,82 @@ export class ParticipantsService {
     return null;
   }
 
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
+  private buildDisplayName(
+    firstName?: string,
+    lastName?: string,
+  ): string | undefined {
+    const parts = [firstName, lastName].filter(Boolean);
+    return parts.length > 0 ? (parts as string[]).join(' ') : undefined;
+  }
+
+  private buildInviteRedirectUrl(
+    jamId: string,
+    jamName?: string | null,
+  ): string | null {
+    if (!this.frontendBaseUrl) {
+      return null;
+    }
+
+    try {
+      const url = new URL('/accept-invite', this.frontendBaseUrl);
+      url.searchParams.set('jamId', jamId);
+
+      if (jamName) {
+        url.searchParams.set('jamName', jamName);
+      }
+
+      return url.toString();
+    } catch (error) {
+      this.logger.warn(
+        `Invalid FRONTEND_BASE_URL configuration: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return null;
+    }
+  }
+
+  private async upsertInvitedProfile(
+    userId: string,
+    profile: {
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      role?: ParticipantRole;
+    },
+  ): Promise<void> {
+    const payload: Record<string, any> = {
+      id: userId,
+      email: profile.email,
+      first_name: profile.firstName || profile.email,
+    };
+
+    if (profile.lastName) {
+      payload.last_name = profile.lastName;
+    }
+
+    if (profile.phone) {
+      payload.phone = profile.phone;
+    }
+
+    payload.main_role = profile.role || 'both';
+
+    const { error } = await this.supabase
+      .from('profiles')
+      .upsert(payload, { onConflict: 'id' });
+
+    if (error) {
+      this.logger.warn(
+        `Failed to upsert invited profile ${userId}: ${error.message}`,
+      );
+    }
+  }
+
   private async fetchActiveParticipants(jamId: string) {
     const { data, error } = await this.supabase
       .from('jam_participants')
@@ -610,6 +887,10 @@ export class ParticipantsService {
   private calculateRoleCounts(
     participants: Array<{ role: ParticipantRole }>,
   ): RoleCounts {
+    if (!Array.isArray(participants) || participants.length === 0) {
+      return { base: 0, flyer: 0, total: 0 };
+    }
+
     return participants.reduce<RoleCounts>(
       (acc, participant) => {
         if (participant.role === 'base') {
