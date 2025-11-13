@@ -19,10 +19,19 @@ export interface Participant {
   promoted_at?: string;
   cancelled_at?: string;
   source?: string;
+  invited?: boolean;
   profiles?: ParticipantProfile;
 }
 
 export interface JoinJamDto {
+  role: 'base' | 'flyer' | 'both';
+}
+
+export interface ManagedParticipantDto {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
   role: 'base' | 'flyer' | 'both';
 }
 
@@ -44,6 +53,14 @@ export const participantsApi = {
 
   joinJam: async (jamId: string, data: JoinJamDto): Promise<Participant> => {
     const response = await apiClient.post(`/participants/jams/${jamId}`, data);
+    return response.data;
+  },
+
+  addParticipantAsManager: async (
+    jamId: string,
+    data: ManagedParticipantDto
+  ): Promise<Participant> => {
+    const response = await apiClient.post(`/participants/jams/${jamId}/manage`, data);
     return response.data;
   },
 

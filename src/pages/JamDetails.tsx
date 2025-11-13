@@ -527,14 +527,14 @@ const JamDetails = () => {
           isOwner={isOwner}
           isManager={hasManagementAccess}
           isAuthenticated={Boolean(currentUser)}
-          onParticipantRemoved={invalidateJamQueries}
+          onParticipantsUpdated={invalidateJamQueries}
         />
 
         {isOwnerOrManager && (
           <WaitingList
             waitingList={waitingList}
             jamId={jam.id}
-            onParticipantRemoved={invalidateJamQueries}
+            onParticipantsUpdated={invalidateJamQueries}
           />
         )}
       </div>
@@ -550,7 +550,7 @@ interface ParticipantsSectionProps {
   isOwner: boolean;
   isAuthenticated: boolean;
   isManager: boolean;
-  onParticipantRemoved: () => void;
+  onParticipantsUpdated: () => void;
 }
 
 const ParticipantsSection = ({
@@ -559,7 +559,7 @@ const ParticipantsSection = ({
   isOwner,
   isAuthenticated,
   isManager,
-  onParticipantRemoved,
+  onParticipantsUpdated,
 }: ParticipantsSectionProps) => (
   <ParticipantsList
     participants={participants}
@@ -567,7 +567,7 @@ const ParticipantsSection = ({
     isOwner={isOwner}
     isAuthenticated={isAuthenticated}
     isManager={isManager}
-    onParticipantRemoved={onParticipantRemoved}
+    onParticipantsUpdated={onParticipantsUpdated}
   
   />
 );

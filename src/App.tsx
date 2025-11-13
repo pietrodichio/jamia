@@ -15,6 +15,7 @@ import CreateJam from "./pages/CreateJam";
 import JamDetails from "./pages/JamDetails";
 import EditJam from "./pages/EditJam";
 import ResetPassword from "./pages/ResetPassword";
+import AcceptInvite from "./pages/AcceptInvite";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import OGImage from "./pages/OGImage";
@@ -25,6 +26,17 @@ const AuthListener = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const hash = window.location.hash;
+    if (
+      hash &&
+      hash.includes("type=invite") &&
+      window.location.pathname !== "/accept-invite"
+    ) {
+      console.info("[AuthListener] Invite hash detected, redirecting to /accept-invite");
+      navigate(`/accept-invite${window.location.search}${hash}`, { replace: true });
+      return;
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         navigate('/reset-password');
@@ -58,6 +70,7 @@ const App = () => (
           <Route path="/jam/:id" element={<JamDetails />} />
           <Route path="/jam/:id/edit" element={<EditJam />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/og-image" element={<OGImage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

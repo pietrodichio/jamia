@@ -18,6 +18,7 @@ import { participantsApi, type Participant } from "@/api/participants.api";
 import { type Jam } from "@/api/jams.api";
 import { useToast } from "@/hooks/use-toast";
 import { UserAvatar } from "@/components/UserAvatar";
+import { AddParticipantCard } from "@/components/AddParticipantCard";
 
 type ParticipantWithProfile = Participant;
 
@@ -27,7 +28,7 @@ interface ParticipantsListProps {
   isOwner: boolean;
   isAuthenticated: boolean;
   isManager: boolean;
-  onParticipantRemoved?: () => void;
+  onParticipantsUpdated?: () => void;
 }
 
 interface ParticipantSummary {
@@ -237,12 +238,13 @@ export const ParticipantsList = ({
   isOwner,
   isAuthenticated,
   isManager,
-  onParticipantRemoved,
+  onParticipantsUpdated,
 }: ParticipantsListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [participantToRemove, setParticipantToRemove] = useState<ParticipantSummary | null>(null);
+  const canManageParticipants = isOwner || isManager;
 
   const removeParticipantMutation = useMutation<void, unknown, string>({
     mutationFn: async (participantId) => {
@@ -253,7 +255,7 @@ export const ParticipantsList = ({
         title: "Partecipante rimosso",
         description: "Il partecipante è stato rimosso dalla jam",
       });
-      onParticipantRemoved?.();
+      onParticipantsUpdated?.();
       queryClient.invalidateQueries({ queryKey: queryKeyForJamParticipants(jam.id) });
       setDialogOpen(false);
       setParticipantToRemove(null);
@@ -291,21 +293,27 @@ export const ParticipantsList = ({
     );
   }
 
-  if (!jam.public_participants && (!isOwner || !isManager)) {
-      return (
-        <ParticipantsCard
-          title={`Partecipanti`}
-          description="Lista dei partecipanti non pubblica"
-        >
-          <div className="text-sm text-muted-foreground py-4">
-            La lista dei partecipanti di questa jam non è pubblica.
-          </div>
-        </ParticipantsCard>
-      );
-    }
+  if (!jam.public_participants && !canManageParticipants) {
+    return (
+      <ParticipantsCard
+        title={`Partecipanti`}
+        description="Lista dei partecipanti non pubblica"
+      >
+        <div className="text-sm text-muted-foreground py-4">
+          La lista dei partecipanti di questa jam non è pubblica.
+        </div>
+      </ParticipantsCard>
+    );
+  }
 
   return (
     <>
+      <AddParticipantCard
+        jamId={jam.id}
+        canManage={canManageParticipants}
+        onParticipantsUpdated={onParticipantsUpdated}
+      />
+
       <ParticipantsCard
         title={`Partecipanti (${participants.length})`}
         description={

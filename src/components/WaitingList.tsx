@@ -12,10 +12,10 @@ import { UserAvatar } from "@/components/UserAvatar";
 interface WaitingListProps {
   waitingList: any[];
   jamId: string;
-  onParticipantRemoved?: () => void;
+  onParticipantsUpdated?: () => void;
 }
 
-export const WaitingList = ({ waitingList, jamId, onParticipantRemoved }: WaitingListProps) => {
+export const WaitingList = ({ waitingList, jamId, onParticipantsUpdated }: WaitingListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -26,7 +26,7 @@ export const WaitingList = ({ waitingList, jamId, onParticipantRemoved }: Waitin
         title: "Partecipante rimosso",
         description: "Il partecipante è stato rimosso dalla lista d'attesa",
       });
-      onParticipantRemoved?.();
+      onParticipantsUpdated?.();
       // Invalidate and refetch jam participants
       queryClient.invalidateQueries({ queryKey: ['jam-participants', jamId] });
     },
