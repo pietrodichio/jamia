@@ -55,7 +55,11 @@ const JamCard = ({
     return format(new Date(date), "HH:mm", { locale: it });
   };
 
-  const isFull = jam.capacity && jam.participant_count ? jam.participant_count >= jam.capacity : false;
+  const participantCount = jam.participant_count ?? 0;
+  const waitingCount = jam.waiting_count ?? 0;
+  const isFull = jam.capacity !== undefined && jam.participant_count !== undefined
+    ? jam.participant_count >= jam.capacity
+    : false;
 
   const handleCardClick = () => {
     navigate(`/jam/${jam.id}`);
@@ -135,13 +139,13 @@ const JamCard = ({
             <Users className="h-4 w-4 text-primary" />
             <div className="flex items-center gap-2">
               <span className="text-sm">
-                {jam.participant_count || 0}
+                {participantCount}
                 {jam.capacity ? `/${jam.capacity}` : ""} partecipanti
               </span>
               {isFull && <Badge variant="secondary" className="text-xs">Completo</Badge>}
-              {jam.waiting_count && jam.waiting_count > 0 && (
+              {waitingCount > 0 && (
                 <Badge variant="outline" className="text-xs">
-                  {jam.waiting_count} in attesa
+                  {waitingCount} in attesa
                 </Badge>
               )}
             </div>

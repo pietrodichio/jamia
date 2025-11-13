@@ -106,11 +106,12 @@ const Auth = () => {
 
     try {
       if (isSignUp) {
+        const trimmedEmail = email.trim();
         const jamUrl = localStorage.getItem('jamia_redirect_url');
         const redirectTo = jamUrl ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(jamUrl)}` : `${window.location.origin}/`;
         
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: trimmedEmail,
           password,
           options: {
             data: { name },
@@ -120,17 +121,17 @@ const Auth = () => {
 
         if (error) throw error;
 
-
-
         // Profile and role will be created by database trigger
         // No need to create them manually here due to RLS restrictions
+
+        localStorage.setItem('jamia_signup_email', trimmedEmail);
 
         toast({
           title: "Registrazione completata!",
           description: "Ti abbiamo inviato un'email di conferma. Controlla la tua casella di posta.",
         });
 
-        navigate("/email-confirmation");
+        navigate("/email-confirmation", { state: { email: trimmedEmail } });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
