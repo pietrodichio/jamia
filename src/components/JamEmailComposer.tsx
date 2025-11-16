@@ -245,13 +245,13 @@ export const JamEmailComposer = ({ jamId, jamName, senderEmail }: JamEmailCompos
         <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
           <div className="space-y-1.5">
             <Label>Email di test</Label>
-            <div className="flex items-center gap-x-8 justify-between">
+            <div className="flex items-center gap-2 md:gap-8 justify-between flex-wrap">
             <Input
               type="email"
               value={testRecipient}
               onChange={(event) => setTestRecipient(event.target.value)}
               placeholder="tuoindirizzo@email.com"
-              className="rounded-xl"
+              className="rounded-xl w-full md:w-[80%]"
             />
             <Button
             variant="outline"
@@ -273,7 +273,7 @@ export const JamEmailComposer = ({ jamId, jamName, senderEmail }: JamEmailCompos
           
         </div>
 
-        <div className="flex justify-between items-center">
+        <div className="flex gap-2 flex-wrap justify-between items-center">
         <p className="text-xs text-muted-foreground">
               Le risposte verranno inoltrate a:{" "}
               {senderEmail ? (

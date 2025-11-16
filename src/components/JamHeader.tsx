@@ -81,7 +81,7 @@ export const JamHeader = ({
             </CardDescription>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {isOwnerOrManager && (
               <>
                 {jam.status === "draft" && (

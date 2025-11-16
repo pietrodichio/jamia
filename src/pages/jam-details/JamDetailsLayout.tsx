@@ -357,7 +357,7 @@ const JamDetailsLayout = () => {
     },
     onSuccess: () => {
       toast({
-        title: "Jam pubblicato!",
+        title: "Jam pubblicata!",
         description: "La tua jam è ora visibile e prenotabile",
       });
       if (id) {

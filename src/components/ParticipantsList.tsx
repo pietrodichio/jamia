@@ -21,7 +21,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Trash2 } from "lucide-react";
-import { participantsApi, type Participant, type ParticipantUpdatableRole } from "@/api/participants.api";
+import {
+  participantsApi,
+  type Participant,
+  type ParticipantUpdatableRole,
+} from "@/api/participants.api";
 import { type Jam } from "@/api/jams.api";
 import { useToast } from "@/hooks/use-toast";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -43,8 +47,8 @@ interface ParticipantsListProps {
   isOwner: boolean;
   isAuthenticated: boolean;
   isManager: boolean;
-   currentUserId: string | null;
-   canManageParticipants: boolean;
+  currentUserId: string | null;
+  canManageParticipants: boolean;
   onParticipantsUpdated?: () => void;
 }
 
@@ -104,7 +108,15 @@ const formatJoinedDate = (joinedAt: string) => {
   return format(date, "d MMMM 'alle' HH:mm", { locale: it });
 };
 
-const ParticipantsCard = ({ title, description, children }: { title: string; description: string; children: ReactNode }) => (
+const ParticipantsCard = ({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) => (
   <Card className="border-primary/10 rounded-2xl mb-6">
     <CardHeader>
       <CardTitle>{title}</CardTitle>
@@ -119,7 +131,10 @@ const UnauthenticatedParticipantsView = ({ isPublic = false }: { isPublic: boole
     <div className="blur-sm pointer-events-none">
       <div className="space-y-3">
         {[1, 2, 3].map((item) => (
-          <div key={item} className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl">
+          <div
+            key={item}
+            className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl flex-wrap"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gray-300" />
               <div className="flex flex-col gap-1">
@@ -137,7 +152,11 @@ const UnauthenticatedParticipantsView = ({ isPublic = false }: { isPublic: boole
 
     <div className="absolute inset-0 flex items-center justify-center bg-background/80">
       <div className="text-center space-y-4">
-        <p className="text-lg font-medium">{isPublic ? "Registrati per vedere i partecipanti" : "La lista dei partecipanti di questa jam non è pubblica."}</p>
+        <p className="text-lg font-medium">
+          {isPublic
+            ? "Registrati per vedere i partecipanti"
+            : "La lista dei partecipanti di questa jam non è pubblica."}
+        </p>
         <Button
           onClick={() => {
             localStorage.setItem("jamia_redirect_url", window.location.pathname);
@@ -155,7 +174,9 @@ const UnauthenticatedParticipantsView = ({ isPublic = false }: { isPublic: boole
 const ParticipantsEmptyState = ({ jamStatus }: { jamStatus: Jam["status"] }) => (
   <div className="text-center py-8">
     <p className="text-muted-foreground mb-2">
-      {jamStatus === "draft" ? "Pubblica la jam per permettere le prenotazioni" : "Nessun partecipante ancora"}
+      {jamStatus === "draft"
+        ? "Pubblica la jam per permettere le prenotazioni"
+        : "Nessun partecipante ancora"}
     </p>
     {jamStatus === "draft" && (
       <p className="text-sm text-muted-foreground">
@@ -182,70 +203,135 @@ const ParticipantRow = ({
   onChangeRole: (role: ParticipantUpdatableRole) => void;
   isUpdatingRole: boolean;
 }) => (
-  <div className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl">
-    <div className="flex items-start gap-3">
+  <div className="flex items-center justify-between gap-3 p-3 bg-secondary/20 rounded-xl">
+    <div className="flex items-start gap-3 min-w-0 flex-1 overflow-hidden">
       <UserAvatar
         photoUrl={participant.profiles?.photo_url}
         firstName={participant.profiles?.first_name}
         lastName={participant.profiles?.last_name}
         size="md"
       />
-      <div className="flex flex-col gap-1">
-        <div className="flex items-start gap-3 max-w-[220px] sm:max-w-none">
+
+      <div className="flex flex-col gap-1 min-w-0 flex-1">
+        <div className="flex items-center gap-2 min-w-0 md:max-w-fit">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <p className="font-medium truncate">
-                  {getParticipantFullName(participant)}
-                </p>
+                <div className="min-w-0 flex-1 md:w-fit">
+                  <p className="font-medium truncate md:w-fit">{getParticipantFullName(participant)}</p>
+                </div>
               </TooltipTrigger>
               <TooltipContent>
                 <span>{getParticipantFullName(participant)}</span>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-         
+
           {canEditRole && (
-            <Select
-              disabled={isUpdatingRole}
-              value={participant.role === "base" ? "base" : "flyer"}
-              onValueChange={(value) => onChangeRole(value as ParticipantUpdatableRole)}
+            <div className="flex-shrink-0">
+              <Select
+                disabled={isUpdatingRole}
+                value={participant.role === "base" ? "base" : "flyer"}
+                onValueChange={(value) => onChangeRole(value as ParticipantUpdatableRole)}
+              >
+                <SelectTrigger
+                  className={`h-7 w-fit gap-x-2 px-2 text-xs rounded-lg ${getRoleBadgeColor(participant.role)} ${isUpdatingRole ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <SelectValue placeholder="Ruolo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="base">Base</SelectItem>
+                  <SelectItem value="flyer">Flyer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 flex-shrink-0 sm:hidden">
+            {isOwner && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onRemove(participant)}
+                disabled={isRemoving}
+                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 sm:hidden">
+          {isOwner && participant.profiles?.phone && (
+            <a
+              href={`https://api.whatsapp.com/send/?phone=${participant.profiles.phone.replace(/^\+/, "")}&text&type=phone_number&app_absent=0`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground underline cursor-pointer truncate"
             >
-              <SelectTrigger className={`h-7 w-fit gap-x-2 px-2 text-xs rounded-lg ${getRoleBadgeColor(participant.role)} ${isUpdatingRole ? "opacity-50 cursor-not-allowed" : ""}`}>
-                <SelectValue placeholder="Ruolo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="base">Base</SelectItem>
-                <SelectItem value="flyer">Flyer</SelectItem>
-              </SelectContent>
-            </Select>
+              {participant.profiles.phone}
+            </a>
+          )}
+          {participant.joined_at ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-xs text-muted-foreground truncate cursor-default">
+                    {formatJoinedDate(participant.joined_at)}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>{formatJoinedDate(participant.joined_at)}</span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <span className="text-xs text-muted-foreground">-</span>
           )}
         </div>
 
-
         {isOwner && participant.profiles?.phone && (
-          <a href={`https://api.whatsapp.com/send/?phone=${participant.profiles.phone.replace(/^\+/, '')}&text&type=phone_number&app_absent=0`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground underline cursor-pointer">{participant.profiles.phone}</a>
+          <a
+            href={`https://api.whatsapp.com/send/?phone=${participant.profiles.phone.replace(/^\+/, "")}&text&type=phone_number&app_absent=0`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-muted-foreground underline cursor-pointer truncate hidden sm:inline"
+          >
+            {participant.profiles.phone}
+          </a>
         )}
-       
-    
       </div>
     </div>
-    <div className="flex flex-col items-end gap-y-2">
 
-    {isOwner && (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onRemove(participant)}
-        disabled={isRemoving}
-        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    )}
-     <span className="text-xs text-muted-foreground text-right">
-          {participant.joined_at ? formatJoinedDate(participant.joined_at) : "-"}
-        </span>
+    <div className="hidden sm:flex flex-col items-end gap-y-2 flex-shrink-0 self-start">
+      {isOwner && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemove(participant)}
+          disabled={isRemoving}
+          className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
+      {participant.joined_at ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-xs text-muted-foreground text-right whitespace-nowrap cursor-default">
+                {formatJoinedDate(participant.joined_at)}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span>{formatJoinedDate(participant.joined_at)}</span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        <span className="text-xs text-muted-foreground text-right">-</span>
+      )}
     </div>
   </div>
 );
@@ -268,8 +354,8 @@ const ParticipantRemovalDialog = ({
       <DialogHeader>
         <DialogTitle>Rimuovi partecipante</DialogTitle>
         <DialogDescription>
-          Sei sicuro di voler rimuovere {participant?.name ?? "questo partecipante"} dalla jam? Questa azione non può
-          essere annullata.
+          Sei sicuro di voler rimuovere {participant?.name ?? "questo partecipante"} dalla jam?
+          Questa azione non può essere annullata.
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
@@ -299,7 +385,8 @@ export const ParticipantsList = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [participantToRemove, setParticipantToRemove] = useState<ParticipantSummary | null>(null);
   const [updatingParticipantId, setUpdatingParticipantId] = useState<string | null>(null);
-  const effectiveCanManageParticipants = typeof canManageParticipants === "boolean" ? canManageParticipants : isOwner || isManager;
+  const effectiveCanManageParticipants =
+    typeof canManageParticipants === "boolean" ? canManageParticipants : isOwner || isManager;
 
   const removeParticipantMutation = useMutation<void, unknown, string>({
     mutationFn: async (participantId) => {
@@ -324,7 +411,11 @@ export const ParticipantsList = ({
     },
   });
 
-  const updateRoleMutation = useMutation<void, unknown, { participantId: string; role: ParticipantUpdatableRole }>({
+  const updateRoleMutation = useMutation<
+    void,
+    unknown,
+    { participantId: string; role: ParticipantUpdatableRole }
+  >({
     mutationFn: async ({ participantId, role }) => {
       setUpdatingParticipantId(participantId);
       await participantsApi.updateRole(participantId, role);
@@ -350,7 +441,9 @@ export const ParticipantsList = ({
   });
 
   const handleRemoveParticipant = (participant: ParticipantWithProfile) => {
-    const name = participant.profiles?.first_name ? participant.profiles.first_name : "questo partecipante";
+    const name = participant.profiles?.first_name
+      ? participant.profiles.first_name
+      : "questo partecipante";
     setParticipantToRemove({ id: participant.id, name });
     setDialogOpen(true);
   };
@@ -361,7 +454,10 @@ export const ParticipantsList = ({
     }
   };
 
-  const handleChangeRole = (participant: ParticipantWithProfile, role: ParticipantUpdatableRole) => {
+  const handleChangeRole = (
+    participant: ParticipantWithProfile,
+    role: ParticipantUpdatableRole,
+  ) => {
     if (participant.role === role) {
       return;
     }
@@ -382,10 +478,7 @@ export const ParticipantsList = ({
 
   if (!jam.public_participants && !effectiveCanManageParticipants) {
     return (
-      <ParticipantsCard
-        title={`Partecipanti`}
-        description="Lista dei partecipanti non pubblica"
-      >
+      <ParticipantsCard title={`Partecipanti`} description="Lista dei partecipanti non pubblica">
         <div className="text-sm text-muted-foreground py-4">
           La lista dei partecipanti di questa jam non è pubblica.
         </div>
@@ -418,11 +511,15 @@ export const ParticipantsList = ({
                 key={participant.id}
                 participant={participant}
                 isOwner={isOwner}
-                canEditRole={effectiveCanManageParticipants || participant.user_id === currentUserId}
+                canEditRole={
+                  effectiveCanManageParticipants || participant.user_id === currentUserId
+                }
                 onRemove={handleRemoveParticipant}
                 isRemoving={removeParticipantMutation.isPending}
                 onChangeRole={(role) => handleChangeRole(participant, role)}
-                isUpdatingRole={updatingParticipantId === participant.id && updateRoleMutation.isPending}
+                isUpdatingRole={
+                  updatingParticipantId === participant.id && updateRoleMutation.isPending
+                }
               />
             ))}
           </div>
