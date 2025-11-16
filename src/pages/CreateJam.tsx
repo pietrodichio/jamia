@@ -8,11 +8,24 @@ import { jamsApi } from "@/api/jams.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import { sanitizeHtml } from "@/lib/sanitize";
+import "quill-emoji/dist/quill-emoji.css";
+import "quill-emoji";
+
+const formatDateTimeLocalInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 
 const createJamSchema = z.object({
   name: z.string().trim().min(1, "Il nome è obbligatorio."),
@@ -58,6 +71,20 @@ type CreateJamFormData = z.infer<typeof createJamSchema>;
 const CreateJam = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const toolbarModules = {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "emoji"],
+        ["clean"],
+      ],
+    },
+    "emoji-toolbar": true,
+    "emoji-textarea": false,
+    "emoji-shortname": true,
+  };
   
   const {
     register,
@@ -96,10 +123,23 @@ const CreateJam = () => {
         // Validate that we have a complete datetime (YYYY-MM-DDTHH:MM format)
         if (startsAt.length === 16) {
           const start = new Date(startsAt);
-          // Add 1 hour
-          start.setHours(start.getHours() + 5);
-          // Format to datetime-local input format (YYYY-MM-DDTHH:mm)
-          const formattedEnd = start.toISOString().slice(0, 16);
+        
+
+          // Add 4 hours (current behavior)
+          const proposedEnd = new Date(start);
+          proposedEnd.setHours(proposedEnd.getHours() + 4);
+          console.log("[CreateJam] proposedEnd (local):", proposedEnd);
+          console.log("[CreateJam] proposedEnd.toISOString():", proposedEnd.toISOString());
+
+          // Clamp to same day at 23:59 if it would cross midnight
+          const endOfDay = new Date(start);
+          endOfDay.setHours(23, 59, 0, 0);
+        
+
+          const finalEnd = proposedEnd > endOfDay ? endOfDay : proposedEnd;
+
+          // Format to datetime-local input format (YYYY-MM-DDTHH:mm) in LOCAL time
+          const formattedEnd = formatDateTimeLocalInput(finalEnd);
           setValue("ends_at", formattedEnd);
         }
       }, 500); // Wait 500ms after user stops typing
@@ -163,6 +203,7 @@ const CreateJam = () => {
       const end = new Date(data.ends_at);
       const startsAtUTC = start.toISOString();
       const endsAtUTC = end.toISOString();
+      const sanitizedDescription = sanitizeHtml(data.description || "");
 
       const jam = await jamsApi.createJam({
         name: data.name,
@@ -170,7 +211,7 @@ const CreateJam = () => {
         gmaps_link: data.gmaps_link || undefined,
         starts_at: startsAtUTC,
         ends_at: endsAtUTC,
-        description: data.description || undefined,
+        description: sanitizedDescription || undefined,
         capacity: data.capacity || undefined,
         desired_bases_min: data.desired_bases_min || undefined,
         desired_bases_max: data.desired_bases_max || undefined,
@@ -302,14 +343,16 @@ const CreateJam = () => {
               {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">Descrizione</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Descrivi la tua jam, livello, cosa portare..."
-                  {...register("description")}
-                  disabled={isSubmitting}
-                  rows={4}
-                  className="rounded-xl resize-none"
-                />
+                <div className="rounded-xl border border-input focus-within:ring-2 focus-within:ring-ring">
+                  <ReactQuill
+                    theme="snow"
+                    value={watch("description") || ""}
+                    onChange={(value) => setValue("description", value, { shouldDirty: true })}
+                    modules={toolbarModules}
+                    placeholder="Descrivi la tua jam, livello, cosa portare..."
+                    readOnly={isSubmitting}
+                  />
+                </div>
               </div>
 
               {/* Capacity Settings */}

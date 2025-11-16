@@ -15,6 +15,7 @@ import { JamHeader } from "@/components/JamHeader";
 import { BookingSection } from "@/components/BookingSection";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { WaitingList } from "@/components/WaitingList";
+import { JamEmailComposer } from "@/components/JamEmailComposer";
 
 type ApiError = {
   response?: {
@@ -88,6 +89,20 @@ const JamDetails = () => {
 
   const currentUser = currentUserQuery.data ?? null;
 
+  const profileQuery = useQuery<Profile | null>({
+    queryKey: ["profile", currentUser?.id],
+    enabled: Boolean(currentUser?.id),
+    queryFn: async () => {
+      if (!currentUser?.id) {
+        return null;
+      }
+      return profilesApi.getProfile(currentUser.id);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isSuperAdmin = Boolean(profileQuery.data?.is_super_admin);
+
   const jamQuery = useQuery<Jam>({
     queryKey: ["jam", id, currentUser?.id],
     enabled: Boolean(id),
@@ -106,7 +121,11 @@ const JamDetails = () => {
   });
 
   const jam = jamQuery.data ?? null;
-  const isOwner = Boolean(jam && currentUser && jam.owner_id === currentUser.id);
+  const isOwner = Boolean(
+    jam &&
+      currentUser &&
+      (jam.owner_id === currentUser.id || isSuperAdmin)
+  );
 
   // Check if user is a manager
   const managersQuery = useQuery({
@@ -129,7 +148,7 @@ const JamDetails = () => {
     currentUser &&
       managers.some((manager) => manager.user_id === currentUser.id)
   );
-  const isOwnerOrManagerAccess = isOwner || isManager;
+  const isOwnerOrManagerAccess = isOwner || isManager || isSuperAdmin;
 
   // Determine if we should fetch participants
   // Only fetch if jam is public OR user has owner/manager access
@@ -209,6 +228,7 @@ const JamDetails = () => {
   const waitingList: JamParticipant[] = participantData.waitingList;
   const hasManagementAccess = participantData.hasManagementAccess;
   const userParticipation = userParticipationQuery.data ?? null;
+  const currentUserId = currentUser?.id ?? null;
   
   // Use owner/manager check from managers query, fallback to hasManagementAccess from participants query
   const isOwnerOrManager = isOwnerOrManagerAccess || hasManagementAccess;
@@ -228,8 +248,11 @@ const JamDetails = () => {
         throw new Error("Utente o jam non trovati");
       }
 
-      const profile = await profilesApi.getProfile(currentUser.id);
-      if (!isProfileComplete(profile)) {
+      let userProfile = profileQuery.data;
+      if (!userProfile) {
+        userProfile = await profilesApi.getProfile(currentUser.id);
+      }
+      if (!isProfileComplete(userProfile)) {
         toast({
           title: "Profilo incompleto",
           description: "Completa il tuo profilo prima di prenotare una jam.",
@@ -241,7 +264,7 @@ const JamDetails = () => {
         throw new IncompleteProfileError();
       }
 
-      const role = profile.main_role ?? "both";
+      const role = userProfile?.main_role ?? "both";
       const result = await participantsApi.joinJam(jam.id, { role });
       return result as JamParticipant;
     },
@@ -526,6 +549,8 @@ const JamDetails = () => {
           participants={participants}
           isOwner={isOwner}
           isManager={hasManagementAccess}
+          currentUserId={currentUserId}
+          canManageParticipants={isOwnerOrManager}
           isAuthenticated={Boolean(currentUser)}
           onParticipantsUpdated={invalidateJamQueries}
         />
@@ -535,6 +560,14 @@ const JamDetails = () => {
             waitingList={waitingList}
             jamId={jam.id}
             onParticipantsUpdated={invalidateJamQueries}
+          />
+        )}
+
+        {isOwnerOrManager && (
+          <JamEmailComposer
+            jamId={jam.id}
+            jamName={jam.name}
+            senderEmail={currentUser?.email}
           />
         )}
       </div>
@@ -550,6 +583,8 @@ interface ParticipantsSectionProps {
   isOwner: boolean;
   isAuthenticated: boolean;
   isManager: boolean;
+  currentUserId: string | null;
+  canManageParticipants: boolean;
   onParticipantsUpdated: () => void;
 }
 
@@ -559,6 +594,8 @@ const ParticipantsSection = ({
   isOwner,
   isAuthenticated,
   isManager,
+  currentUserId,
+  canManageParticipants,
   onParticipantsUpdated,
 }: ParticipantsSectionProps) => (
   <ParticipantsList
@@ -567,6 +604,8 @@ const ParticipantsSection = ({
     isOwner={isOwner}
     isAuthenticated={isAuthenticated}
     isManager={isManager}
+    currentUserId={currentUserId}
+    canManageParticipants={canManageParticipants}
     onParticipantsUpdated={onParticipantsUpdated}
   
   />

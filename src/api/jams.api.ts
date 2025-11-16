@@ -56,6 +56,29 @@ export interface UpdateJamDto {
   public_participants?: boolean;
 }
 
+export type JamEmailAudience = "all" | "participants" | "waiting";
+
+export interface SendJamEmailPayload {
+  subject: string;
+  htmlContent: string;
+  previewText?: string;
+  textContent?: string;
+  audience: JamEmailAudience;
+}
+
+export interface SendJamEmailResponse {
+  recipientCount: number;
+  audience: JamEmailAudience;
+}
+
+export interface TestJamEmailPayload {
+  subject: string;
+  htmlContent: string;
+  previewText?: string;
+  textContent?: string;
+  recipientEmail: string;
+}
+
 export const jamsApi = {
   getPublishedJams: async (): Promise<Jam[]> => {
     const response = await apiClient.get('/jams');
@@ -105,5 +128,20 @@ export const jamsApi = {
     const response = await apiClient.post(`/jams/${jamId}/clone`);
     return response.data;
   },
-};
 
+  sendJamEmail: async (
+    jamId: string,
+    payload: SendJamEmailPayload
+  ): Promise<SendJamEmailResponse> => {
+    const response = await apiClient.post(`/jams/${jamId}/email`, payload);
+    return response.data;
+  },
+
+  sendJamEmailTest: async (
+    jamId: string,
+    payload: TestJamEmailPayload
+  ): Promise<{ recipientCount: number }> => {
+    const response = await apiClient.post(`/jams/${jamId}/email/test`, payload);
+    return response.data;
+  },
+};

@@ -27,6 +27,8 @@ export interface JoinJamDto {
   role: 'base' | 'flyer' | 'both';
 }
 
+export type ParticipantUpdatableRole = 'base' | 'flyer';
+
 export interface ManagedParticipantDto {
   email: string;
   firstName?: string;
@@ -43,6 +45,17 @@ export interface ParticipantsResponse {
 export const participantsApi = {
   getJamParticipants: async (jamId: string): Promise<ParticipantsResponse> => {
     const response = await apiClient.get(`/participants/jams/${jamId}`);
+    return response.data;
+  },
+
+  updateRole: async (
+    participantId: string,
+    role: ParticipantUpdatableRole
+  ): Promise<Participant> => {
+    const response = await apiClient.patch(
+      `/participants/${participantId}/role`,
+      { role }
+    );
     return response.data;
   },
 

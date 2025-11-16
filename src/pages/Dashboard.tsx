@@ -20,13 +20,32 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isSuperAdmin = Boolean(profile?.is_super_admin);
 
   useEffect(() => {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    console.log("[Dashboard] isLoading updated:", isLoading);
+  }, [isLoading]);
+
+  useEffect(() => {
+    console.log("[Dashboard] upcomingJams count:", upcomingJams.length);
+  }, [upcomingJams]);
+
+  useEffect(() => {
+    console.log("[Dashboard] myJams count:", myJams.length);
+  }, [myJams]);
+
   const checkAuth = async () => {
+    const startTimestamp = performance.now();
+    console.log("[Dashboard] checkAuth start");
     const { data: { session } } = await supabase.auth.getSession();
+    console.log(
+      "[Dashboard] checkAuth session fetched",
+      { hasSession: Boolean(session), durationMs: performance.now() - startTimestamp }
+    );
     
     if (!session) {
       navigate("/auth");
@@ -43,6 +62,10 @@ const Dashboard = () => {
 
     try {
       const profileData = await profilesApi.getProfile(session.user.id);
+      console.log(
+        "[Dashboard] checkAuth profile fetched",
+        { durationMs: performance.now() - startTimestamp }
+      );
       setProfile(profileData);
 
       if (profileData && !profileData.phone) {
@@ -67,14 +90,24 @@ const Dashboard = () => {
   };
 
   const loadJams = async (userId: string) => {
+    const startTimestamp = performance.now();
+    console.log("[Dashboard] loadJams start", { userId });
     setIsLoading(true);
     try {
       // Load jams created by user
       const ownedJams = await jamsApi.getMyJams();
+      console.log("[Dashboard] loadJams owned jams fetched", {
+        count: ownedJams.length,
+        durationMs: performance.now() - startTimestamp
+      });
       setMyJams(ownedJams);
 
       // Load jams user is participating in
       const participatedJams = await jamsApi.getParticipatingJams();
+      console.log("[Dashboard] loadJams participating jams fetched", {
+        count: participatedJams.length,
+        durationMs: performance.now() - startTimestamp
+      });
       setUpcomingJams(participatedJams);
 
       // Load managers for all jams to check permissions
@@ -83,15 +116,30 @@ const Dashboard = () => {
       
       for (const jam of allJams) {
         try {
+          const jamStart = performance.now();
           const managers = await managersApi.getJamManagers(jam.id);
+          console.log("[Dashboard] loadJams managers fetched", {
+            jamId: jam.id,
+            managerCount: managers.length,
+            durationMs: performance.now() - jamStart
+          });
           managersMap[jam.id] = managers;
         } catch (error) {
           // If user can't access managers, they're not a manager
+          console.warn("[Dashboard] loadJams managers fetch failed", {
+            jamId: jam.id,
+            durationMs: performance.now() - startTimestamp,
+            error
+          });
           managersMap[jam.id] = [];
         }
       }
       
       setManagersByJam(managersMap);
+      console.log("[Dashboard] loadJams completed", {
+        totalManagersFetched: Object.keys(managersMap).length,
+        totalDurationMs: performance.now() - startTimestamp
+      });
     } catch (error: any) {
       toast({
         title: "Errore",
@@ -112,6 +160,7 @@ const Dashboard = () => {
   };
 
   const isOwnerOrManager = (jam: any) => {
+    if (isSuperAdmin) return true;
     if (!user) return false;
     if (jam.owner_id === user.id) return true;
     const managers = managersByJam[jam.id] || [];
@@ -119,6 +168,7 @@ const Dashboard = () => {
   };
 
   const isOwner = (jam: any) => {
+    if (isSuperAdmin) return true;
     if (!user) return false;
     return jam.owner_id === user.id;
   };

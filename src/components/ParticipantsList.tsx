@@ -6,6 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -14,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Trash2 } from "lucide-react";
-import { participantsApi, type Participant } from "@/api/participants.api";
+import { participantsApi, type Participant, type ParticipantUpdatableRole } from "@/api/participants.api";
 import { type Jam } from "@/api/jams.api";
 import { useToast } from "@/hooks/use-toast";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -28,6 +35,8 @@ interface ParticipantsListProps {
   isOwner: boolean;
   isAuthenticated: boolean;
   isManager: boolean;
+   currentUserId: string | null;
+   canManageParticipants: boolean;
   onParticipantsUpdated?: () => void;
 }
 
@@ -151,13 +160,19 @@ const ParticipantsEmptyState = ({ jamStatus }: { jamStatus: Jam["status"] }) => 
 const ParticipantRow = ({
   participant,
   isOwner,
+  canEditRole,
   onRemove,
   isRemoving,
+  onChangeRole,
+  isUpdatingRole,
 }: {
   participant: ParticipantWithProfile;
   isOwner: boolean;
+  canEditRole: boolean;
   onRemove: (participant: ParticipantWithProfile) => void;
   isRemoving: boolean;
+  onChangeRole: (role: ParticipantUpdatableRole) => void;
+  isUpdatingRole: boolean;
 }) => (
   <div className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl">
     <div className="flex items-center gap-3">
@@ -168,22 +183,38 @@ const ParticipantRow = ({
         size="md"
       />
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <p className="font-medium">
             {participant.profiles?.first_name} {participant.profiles?.last_name || ""}
           </p>
-          <Badge className={getRoleBadgeColor(participant.role)}>
-            {participant.role === "base" ? "Base" : participant.role === "flyer" ? "Flyer" : "Both"}
-          </Badge>
+         
+          {canEditRole && (
+            <Select
+              disabled={isUpdatingRole}
+              value={participant.role === "base" ? "base" : "flyer"}
+              onValueChange={(value) => onChangeRole(value as ParticipantUpdatableRole)}
+            >
+              <SelectTrigger className={`h-7 w-fit gap-x-2 px-2 text-xs rounded-lg ${getRoleBadgeColor(participant.role)} ${isUpdatingRole ? "opacity-50 cursor-not-allowed" : ""}`}>
+                <SelectValue placeholder="Ruolo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="base">Base</SelectItem>
+                <SelectItem value="flyer">Flyer</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
+
+
         {isOwner && participant.profiles?.phone && (
           <a href={`https://api.whatsapp.com/send/?phone=${participant.profiles.phone.replace(/^\+/, '')}&text&type=phone_number&app_absent=0`} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground underline cursor-pointer">{participant.profiles.phone}</a>
         )}
-        <span className="text-xs text-muted-foreground">
-          {participant.joined_at ? formatJoinedDate(participant.joined_at) : "-"}
-        </span>
+       
+    
       </div>
     </div>
+    <div className="flex flex-col items-end gap-y-2">
+
     {isOwner && (
       <Button
         variant="ghost"
@@ -195,6 +226,10 @@ const ParticipantRow = ({
         <Trash2 className="h-4 w-4" />
       </Button>
     )}
+     <span className="text-xs text-muted-foreground">
+          {participant.joined_at ? formatJoinedDate(participant.joined_at) : "-"}
+        </span>
+    </div>
   </div>
 );
 
@@ -238,13 +273,16 @@ export const ParticipantsList = ({
   isOwner,
   isAuthenticated,
   isManager,
+  currentUserId,
+  canManageParticipants,
   onParticipantsUpdated,
 }: ParticipantsListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [participantToRemove, setParticipantToRemove] = useState<ParticipantSummary | null>(null);
-  const canManageParticipants = isOwner || isManager;
+  const [updatingParticipantId, setUpdatingParticipantId] = useState<string | null>(null);
+  const effectiveCanManageParticipants = typeof canManageParticipants === "boolean" ? canManageParticipants : isOwner || isManager;
 
   const removeParticipantMutation = useMutation<void, unknown, string>({
     mutationFn: async (participantId) => {
@@ -269,6 +307,31 @@ export const ParticipantsList = ({
     },
   });
 
+  const updateRoleMutation = useMutation<void, unknown, { participantId: string; role: ParticipantUpdatableRole }>({
+    mutationFn: async ({ participantId, role }) => {
+      setUpdatingParticipantId(participantId);
+      await participantsApi.updateRole(participantId, role);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Ruolo aggiornato",
+        description: "Il ruolo del partecipante è stato aggiornato",
+      });
+      onParticipantsUpdated?.();
+      queryClient.invalidateQueries({ queryKey: queryKeyForJamParticipants(jam.id) });
+    },
+    onError: (error) => {
+      toast({
+        title: "Errore",
+        description: getApiErrorMessage(error, "Impossibile aggiornare il ruolo del partecipante"),
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setUpdatingParticipantId(null);
+    },
+  });
+
   const handleRemoveParticipant = (participant: ParticipantWithProfile) => {
     const name = participant.profiles?.first_name ? participant.profiles.first_name : "questo partecipante";
     setParticipantToRemove({ id: participant.id, name });
@@ -279,6 +342,13 @@ export const ParticipantsList = ({
     if (participantToRemove) {
       removeParticipantMutation.mutate(participantToRemove.id);
     }
+  };
+
+  const handleChangeRole = (participant: ParticipantWithProfile, role: ParticipantUpdatableRole) => {
+    if (participant.role === role) {
+      return;
+    }
+    updateRoleMutation.mutate({ participantId: participant.id, role });
   };
 
   if (!isAuthenticated) {
@@ -293,7 +363,7 @@ export const ParticipantsList = ({
     );
   }
 
-  if (!jam.public_participants && !canManageParticipants) {
+  if (!jam.public_participants && !effectiveCanManageParticipants) {
     return (
       <ParticipantsCard
         title={`Partecipanti`}
@@ -331,8 +401,11 @@ export const ParticipantsList = ({
                 key={participant.id}
                 participant={participant}
                 isOwner={isOwner}
+                canEditRole={effectiveCanManageParticipants || participant.user_id === currentUserId}
                 onRemove={handleRemoveParticipant}
                 isRemoving={removeParticipantMutation.isPending}
+                onChangeRole={(role) => handleChangeRole(participant, role)}
+                isUpdatingRole={updatingParticipantId === participant.id && updateRoleMutation.isPending}
               />
             ))}
           </div>

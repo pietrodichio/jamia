@@ -7,14 +7,28 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { jamsApi } from "@/api/jams.api";
 import { managersApi } from "@/api/managers.api";
+import { profilesApi } from "@/api/profiles.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, MapPin, Calendar as CalendarIcon } from "lucide-react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import "quill-emoji/dist/quill-emoji.css";
+import "quill-emoji";
+import { sanitizeHtml } from "@/lib/sanitize";
+
+const formatDateTimeLocalInput = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 
 const editJamSchema = z.object({
   name: z.string().trim().min(1, "Il nome è obbligatorio."),
@@ -62,6 +76,20 @@ const EditJam = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const toolbarModules = {
+    toolbar: {
+      container: [
+        [{ header: [1, 2, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "emoji"],
+        ["clean"],
+      ],
+    },
+    "emoji-toolbar": true,
+    "emoji-textarea": false,
+    "emoji-shortname": true,
+  };
 
   // Load jam data
   const jamQuery = useQuery({
@@ -100,13 +128,31 @@ const EditJam = () => {
     },
   });
 
-  const isOwner = Boolean(jam && currentUserQuery.data && jam.owner_id === currentUserQuery.data.id);
+  const currentUser = currentUserQuery.data ?? null;
+
+  const profileQuery = useQuery({
+    queryKey: ["profile", currentUser?.id],
+    enabled: Boolean(currentUser?.id),
+    queryFn: async () => {
+      if (!currentUser?.id) {
+        return null;
+      }
+      return profilesApi.getProfile(currentUser.id);
+    },
+  });
+
+  const isSuperAdmin = Boolean(profileQuery.data?.is_super_admin);
+  const isOwner = Boolean(
+    jam &&
+      currentUser &&
+      (jam.owner_id === currentUser.id || isSuperAdmin)
+  );
   const managers = managersQuery.data || [];
   const isManager = Boolean(
-    currentUserQuery.data &&
-      managers.some((manager) => manager.user_id === currentUserQuery.data.id)
+    currentUser &&
+      managers.some((manager) => manager.user_id === currentUser.id)
   );
-  const canEdit = isOwner || isManager;
+  const canEdit = isOwner || isManager || isSuperAdmin;
 
   const {
     register,
@@ -144,8 +190,25 @@ const EditJam = () => {
       const timer = setTimeout(() => {
         if (startsAt.length === 16) {
           const start = new Date(startsAt);
-          start.setHours(start.getHours() + 5);
-          const formattedEnd = start.toISOString().slice(0, 16);
+          console.log("[EditJam] startsAt raw value:", startsAt);
+          console.log("[EditJam] start Date (local):", start);
+          console.log("[EditJam] start.toISOString():", start.toISOString());
+
+          const proposedEnd = new Date(start);
+          proposedEnd.setHours(proposedEnd.getHours() + 5);
+          console.log("[EditJam] proposedEnd (local):", proposedEnd);
+          console.log("[EditJam] proposedEnd.toISOString():", proposedEnd.toISOString());
+
+          const endOfDay = new Date(start);
+          endOfDay.setHours(23, 59, 0, 0);
+          console.log("[EditJam] endOfDay (local):", endOfDay);
+          console.log("[EditJam] endOfDay.toISOString():", endOfDay.toISOString());
+
+          const finalEnd = proposedEnd > endOfDay ? endOfDay : proposedEnd;
+          console.log("[EditJam] finalEnd (local):", finalEnd);
+          console.log("[EditJam] finalEnd.toISOString():", finalEnd.toISOString());
+
+          const formattedEnd = formatDateTimeLocalInput(finalEnd);
           setValue("ends_at", formattedEnd);
         }
       }, 500);
@@ -234,6 +297,7 @@ const EditJam = () => {
       const end = new Date(data.ends_at);
       const startsAtUTC = start.toISOString();
       const endsAtUTC = end.toISOString();
+      const sanitizedDescription = sanitizeHtml(data.description || "");
 
       await jamsApi.updateJam(id, {
         name: data.name,
@@ -241,7 +305,7 @@ const EditJam = () => {
         gmaps_link: data.gmaps_link || undefined,
         starts_at: startsAtUTC,
         ends_at: endsAtUTC,
-        description: data.description || undefined,
+        description: sanitizedDescription || undefined,
         capacity: data.capacity || undefined,
         desired_bases_min: data.desired_bases_min || undefined,
         desired_bases_max: data.desired_bases_max || undefined,
@@ -391,14 +455,16 @@ const EditJam = () => {
               {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">Descrizione</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Descrivi la tua jam, livello, cosa portare..."
-                  {...register("description")}
-                  disabled={isSubmitting}
-                  rows={4}
-                  className="rounded-xl resize-none"
-                />
+                <div className="rounded-xl border border-input focus-within:ring-2 focus-within:ring-ring">
+                  <ReactQuill
+                    theme="snow"
+                    value={watch("description") || ""}
+                    onChange={(value) => setValue("description", value, { shouldDirty: true })}
+                    modules={toolbarModules}
+                    placeholder="Descrivi la tua jam, livello, cosa portare..."
+                    readOnly={isSubmitting}
+                  />
+                </div>
               </div>
 
               {/* Capacity Settings */}
@@ -544,4 +610,3 @@ const EditJam = () => {
 };
 
 export default EditJam;
-
