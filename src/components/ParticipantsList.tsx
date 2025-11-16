@@ -26,8 +26,16 @@ import { type Jam } from "@/api/jams.api";
 import { useToast } from "@/hooks/use-toast";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AddParticipantCard } from "@/components/AddParticipantCard";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type ParticipantWithProfile = Participant;
+
+const getParticipantFullName = (participant: ParticipantWithProfile) => {
+  const firstName = participant.profiles?.first_name ?? "";
+  const lastName = participant.profiles?.last_name ?? "";
+
+  return `${firstName} ${lastName}`.trim();
+};
 
 interface ParticipantsListProps {
   participants: ParticipantWithProfile[];
@@ -175,7 +183,7 @@ const ParticipantRow = ({
   isUpdatingRole: boolean;
 }) => (
   <div className="flex items-center justify-between p-3 bg-secondary/20 rounded-xl">
-    <div className="flex items-center gap-3">
+    <div className="flex items-start gap-3">
       <UserAvatar
         photoUrl={participant.profiles?.photo_url}
         firstName={participant.profiles?.first_name}
@@ -183,10 +191,19 @@ const ParticipantRow = ({
         size="md"
       />
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-3">
-          <p className="font-medium">
-            {participant.profiles?.first_name} {participant.profiles?.last_name || ""}
-          </p>
+        <div className="flex items-start gap-3 max-w-[220px] sm:max-w-none">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="font-medium truncate">
+                  {getParticipantFullName(participant)}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>{getParticipantFullName(participant)}</span>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
          
           {canEditRole && (
             <Select
@@ -226,7 +243,7 @@ const ParticipantRow = ({
         <Trash2 className="h-4 w-4" />
       </Button>
     )}
-     <span className="text-xs text-muted-foreground">
+     <span className="text-xs text-muted-foreground text-right">
           {participant.joined_at ? formatJoinedDate(participant.joined_at) : "-"}
         </span>
     </div>
