@@ -12,6 +12,15 @@ type ParticipantEmailContext = {
   jamLocation?: string | null;
 };
 
+type CustomEmailContext = {
+  to: string;
+  subject: string;
+  htmlContent: string;
+  textContent?: string;
+  previewText?: string;
+  replyTo?: string | null;
+};
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -61,15 +70,41 @@ export class EmailService {
     await this.dispatchEmail({ ...context, subject, html, text });
   }
 
+  async sendCustomEmail({
+    to,
+    subject,
+    htmlContent,
+    textContent,
+    previewText,
+    replyTo,
+  }: CustomEmailContext) {
+    const html = this.injectPreviewText(htmlContent, previewText);
+    const text =
+      textContent && textContent.trim().length > 0
+        ? this.prependPreviewText(previewText, textContent)
+        : this.buildPlainTextBody(htmlContent, previewText);
+
+    await this.dispatchEmail({
+      to,
+      subject,
+      html,
+      text,
+      replyTo: replyTo || undefined,
+    });
+  }
+
   private async dispatchEmail({
     to,
     subject,
     html,
     text,
-  }: ParticipantEmailContext & {
+    replyTo,
+  }: {
+    to: string;
     subject: string;
     html: string;
     text: string;
+    replyTo?: string;
   }) {
     if (!this.enabled || !this.resend) {
       this.logger.warn(
@@ -84,13 +119,19 @@ export class EmailService {
     }
 
     try {
-      await this.resend.emails.send({
+      const payload: Parameters<Resend['emails']['send']>[0] = {
         from: this.fromEmail,
         to,
         subject,
         html,
         text,
-      });
+      };
+
+      if (replyTo) {
+        payload.replyTo = replyTo;
+      }
+
+      await this.resend.emails.send(payload);
     } catch (error) {
       this.logger.error(
         `Failed to send email "${subject}" to ${to}: ${
@@ -199,6 +240,51 @@ export class EmailService {
       html: htmlParts.join('\n'),
       text: textParts.join('\n'),
     };
+  }
+
+  private injectPreviewText(html: string, previewText?: string): string {
+    const trimmedPreview = previewText?.trim();
+    if (!trimmedPreview) {
+      return html;
+    }
+
+    const previewBlock = `<div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:transparent;">${trimmedPreview}</div>`;
+
+    return `${previewBlock}${html}`;
+  }
+
+  private prependPreviewText(
+    previewText: string | undefined,
+    body: string,
+  ): string {
+    const trimmedPreview = previewText?.trim();
+    const trimmedBody = body.trim();
+
+    if (!trimmedPreview) {
+      return trimmedBody;
+    }
+
+    return `${trimmedPreview}\n\n${trimmedBody}`.trim();
+  }
+
+  private buildPlainTextBody(html: string, previewText?: string): string {
+    const withoutScripts = html
+      .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '');
+
+    const withLineBreaks = withoutScripts
+      .replace(/<(br|BR)\s*\/?>/g, '\n')
+      .replace(/<\/(p|div|h[1-6]|li|tr|table)>/gi, '\n');
+
+    const withoutTags = withLineBreaks.replace(/<[^>]+>/g, '');
+
+    const normalized = withoutTags.replace(/\n{3,}/g, '\n\n').trim();
+
+    if (!normalized) {
+      return this.prependPreviewText(previewText, '');
+    }
+
+    return this.prependPreviewText(previewText, normalized);
   }
 
   private buildGreeting(recipientName?: string | null): string {

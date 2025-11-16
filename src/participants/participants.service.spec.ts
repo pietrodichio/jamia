@@ -1,4 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ParticipantsService } from './participants.service';
 import { createSupabaseMock } from '../test-utils/supabase-mock';
 
@@ -394,5 +398,145 @@ describe('ParticipantsService', () => {
     await expect(
       service.joinJam('jam-unpublished', 'user', { role: 'both' }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('allows a participant to update their own role', async () => {
+    const supabase = createSupabaseMock({
+      jam_participants: [
+        {
+          response: {
+            data: {
+              id: 'participant-1',
+              jam_id: 'jam-role',
+              user_id: 'user-1',
+              role: 'base',
+            },
+            error: null,
+          },
+        },
+        {
+          response: {
+            data: {
+              id: 'participant-1',
+              jam_id: 'jam-role',
+              user_id: 'user-1',
+              role: 'flyer',
+            },
+            error: null,
+          },
+          updateResponse: {
+            data: {
+              id: 'participant-1',
+              jam_id: 'jam-role',
+              user_id: 'user-1',
+              role: 'flyer',
+            },
+            error: null,
+          },
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    const result = await service.updateParticipantRole(
+      'participant-1',
+      'user-1',
+      'flyer',
+    );
+
+    expect(result.role).toBe('flyer');
+    expect(auditService.log).toHaveBeenCalledWith(
+      'jam-role',
+      'user-1',
+      'role_updated',
+      expect.objectContaining({
+        previous_role: 'base',
+        new_role: 'flyer',
+        target_user_id: 'user-1',
+      }),
+    );
+  });
+
+  it('prevents an unrelated user from updating someone else’s role', async () => {
+    const supabase = createSupabaseMock({
+      jam_participants: [
+        {
+          response: {
+            data: {
+              id: 'participant-1',
+              jam_id: 'jam-role',
+              user_id: 'user-1',
+              role: 'base',
+            },
+            error: null,
+          },
+        },
+        {
+          response: {
+            data: {
+              id: 'participant-1',
+              jam_id: 'jam-role',
+              user_id: 'user-1',
+              role: 'base',
+            },
+            error: null,
+          },
+        },
+      ],
+      jams: [
+        {
+          response: {
+            data: {
+              id: 'jam-role',
+              owner_id: 'owner-1',
+            },
+            error: null,
+          },
+        },
+      ],
+      jam_managers: [
+        {
+          response: {
+            data: null,
+            error: null,
+          },
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    await expect(
+      service.updateParticipantRole('participant-1', 'other-user', 'flyer'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('throws NotFoundException when updating role for non-existing participation', async () => {
+    const supabase = createSupabaseMock({
+      jam_participants: [
+        {
+          response: {
+            data: null,
+            error: null,
+          },
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    await expect(
+      service.updateParticipantRole('missing', 'user-1', 'base'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 });

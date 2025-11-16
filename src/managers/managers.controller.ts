@@ -18,7 +18,11 @@ export class ManagersController {
 
   @Get()
   async getJamManagers(@Param('jamId') jamId: string, @User() user: AuthUser) {
-    return this.managersService.getJamManagers(jamId, user.id);
+    return this.managersService.getJamManagers(
+      jamId,
+      user.id,
+      user.isSuperAdmin,
+    );
   }
 
   @Post()
@@ -27,7 +31,12 @@ export class ManagersController {
     @Body() body: { userId: string },
     @User() user: AuthUser,
   ) {
-    return this.managersService.addJamManager(jamId, user.id, body.userId);
+    return this.managersService.addJamManager(
+      jamId,
+      user.id,
+      body.userId,
+      user.isSuperAdmin,
+    );
   }
 
   @Delete(':managerUserId')
@@ -36,6 +45,11 @@ export class ManagersController {
     @Param('managerUserId') managerUserId: string,
     @User() user: AuthUser,
   ) {
-    return this.managersService.removeJamManager(jamId, user.id, managerUserId);
+    return this.managersService.removeJamManager(
+      jamId,
+      user.id,
+      managerUserId,
+      user.isSuperAdmin,
+    );
   }
 }

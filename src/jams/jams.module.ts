@@ -3,9 +3,10 @@ import { JamsController } from './jams.controller';
 import { PublicJamsController } from './public-jams.controller';
 import { JamsService } from './jams.service';
 import { AuditModule } from '../audit/audit.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, EmailModule],
   controllers: [JamsController, PublicJamsController],
   providers: [JamsService],
   exports: [JamsService],

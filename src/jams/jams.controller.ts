@@ -11,6 +11,7 @@ import {
 import { JamsService } from './jams.service';
 import { CreateJamDto } from './dto/create-jam.dto';
 import { UpdateJamDto } from './dto/update-jam.dto';
+import { SendJamEmailDto, TestJamEmailDto } from './dto/send-jam-email.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User, AuthUser } from '../auth/user.decorator';
 
@@ -36,7 +37,7 @@ export class JamsController {
 
   @Get(':id')
   async getJamById(@Param('id') id: string, @User() user: AuthUser) {
-    return this.jamsService.getJamById(id, user.id);
+    return this.jamsService.getJamById(id, user.id, user.isSuperAdmin);
   }
 
   @Post()
@@ -50,21 +51,56 @@ export class JamsController {
     @User() user: AuthUser,
     @Body() updateJamDto: UpdateJamDto,
   ) {
-    return this.jamsService.updateJam(id, user.id, updateJamDto);
+    return this.jamsService.updateJam(
+      id,
+      user.id,
+      updateJamDto,
+      user.isSuperAdmin,
+    );
   }
 
   @Post(':id/publish')
   async publishJam(@Param('id') id: string, @User() user: AuthUser) {
-    return this.jamsService.publishJam(id, user.id);
+    return this.jamsService.publishJam(id, user.id, user.isSuperAdmin);
   }
 
   @Delete(':id')
   async deleteJam(@Param('id') id: string, @User() user: AuthUser) {
-    return this.jamsService.deleteJam(id, user.id);
+    return this.jamsService.deleteJam(id, user.id, user.isSuperAdmin);
   }
 
   @Post(':id/clone')
   async cloneJam(@Param('id') id: string, @User() user: AuthUser) {
-    return this.jamsService.cloneJam(id, user.id);
+    return this.jamsService.cloneJam(id, user.id, user.isSuperAdmin);
+  }
+
+  @Post(':id/email')
+  async sendJamEmail(
+    @Param('id') id: string,
+    @User() user: AuthUser,
+    @Body() dto: SendJamEmailDto,
+  ) {
+    return this.jamsService.sendJamEmail(
+      id,
+      user.id,
+      dto,
+      user.isSuperAdmin,
+      user.email,
+    );
+  }
+
+  @Post(':id/email/test')
+  async testJamEmail(
+    @Param('id') id: string,
+    @User() user: AuthUser,
+    @Body() dto: TestJamEmailDto,
+  ) {
+    return this.jamsService.sendJamEmailTest(
+      id,
+      user.id,
+      dto,
+      user.isSuperAdmin,
+      user.email,
+    );
   }
 }

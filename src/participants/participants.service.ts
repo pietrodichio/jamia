@@ -72,7 +72,11 @@ export class ParticipantsService {
       configService?.get<string>('FRONTEND_BASE_URL') || null;
   }
 
-  async getJamParticipants(jamId: string, userId: string) {
+  async getJamParticipants(
+    jamId: string,
+    userId: string,
+    isSuperAdmin = false,
+  ) {
     // Check if user has permission (owner or participant)
     const { data: jam } = await this.supabase
       .from('jams')
@@ -84,9 +88,9 @@ export class ParticipantsService {
       throw new NotFoundException('Jam not found');
     }
 
-    let hasManagementAccess = jam.owner_id === userId;
+    let hasManagementAccess = isSuperAdmin || jam.owner_id === userId;
 
-    if (!hasManagementAccess) {
+    if (!hasManagementAccess && !isSuperAdmin) {
       const { data: managerRecord, error: managerError } = await this.supabase
         .from('jam_managers')
         .select('id')
@@ -338,10 +342,11 @@ export class ParticipantsService {
     jamId: string,
     actorUserId: string,
     addParticipantDto: AddParticipantDto,
+    isSuperAdmin = false,
   ) {
     const jam = await this.fetchJamWithConfig(jamId);
 
-    if (jam.owner_id !== actorUserId) {
+    if (!isSuperAdmin && jam.owner_id !== actorUserId) {
       const { data: managerRecord, error: managerError } = await this.supabase
         .from('jam_managers')
         .select('id')
@@ -381,7 +386,11 @@ export class ParticipantsService {
       targetUserId = existingProfile.id;
     } else {
       const inviteOptions: {
-        data?: { name?: string; invite_jam_id?: string; invite_jam_name?: string | null };
+        data?: {
+          name?: string;
+          invite_jam_id?: string;
+          invite_jam_name?: string | null;
+        };
         redirectTo?: string;
       } = {
         data: {
@@ -485,7 +494,11 @@ export class ParticipantsService {
     return data;
   }
 
-  async removeParticipant(participantId: string, userId: string) {
+  async removeParticipant(
+    participantId: string,
+    userId: string,
+    isSuperAdmin = false,
+  ) {
     // Get participation
     const { data: participation, error: fetchError } = await this.supabase
       .from('jam_participants')
@@ -508,9 +521,9 @@ export class ParticipantsService {
       throw new NotFoundException('Jam not found');
     }
 
-    let hasPermission = jam.owner_id === userId;
+    let hasPermission = isSuperAdmin || jam.owner_id === userId;
 
-    if (!hasPermission) {
+    if (!hasPermission && !isSuperAdmin) {
       const { data: managerRecord, error: managerError } = await this.supabase
         .from('jam_managers')
         .select('id')
@@ -560,6 +573,81 @@ export class ParticipantsService {
     }
 
     return { message: 'Participant removed successfully' };
+  }
+
+  async updateParticipantRole(
+    participantId: string,
+    userId: string,
+    role: 'base' | 'flyer',
+    isSuperAdmin = false,
+  ) {
+    const { data: participation, error: fetchError } = await this.supabase
+      .from('jam_participants')
+      .select('id, jam_id, user_id, role')
+      .eq('id', participantId)
+      .single();
+
+    if (fetchError || !participation) {
+      throw new NotFoundException('Participation not found');
+    }
+
+    const isSelfUpdate = participation.user_id === userId;
+
+    if (!isSelfUpdate) {
+      const { data: jam } = await this.supabase
+        .from('jams')
+        .select('owner_id')
+        .eq('id', participation.jam_id)
+        .single();
+
+      if (!jam) {
+        throw new NotFoundException('Jam not found');
+      }
+
+      let hasPermission = isSuperAdmin || jam.owner_id === userId;
+
+      if (!hasPermission && !isSuperAdmin) {
+        const { data: managerRecord, error: managerError } =
+          await this.supabase
+            .from('jam_managers')
+            .select('id')
+            .eq('jam_id', participation.jam_id)
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (managerError) {
+          throw new Error(
+            `Failed to verify manager permissions: ${managerError.message}`,
+          );
+        }
+
+        hasPermission = Boolean(managerRecord);
+      }
+
+      if (!hasPermission) {
+        throw new ForbiddenException(
+          'You do not have permission to update this participant role',
+        );
+      }
+    }
+
+    const previousRole = participation.role as ParticipantRole;
+
+    const { data: updated, error: updateError } = await this.supabase
+      .from('jam_participants')
+      .update({ role })
+      .eq('id', participantId)
+      .select()
+      .single();
+
+    if (updateError || !updated) {
+      throw new Error(
+        `Failed to update participant role: ${updateError?.message || 'unknown error'}`,
+      );
+    }
+
+
+    return updated;
   }
 
   private async promoteFromWaitingList(jamId: string): Promise<void> {
