@@ -197,6 +197,7 @@ export class ParticipantsService {
 
   async joinJam(jamId: string, userId: string, joinJamDto: JoinJamDto) {
     const jam = await this.fetchJamWithConfig(jamId);
+    await this.ensureUserEmailConfirmed(userId);
 
     if (jam.status !== 'published') {
       throw new BadRequestException('This jam is not available for booking');
@@ -336,6 +337,32 @@ export class ParticipantsService {
           ? 'Added to waiting list'
           : 'Successfully joined the jam',
     };
+  }
+
+  private async ensureUserEmailConfirmed(userId: string) {
+    const { data, error } = await this.supabase.auth.admin.getUserById(userId);
+
+    if (error) {
+      throw new Error(
+        `Failed to verify email confirmation status: ${error.message}`,
+      );
+    }
+
+    const user = data?.user;
+
+    if (!user) {
+      throw new ForbiddenException('User not found');
+    }
+
+    const isEmailConfirmed = Boolean(
+      user.email_confirmed_at || user.confirmed_at,
+    );
+
+    if (!isEmailConfirmed) {
+      throw new ForbiddenException(
+        'Please confirm your email before joining a jam',
+      );
+    }
   }
 
   async addParticipantAsManager(
