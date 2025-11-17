@@ -11,6 +11,7 @@ const JamOverviewPage = () => {
     isOwnerOrManager,
     userParticipation,
     isAuthenticated,
+    isEmailConfirmed,
     actions,
     states,
   } = useJamDetailsContext();
@@ -39,6 +40,7 @@ const JamOverviewPage = () => {
         isBooking={states.isBooking}
         isCancelling={states.isCancelling}
         isAuthenticated={isAuthenticated}
+        isEmailConfirmed={isEmailConfirmed}
         onBook={actions.onBook}
         onCancelParticipation={actions.onCancelParticipation}
       />

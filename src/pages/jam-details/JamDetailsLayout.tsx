@@ -82,6 +82,7 @@ export interface JamDetailsContextValue {
   isManager: boolean;
   isOwnerOrManager: boolean;
   isAuthenticated: boolean;
+  isEmailConfirmed: boolean;
   currentUserId: string | null;
   canManageParticipants: boolean;
   actions: {
@@ -124,6 +125,9 @@ const JamDetailsLayout = () => {
   });
 
   const currentUser = currentUserQuery.data ?? null;
+  const isEmailConfirmed = Boolean(
+    currentUser?.email_confirmed_at || currentUser?.confirmed_at,
+  );
 
   const profileQuery = useQuery<Profile | null>({
     queryKey: ["profile", currentUser?.id],
@@ -560,6 +564,7 @@ const JamDetailsLayout = () => {
     isManager,
     isOwnerOrManager,
     isAuthenticated: Boolean(currentUser),
+    isEmailConfirmed,
     currentUserId,
     canManageParticipants: isOwnerOrManager,
     actions: {
