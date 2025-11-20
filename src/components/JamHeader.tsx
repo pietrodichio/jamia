@@ -1,3 +1,4 @@
+/* eslint-disable react/no-danger */
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { jamsApi } from "@/api/jams.api";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 interface JamHeaderProps {
   jam: any;
@@ -79,7 +81,7 @@ export const JamHeader = ({
             </CardDescription>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {isOwnerOrManager && (
               <>
                 {jam.status === "draft" && (
@@ -184,7 +186,11 @@ export const JamHeader = ({
 
         {jam.description && (
           <div className="pt-4 border-t">
-            <p className="text-muted-foreground whitespace-pre-wrap">{jam.description}</p>
+            {/* eslint-disable-next-line */}
+            <div
+              className="text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(jam.description) }}
+            />
           </div>
         )}
       </CardContent>

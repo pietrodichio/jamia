@@ -18,6 +18,11 @@ const redirectToAuth = (mode: "login" | "signup") => {
   window.location.href = `/auth?mode=${mode}`;
 };
 
+const redirectToEmailConfirmation = () => {
+  localStorage.setItem("jamia_redirect_url", window.location.pathname);
+  window.location.href = "/email-confirmation";
+};
+
 interface BookingSectionProps {
   jam: Jam;
   isOwner: boolean;
@@ -25,6 +30,7 @@ interface BookingSectionProps {
   isBooking: boolean;
   isCancelling: boolean;
   isAuthenticated: boolean;
+  isEmailConfirmed: boolean;
   onBook: () => void;
   onCancelParticipation: () => void;
 }
@@ -52,6 +58,17 @@ const BookingButton = ({ isBooking, onBook }: { isBooking: boolean; onBook: () =
     {isBooking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
     Prenota il tuo posto
   </Button>
+);
+
+const EmailConfirmationPrompt = () => (
+  <div className="space-y-3">
+    <p className="text-center text-muted-foreground">
+      Conferma il tuo indirizzo email per poter prenotare un posto in questa jam.
+    </p>
+    <Button className="w-full rounded-xl" size="lg" onClick={redirectToEmailConfirmation}>
+      Vai alla conferma email
+    </Button>
+  </div>
 );
 
 const ParticipationBanner = ({
@@ -146,6 +163,7 @@ export const BookingSection = ({
   isBooking,
   isCancelling,
   isAuthenticated,
+  isEmailConfirmed,
   onBook,
   onCancelParticipation,
 }: BookingSectionProps) => {
@@ -156,10 +174,11 @@ export const BookingSection = ({
   return (
     <SectionContainer>
       {!isAuthenticated && <AuthPrompt />}
-      {isAuthenticated && !userParticipation && (
+      {isAuthenticated && !isEmailConfirmed && <EmailConfirmationPrompt />}
+      {isAuthenticated && isEmailConfirmed && !userParticipation && (
         <BookingButton isBooking={isBooking} onBook={onBook} />
       )}
-      {isAuthenticated && userParticipation && (
+      {isAuthenticated && isEmailConfirmed && userParticipation && (
         <ParticipationBanner
           userParticipation={userParticipation}
           onCancelParticipation={onCancelParticipation}

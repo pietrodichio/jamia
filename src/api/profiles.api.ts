@@ -12,6 +12,7 @@ export interface Profile {
   photo_url?: string;
   verified?: boolean;
   created_at?: string;
+  is_super_admin?: boolean;
 }
 
 export interface UpdateProfileDto {
@@ -40,4 +41,3 @@ export const profilesApi = {
     return response.data;
   },
 };
-

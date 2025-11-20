@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,11 +10,22 @@ import { managersApi } from "@/api/managers.api";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { JamHeader } from "@/components/JamHeader";
-import { BookingSection } from "@/components/BookingSection";
-import { ParticipantsList } from "@/components/ParticipantsList";
-import { WaitingList } from "@/components/WaitingList";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+export type JamParticipant = Participant;
+
+type ParticipantsQueryResult = {
+  participants: JamParticipant[];
+  waitingList: JamParticipant[];
+  hasManagementAccess: boolean;
+};
 
 type ApiError = {
   response?: {
@@ -24,14 +35,6 @@ type ApiError = {
     };
   };
   message?: string;
-};
-
-type JamParticipant = Participant;
-
-type ParticipantsQueryResult = {
-  participants: JamParticipant[];
-  waitingList: JamParticipant[];
-  hasManagementAccess: boolean;
 };
 
 class IncompleteProfileError extends Error {
@@ -68,9 +71,44 @@ const isProfileComplete = (profile: Profile | null | undefined): boolean => {
   return Boolean(profile?.first_name?.trim() && profile?.phone?.trim());
 };
 
-const JamDetails = () => {
+export interface JamDetailsContextValue {
+  jam: Jam;
+  currentUser: User | null;
+  profile: Profile | null;
+  participants: JamParticipant[];
+  waitingList: JamParticipant[];
+  userParticipation: JamParticipant | null;
+  isOwner: boolean;
+  isManager: boolean;
+  isOwnerOrManager: boolean;
+  isAuthenticated: boolean;
+  isEmailConfirmed: boolean;
+  currentUserId: string | null;
+  canManageParticipants: boolean;
+  actions: {
+    onBook: () => void;
+    onCancelParticipation: () => void;
+    onPublish: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
+    onShare: () => void;
+    onClone: () => void;
+    onParticipantsUpdated: () => void;
+    onManageManagers: () => void;
+  };
+  states: {
+    isBooking: boolean;
+    isCancelling: boolean;
+    isPublishing: boolean;
+    isCloning: boolean;
+    isParticipantsLoading: boolean;
+  };
+}
+
+const JamDetailsLayout = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -87,6 +125,23 @@ const JamDetails = () => {
   });
 
   const currentUser = currentUserQuery.data ?? null;
+  const isEmailConfirmed = Boolean(
+    currentUser?.email_confirmed_at || currentUser?.confirmed_at,
+  );
+
+  const profileQuery = useQuery<Profile | null>({
+    queryKey: ["profile", currentUser?.id],
+    enabled: Boolean(currentUser?.id),
+    queryFn: async () => {
+      if (!currentUser?.id) {
+        return null;
+      }
+      return profilesApi.getProfile(currentUser.id);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isSuperAdmin = Boolean(profileQuery.data?.is_super_admin);
 
   const jamQuery = useQuery<Jam>({
     queryKey: ["jam", id, currentUser?.id],
@@ -106,9 +161,12 @@ const JamDetails = () => {
   });
 
   const jam = jamQuery.data ?? null;
-  const isOwner = Boolean(jam && currentUser && jam.owner_id === currentUser.id);
+  const isOwner = Boolean(
+    jam &&
+      currentUser &&
+      (jam.owner_id === currentUser.id || isSuperAdmin)
+  );
 
-  // Check if user is a manager
   const managersQuery = useQuery({
     queryKey: ["jam-managers", id],
     enabled: Boolean(id && currentUser && !currentUserQuery.isLoading && jamQuery.isSuccess),
@@ -118,7 +176,6 @@ const JamDetails = () => {
       try {
         return await managersApi.getJamManagers(id);
       } catch (error) {
-        // If user can't access managers, they're not a manager
         return [];
       }
     },
@@ -129,23 +186,20 @@ const JamDetails = () => {
     currentUser &&
       managers.some((manager) => manager.user_id === currentUser.id)
   );
-  const isOwnerOrManagerAccess = isOwner || isManager;
+  const isOwnerOrManagerAccess = isOwner || isManager || isSuperAdmin;
 
-  // Determine if we should fetch participants
-  // Only fetch if jam is public OR user has owner/manager access
   const shouldFetchParticipants = Boolean(
     jam &&
       (jam.public_participants || isOwnerOrManagerAccess)
   );
-  
-  // If jam is public, we don't need to wait for managers check
+
   const isPublic = Boolean(jam?.public_participants);
 
   const participantsQuery = useQuery<ParticipantsQueryResult>({
     queryKey: ["jam-participants", id, currentUser?.id],
     enabled: Boolean(
-      id && 
-      jamQuery.isSuccess && 
+      id &&
+      jamQuery.isSuccess &&
       shouldFetchParticipants &&
       (isPublic || managersQuery.isSuccess || managersQuery.isError)
     ),
@@ -205,12 +259,12 @@ const JamDetails = () => {
 
   const participantData: ParticipantsQueryResult =
     participantsQuery.data ?? { participants: [], waitingList: [], hasManagementAccess: false };
-  const participants: JamParticipant[] = participantData.participants;
-  const waitingList: JamParticipant[] = participantData.waitingList;
+  const participants = participantData.participants;
+  const waitingList = participantData.waitingList;
   const hasManagementAccess = participantData.hasManagementAccess;
   const userParticipation = userParticipationQuery.data ?? null;
-  
-  // Use owner/manager check from managers query, fallback to hasManagementAccess from participants query
+  const currentUserId = currentUser?.id ?? null;
+
   const isOwnerOrManager = isOwnerOrManagerAccess || hasManagementAccess;
 
   const invalidateJamQueries = () => {
@@ -228,8 +282,11 @@ const JamDetails = () => {
         throw new Error("Utente o jam non trovati");
       }
 
-      const profile = await profilesApi.getProfile(currentUser.id);
-      if (!isProfileComplete(profile)) {
+      let userProfile = profileQuery.data;
+      if (!userProfile) {
+        userProfile = await profilesApi.getProfile(currentUser.id);
+      }
+      if (!isProfileComplete(userProfile)) {
         toast({
           title: "Profilo incompleto",
           description: "Completa il tuo profilo prima di prenotare una jam.",
@@ -241,7 +298,7 @@ const JamDetails = () => {
         throw new IncompleteProfileError();
       }
 
-      const role = profile.main_role ?? "both";
+      const role = userProfile?.main_role ?? "both";
       const result = await participantsApi.joinJam(jam.id, { role });
       return result as JamParticipant;
     },
@@ -304,7 +361,7 @@ const JamDetails = () => {
     },
     onSuccess: () => {
       toast({
-        title: "Jam pubblicato!",
+        title: "Jam pubblicata!",
         description: "La tua jam è ora visibile e prenotabile",
       });
       if (id) {
@@ -486,90 +543,77 @@ const JamDetails = () => {
   );
 
   const backDestination = currentUser ? "/dashboard" : "/";
+  const basePath = `/jam/${id}`;
+
+  const navItems = [
+    { label: "Panoramica", path: basePath },
+    { label: "Partecipanti", path: `${basePath}/participants` },
+    ...(isOwnerOrManager
+      ? [{ label: "Comunicazioni", path: `${basePath}/communication` }]
+      : []),
+  ];
+
+  const contextValue: JamDetailsContextValue = {
+    jam,
+    currentUser,
+    profile: profileQuery.data ?? null,
+    participants,
+    waitingList,
+    userParticipation,
+    isOwner,
+    isManager,
+    isOwnerOrManager,
+    isAuthenticated: Boolean(currentUser),
+    isEmailConfirmed,
+    currentUserId,
+    canManageParticipants: isOwnerOrManager,
+    actions: {
+      onBook: handleBook,
+      onCancelParticipation: handleCancelParticipation,
+      onPublish: handlePublish,
+      onEdit: handleEdit,
+      onDelete: handleDelete,
+      onShare: copyShareLink,
+      onClone: handleClone,
+      onParticipantsUpdated: invalidateJamQueries,
+      onManageManagers: handleManageManagers,
+    },
+    states: {
+      isBooking: bookMutation.isPending,
+      isCancelling: cancelParticipationMutation.isPending,
+      isPublishing: publishMutation.isPending,
+      isCloning: cloneMutation.isPending,
+      isParticipantsLoading: participantsQuery.isLoading,
+    },
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       <div className="container mx-auto p-4 max-w-5xl flex flex-col gap-4">
-        <Button variant="ghost" onClick={() => navigate(backDestination)} className="mb-6 rounded-xl">
+        <Button variant="ghost" onClick={() => navigate(backDestination)} className="mb-2 rounded-xl w-fit">
           <ArrowLeft className="mr-2 h-4 w-4" />
           {currentUser ? "Torna alla Dashboard" : "Torna alla Home"}
         </Button>
 
-        <JamHeader
-          jam={jam}
-          isOwner={isOwner}
-          isOwnerOrManager={isOwnerOrManager}
-          participants={participants}
-          waitingList={isOwnerOrManager ? waitingList : []}
-          isPublishing={publishMutation.isPending}
-          onPublish={handlePublish}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onShare={copyShareLink}
-          onClone={handleClone}
-          onManageManagers={handleManageManagers}
-        />
+        <div className="flex flex-wrap gap-2 border-b border-border pb-4">
+          {navItems.map((item) => (
+            <Button
+              key={item.path}
+              variant={location.pathname === item.path ? "default" : "ghost"}
+              className="rounded-xl"
+              asChild
+            >
+              <Link to={item.path}>{item.label}</Link>
+            </Button>
+          ))}
+        </div>
 
-        <BookingSection
-          jam={jam}
-          isOwner={isOwner}
-          userParticipation={userParticipation}
-          isBooking={bookMutation.isPending}
-          isCancelling={cancelParticipationMutation.isPending}
-          isAuthenticated={Boolean(currentUser)}
-          onBook={handleBook}
-          onCancelParticipation={handleCancelParticipation}
-        />
-
-        <ParticipantsSection
-          jam={jam}
-          participants={participants}
-          isOwner={isOwner}
-          isManager={hasManagementAccess}
-          isAuthenticated={Boolean(currentUser)}
-          onParticipantsUpdated={invalidateJamQueries}
-        />
-
-        {isOwnerOrManager && (
-          <WaitingList
-            waitingList={waitingList}
-            jamId={jam.id}
-            onParticipantsUpdated={invalidateJamQueries}
-          />
-        )}
+        <Outlet context={contextValue} />
       </div>
-      
+
       <DeleteConfirmDialog />
     </div>
   );
 };
 
-interface ParticipantsSectionProps {
-  jam: Jam;
-  participants: JamParticipant[];
-  isOwner: boolean;
-  isAuthenticated: boolean;
-  isManager: boolean;
-  onParticipantsUpdated: () => void;
-}
-
-const ParticipantsSection = ({
-  jam,
-  participants,
-  isOwner,
-  isAuthenticated,
-  isManager,
-  onParticipantsUpdated,
-}: ParticipantsSectionProps) => (
-  <ParticipantsList
-    participants={participants}
-    jam={jam}
-    isOwner={isOwner}
-    isAuthenticated={isAuthenticated}
-    isManager={isManager}
-    onParticipantsUpdated={onParticipantsUpdated}
-  
-  />
-);
-
-export default JamDetails;
+export default JamDetailsLayout;

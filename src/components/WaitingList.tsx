@@ -13,9 +13,15 @@ interface WaitingListProps {
   waitingList: any[];
   jamId: string;
   onParticipantsUpdated?: () => void;
+  canPromote?: boolean;
 }
 
-export const WaitingList = ({ waitingList, jamId, onParticipantsUpdated }: WaitingListProps) => {
+export const WaitingList = ({
+  waitingList,
+  jamId,
+  onParticipantsUpdated,
+  canPromote = false,
+}: WaitingListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -39,9 +45,34 @@ export const WaitingList = ({ waitingList, jamId, onParticipantsUpdated }: Waiti
     },
   });
 
+  const promoteParticipantMutation = useMutation({
+    mutationFn: (participantId: string) => participantsApi.promoteParticipant(participantId),
+    onSuccess: () => {
+      toast({
+        title: "Partecipante promosso",
+        description: "Il partecipante è stato spostato nella lista dei confermati",
+      });
+      onParticipantsUpdated?.();
+      queryClient.invalidateQueries({ queryKey: ['jam-participants', jamId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.response?.data?.message || "Impossibile promuovere il partecipante",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRemoveParticipant = (participantId: string, participantName: string) => {
     if (confirm(`Sei sicuro di voler rimuovere ${participantName} dalla lista d'attesa?`)) {
       removeParticipantMutation.mutate(participantId);
+    }
+  };
+
+  const handlePromoteParticipant = (participantId: string, participantName: string) => {
+    if (confirm(`Vuoi promuovere ${participantName} tra i partecipanti?`)) {
+      promoteParticipantMutation.mutate(participantId);
     }
   };
 
@@ -78,7 +109,11 @@ export const WaitingList = ({ waitingList, jamId, onParticipantsUpdated }: Waiti
     <Card className="border-primary/10 rounded-2xl">
       <CardHeader>
         <CardTitle>Lista d'attesa ({waitingList.length})</CardTitle>
-        <CardDescription>Persone in attesa di un posto</CardDescription>
+        <CardDescription>
+          {canPromote
+            ? "La promozione automatica è disattivata: puoi promuovere manualmente le persone iscritte."
+            : "Persone in attesa di un posto"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -112,15 +147,27 @@ export const WaitingList = ({ waitingList, jamId, onParticipantsUpdated }: Waiti
                   </span>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleRemoveParticipant(w.id, w.profiles?.first_name || 'questo partecipante')}
-                disabled={removeParticipantMutation.isPending}
-                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <UserX className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {canPromote && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => handlePromoteParticipant(w.id, w.profiles?.first_name || 'questo partecipante')}
+                    disabled={promoteParticipantMutation.isPending}
+                  >
+                    Promuovi
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveParticipant(w.id, w.profiles?.first_name || 'questo partecipante')}
+                  disabled={removeParticipantMutation.isPending}
+                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <UserX className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>
