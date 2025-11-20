@@ -10,14 +10,30 @@ import { SUPABASE_CLIENT } from '../config/supabase.config';
 import { CreateJamDto } from './dto/create-jam.dto';
 import { UpdateJamDto } from './dto/update-jam.dto';
 import { AuditService } from '../audit/audit.service';
+import { EmailService } from '../email/email.service';
+import {
+  JamEmailAudience,
+  SendJamEmailDto,
+  TestJamEmailDto,
+} from './dto/send-jam-email.dto';
 
 type ParticipantRole = 'base' | 'flyer' | 'both';
+type ParticipantState = 'participant' | 'waiting';
+
+type JamEmailRecipient = {
+  userId: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  state: ParticipantState;
+};
 
 @Injectable()
 export class JamsService {
   constructor(
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly auditService: AuditService,
+    private readonly emailService: EmailService,
   ) {}
 
   async getPublishedJams() {
@@ -82,7 +98,7 @@ export class JamsService {
     }));
   }
 
-  async getJamById(jamId: string, userId?: string) {
+  async getJamById(jamId: string, userId?: string, isSuperAdmin = false) {
     const { data, error } = await this.supabase
       .from('jams')
       .select(
@@ -102,10 +118,18 @@ export class JamsService {
     }
 
     // Check if user has permission to view this jam
-    if (data.status !== 'published' && data.owner_id !== userId) {
+    if (
+      !isSuperAdmin &&
+      data.status !== 'published' &&
+      data.owner_id !== userId
+    ) {
       // Check if user is a manager
       if (userId) {
-        const isManager = await this.isManagerOrOwner(jamId, userId);
+        const isManager = await this.isManagerOrOwner(
+          jamId,
+          userId,
+          isSuperAdmin,
+        );
         if (!isManager) {
           throw new ForbiddenException(
             'You do not have permission to view this jam',
@@ -252,11 +276,20 @@ export class JamsService {
     return data;
   }
 
-  async updateJam(jamId: string, userId: string, updateJamDto: UpdateJamDto) {
+  async updateJam(
+    jamId: string,
+    userId: string,
+    updateJamDto: UpdateJamDto,
+    isSuperAdmin = false,
+  ) {
     // Check ownership or management
     const jam = await this.getJamById(jamId);
 
-    const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
+    const isOwnerOrManager = await this.isManagerOrOwner(
+      jamId,
+      userId,
+      isSuperAdmin,
+    );
     if (!isOwnerOrManager) {
       throw new ForbiddenException(
         'You can only update jams you own or manage',
@@ -295,12 +328,14 @@ export class JamsService {
     return data;
   }
 
-  async publishJam(jamId: string, userId: string) {
-    const jam = await this.getJamById(jamId, userId);
-    console.log('jam:', jam);
-    console.log('userId:', userId);
+  async publishJam(jamId: string, userId: string, isSuperAdmin = false) {
+    await this.getJamById(jamId, userId, isSuperAdmin);
 
-    const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
+    const isOwnerOrManager = await this.isManagerOrOwner(
+      jamId,
+      userId,
+      isSuperAdmin,
+    );
     if (!isOwnerOrManager) {
       throw new ForbiddenException(
         'You can only publish jams you own or manage',
@@ -326,14 +361,18 @@ export class JamsService {
     return data;
   }
 
-  async deleteJam(jamId: string, userId: string) {
-    const jam = await this.getJamById(jamId, userId);
+  async deleteJam(jamId: string, userId: string, isSuperAdmin = false) {
+    const jam = await this.getJamById(jamId, userId, isSuperAdmin);
 
     if (!jam) {
       throw new NotFoundException('Jam not found');
     }
 
-    const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
+    const isOwnerOrManager = await this.isManagerOrOwner(
+      jamId,
+      userId,
+      isSuperAdmin,
+    );
     if (!isOwnerOrManager) {
       throw new ForbiddenException(
         'You can only delete jams you own or manage',
@@ -401,12 +440,16 @@ export class JamsService {
     }));
   }
 
-  async cloneJam(jamId: string, userId: string) {
+  async cloneJam(jamId: string, userId: string, isSuperAdmin = false) {
     // Get the original jam
-    const originalJam = await this.getJamById(jamId, userId);
+    const originalJam = await this.getJamById(jamId, userId, isSuperAdmin);
 
     // Check if user has permission to clone this jam
-    const isOwnerOrManager = await this.isManagerOrOwner(jamId, userId);
+    const isOwnerOrManager = await this.isManagerOrOwner(
+      jamId,
+      userId,
+      isSuperAdmin,
+    );
     if (!isOwnerOrManager) {
       throw new ForbiddenException('You can only clone jams you own or manage');
     }
@@ -450,7 +493,99 @@ export class JamsService {
     return data;
   }
 
-  async isManagerOrOwner(jamId: string, userId: string): Promise<boolean> {
+  async sendJamEmail(
+    jamId: string,
+    userId: string,
+    dto: SendJamEmailDto,
+    isSuperAdmin = false,
+    senderEmail?: string | null,
+  ) {
+    await this.getJamById(jamId, userId, isSuperAdmin);
+
+    const canManage = await this.isManagerOrOwner(jamId, userId, isSuperAdmin);
+    if (!canManage) {
+      throw new ForbiddenException(
+        'Solo il proprietario, un manager o un super admin può inviare email',
+      );
+    }
+
+    const recipients = await this.getJamEmailRecipients(jamId, dto.audience);
+
+    if (recipients.length === 0) {
+      throw new BadRequestException(
+        'Non ci sono destinatari per questa selezione',
+      );
+    }
+
+    await Promise.all(
+      recipients.map((recipient) =>
+        this.emailService.sendCustomEmail({
+          to: recipient.email,
+          subject: dto.subject,
+          htmlContent: dto.htmlContent,
+          textContent: dto.textContent,
+          previewText: dto.previewText,
+          replyTo: senderEmail || null,
+        }),
+      ),
+    );
+
+    await this.auditService.log(jamId, userId, 'email_sent', {
+      recipient_count: recipients.length,
+      audience: dto.audience,
+    });
+
+    return {
+      recipientCount: recipients.length,
+      audience: dto.audience,
+    };
+  }
+
+  async sendJamEmailTest(
+    jamId: string,
+    userId: string,
+    dto: TestJamEmailDto,
+    isSuperAdmin = false,
+    senderEmail?: string | null,
+  ) {
+    await this.getJamById(jamId, userId, isSuperAdmin);
+
+    const canManage = await this.isManagerOrOwner(jamId, userId, isSuperAdmin);
+    if (!canManage) {
+      throw new ForbiddenException(
+        'Solo il proprietario, un manager o un super admin può inviare email',
+      );
+    }
+
+    const normalizedRecipient = dto.recipientEmail.trim();
+
+    await this.emailService.sendCustomEmail({
+      to: normalizedRecipient,
+      subject: dto.subject,
+      htmlContent: dto.htmlContent,
+      textContent: dto.textContent,
+      previewText: dto.previewText,
+      replyTo: senderEmail || null,
+    });
+
+    await this.auditService.log(jamId, userId, 'email_test_sent', {
+      recipient: normalizedRecipient,
+    });
+
+    return {
+      recipientCount: 1,
+    };
+  }
+
+  async isManagerOrOwner(
+    jamId: string,
+    userId: string,
+    isSuperAdmin = false,
+  ): Promise<boolean> {
+    if (isSuperAdmin) {
+      return true;
+    }
+
     const { data, error } = await this.supabase.rpc('is_owner_or_manager', {
       jam_id: jamId,
       user_id: userId,
@@ -462,6 +597,85 @@ export class JamsService {
     }
 
     return data || false;
+  }
+
+  private resolveAudienceStates(
+    audience: JamEmailAudience,
+  ): ParticipantState[] {
+    switch (audience) {
+      case JamEmailAudience.PARTICIPANTS:
+        return ['participant'];
+      case JamEmailAudience.WAITING:
+        return ['waiting'];
+      default:
+        return ['participant', 'waiting'];
+    }
+  }
+
+  private async getJamEmailRecipients(
+    jamId: string,
+    audience: JamEmailAudience,
+  ): Promise<JamEmailRecipient[]> {
+    const states = this.resolveAudienceStates(audience);
+
+    const { data, error } = await this.supabase
+      .from('jam_participants')
+      .select('user_id, state')
+      .eq('jam_id', jamId)
+      .in('state', states);
+
+    if (error) {
+      throw new Error(
+        `Failed to fetch participants for email: ${error.message}`,
+      );
+    }
+
+    const participants = (data || []) as Array<{
+      user_id: string;
+      state: ParticipantState;
+    }>;
+
+    if (participants.length === 0) {
+      return [];
+    }
+
+    const userIds = participants.map((participant) => participant.user_id);
+
+    const { data: profiles, error: profilesError } = await this.supabase
+      .from('profiles')
+      .select('id, email, first_name, last_name')
+      .in('id', userIds);
+
+    if (profilesError) {
+      throw new Error(
+        `Failed to fetch participant profiles: ${profilesError.message}`,
+      );
+    }
+
+    const profileMap = new Map(
+      (profiles || []).map((profile) => [profile.id, profile]),
+    );
+
+    const recipients: JamEmailRecipient[] = [];
+
+    participants.forEach((participant) => {
+      const profile = profileMap.get(participant.user_id);
+      const email = profile?.email?.trim();
+
+      if (!email) {
+        return;
+      }
+
+      recipients.push({
+        userId: participant.user_id,
+        email,
+        firstName: profile?.first_name ?? undefined,
+        lastName: profile?.last_name ?? undefined,
+        state: participant.state,
+      });
+    });
+
+    return recipients;
   }
 
   private async ensureOwnerParticipation(

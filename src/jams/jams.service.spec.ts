@@ -3,9 +3,11 @@ import { createSupabaseMock } from '../test-utils/supabase-mock';
 
 describe('JamsService', () => {
   const auditService = { log: jest.fn() };
+  const emailService = { sendCustomEmail: jest.fn() };
 
   beforeEach(() => {
     auditService.log = jest.fn().mockResolvedValue(undefined);
+    emailService.sendCustomEmail = jest.fn().mockResolvedValue(undefined);
   });
 
   it('enrols the owner as participant when creating a jam', async () => {
@@ -45,8 +47,15 @@ describe('JamsService', () => {
         },
       ],
     });
+    (supabase.client as any).rpc = jest
+      .fn()
+      .mockResolvedValue({ data: true, error: null });
 
-    const service = new JamsService(supabase.client, auditService as any);
+    const service = new JamsService(
+      supabase.client,
+      auditService as any,
+      emailService as any,
+    );
 
     await service.createJam('owner-1', {
       name: 'Morning Jam',
@@ -101,8 +110,15 @@ describe('JamsService', () => {
         },
       ],
     });
+    (supabase.client as any).rpc = jest
+      .fn()
+      .mockResolvedValue({ data: true, error: null });
 
-    const service = new JamsService(supabase.client, auditService as any);
+    const service = new JamsService(
+      supabase.client,
+      auditService as any,
+      emailService as any,
+    );
 
     await service.publishJam('jam-publish', 'owner-2');
 

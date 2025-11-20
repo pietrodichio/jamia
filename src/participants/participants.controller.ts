@@ -1,16 +1,17 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { ParticipantsService } from './participants.service';
 import { JoinJamDto } from './dto/join-jam.dto';
 import { AddParticipantDto } from './dto/add-participant.dto';
+import { UpdateParticipantRoleDto } from './dto/update-role.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User, AuthUser } from '../auth/user.decorator';
 
@@ -24,7 +25,11 @@ export class ParticipantsController {
     @Param('jamId') jamId: string,
     @User() user: AuthUser,
   ) {
-    return this.participantsService.getJamParticipants(jamId, user.id);
+    return this.participantsService.getJamParticipants(
+      jamId,
+      user.id,
+      user.isSuperAdmin,
+    );
   }
 
   @Get('jams/:jamId/my-participation')
@@ -54,6 +59,7 @@ export class ParticipantsController {
       jamId,
       user.id,
       addParticipantDto,
+      user.isSuperAdmin,
     );
   }
 
@@ -62,8 +68,26 @@ export class ParticipantsController {
     return this.participantsService.cancelParticipation(id, user.id);
   }
 
+  @Patch(':id/role')
+  async updateParticipantRole(
+    @Param('id') id: string,
+    @User() user: AuthUser,
+    @Body() dto: UpdateParticipantRoleDto,
+  ) {
+    return this.participantsService.updateParticipantRole(
+      id,
+      user.id,
+      dto.role,
+      user.isSuperAdmin,
+    );
+  }
+
   @Delete(':id')
   async removeParticipant(@Param('id') id: string, @User() user: AuthUser) {
-    return this.participantsService.removeParticipant(id, user.id);
+    return this.participantsService.removeParticipant(
+      id,
+      user.id,
+      user.isSuperAdmin,
+    );
   }
 }

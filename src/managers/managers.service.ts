@@ -16,7 +16,7 @@ export class ManagersService {
     private readonly auditService: AuditService,
   ) {}
 
-  async getJamManagers(jamId: string, userId: string) {
+  async getJamManagers(jamId: string, userId: string, isSuperAdmin = false) {
     // Check if the user is the owner or an existing manager of the jam
     const { data: jam, error: jamError } = await this.supabase
       .from('jams')
@@ -30,17 +30,19 @@ export class ManagersService {
 
     const isOwner = jam.owner_id === userId;
 
-    const { data: existingManager, error: managerError } = await this.supabase
-      .from('jam_managers')
-      .select('user_id')
-      .eq('jam_id', jamId)
-      .eq('user_id', userId)
-      .maybeSingle();
+    if (!isSuperAdmin) {
+      const { data: existingManager, error: managerError } = await this.supabase
+        .from('jam_managers')
+        .select('user_id')
+        .eq('jam_id', jamId)
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if (!isOwner && !existingManager) {
-      throw new ForbiddenException(
-        'You do not have permission to view managers for this jam',
-      );
+      if (!isOwner && !existingManager) {
+        throw new ForbiddenException(
+          'You do not have permission to view managers for this jam',
+        );
+      }
     }
 
     const { data, error } = await this.supabase
@@ -70,7 +72,12 @@ export class ManagersService {
     return data || [];
   }
 
-  async addJamManager(jamId: string, ownerId: string, managerUserId: string) {
+  async addJamManager(
+    jamId: string,
+    ownerId: string,
+    managerUserId: string,
+    isSuperAdmin = false,
+  ) {
     // Check if jam exists and user has permission
     const { data: jam, error: jamError } = await this.supabase
       .from('jams')
@@ -83,7 +90,7 @@ export class ManagersService {
     }
 
     // Check if ownerId is actually the owner of the jam
-    if (jam.owner_id !== ownerId) {
+    if (!isSuperAdmin && jam.owner_id !== ownerId) {
       throw new ForbiddenException('Only the jam owner can add managers');
     }
 
@@ -140,6 +147,7 @@ export class ManagersService {
     jamId: string,
     ownerId: string,
     managerUserId: string,
+    isSuperAdmin = false,
   ) {
     // Check if ownerId is actually the owner of the jam
     const { data: jam, error: jamError } = await this.supabase
@@ -152,7 +160,7 @@ export class ManagersService {
       throw new NotFoundException('Jam not found');
     }
 
-    if (jam.owner_id !== ownerId) {
+    if (!isSuperAdmin && jam.owner_id !== ownerId) {
       throw new ForbiddenException('Only the jam owner can remove managers');
     }
 
