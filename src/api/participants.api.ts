@@ -86,6 +86,11 @@ export const participantsApi = {
     await apiClient.delete(`/participants/${participantId}`);
   },
 
+  promoteParticipant: async (participantId: string): Promise<Participant> => {
+    const response = await apiClient.patch(`/participants/${participantId}/promote`);
+    return response.data;
+  },
+
   getPublicJamParticipants: async (jamId: string): Promise<{ participants: Participant[] }> => {
     const response = await publicApiClient.get(`/public/jams/${jamId}/participants`);
     return response.data;

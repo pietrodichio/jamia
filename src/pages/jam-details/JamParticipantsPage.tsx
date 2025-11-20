@@ -19,6 +19,7 @@ const JamParticipantsPage = () => {
   } = useJamDetailsContext();
 
   const participantsUnavailable = !jam.public_participants && !isOwnerOrManager;
+  const canManuallyPromote = Boolean(isOwnerOrManager && jam.auto_promote === false);
 
   if (states.isParticipantsLoading) {
     return (
@@ -54,6 +55,7 @@ const JamParticipantsPage = () => {
           waitingList={waitingList}
           jamId={jam.id}
           onParticipantsUpdated={actions.onParticipantsUpdated}
+          canPromote={canManuallyPromote}
         />
       )}
     </div>
