@@ -518,6 +518,139 @@ describe('ParticipantsService', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
+  it('allows the jam owner to manually promote a waiting participant when auto-promote is disabled', async () => {
+    const updatedPayloads: unknown[] = [];
+
+    const supabase = createSupabaseMock({
+      jam_participants: [
+        {
+          response: {
+            data: {
+              id: 'waiting-1',
+              jam_id: 'jam-manual',
+              user_id: 'user-wait',
+              role: 'base',
+              state: 'waiting',
+            },
+            error: null,
+          },
+        },
+        {
+          response: {
+            data: [{ id: 'existing', role: 'flyer' }],
+            error: null,
+          },
+        },
+        {
+          response: {
+            data: {
+              id: 'waiting-1',
+              jam_id: 'jam-manual',
+              user_id: 'user-wait',
+              role: 'base',
+              state: 'participant',
+            },
+            error: null,
+          },
+          updateResponse: {
+            data: {
+              id: 'waiting-1',
+              jam_id: 'jam-manual',
+              user_id: 'user-wait',
+              role: 'base',
+              state: 'participant',
+            },
+            error: null,
+          },
+          onUpdate: (payload) => updatedPayloads.push(payload),
+        },
+      ],
+      jams: [
+        {
+          response: {
+            data: {
+              id: 'jam-manual',
+              owner_id: 'owner-1',
+              status: 'published',
+              capacity: 5,
+              desired_bases_max: null,
+              desired_flyers_max: null,
+              auto_promote: false,
+              name: 'Manual Jam',
+            },
+            error: null,
+          },
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    const result = await service.promoteWaitingParticipant(
+      'waiting-1',
+      'owner-1',
+    );
+
+    expect(result.state).toBe('participant');
+    expect(updatedPayloads).toHaveLength(1);
+    expect(updatedPayloads[0]).toMatchObject({
+      state: 'participant',
+    });
+    expect(auditService.log).toHaveBeenCalledWith(
+      'jam-manual',
+      'owner-1',
+      'promoted',
+      expect.objectContaining({ target_user_id: 'user-wait' }),
+    );
+  });
+
+  it('prevents manual promotion when auto-promote is active', async () => {
+    const supabase = createSupabaseMock({
+      jam_participants: [
+        {
+          response: {
+            data: {
+              id: 'waiting-2',
+              jam_id: 'jam-auto',
+              user_id: 'user-wait',
+              role: 'flyer',
+              state: 'waiting',
+            },
+            error: null,
+          },
+        },
+      ],
+      jams: [
+        {
+          response: {
+            data: {
+              id: 'jam-auto',
+              owner_id: 'owner-1',
+              status: 'published',
+              capacity: 5,
+              desired_bases_max: null,
+              desired_flyers_max: null,
+              auto_promote: true,
+            },
+            error: null,
+          },
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    await expect(
+      service.promoteWaitingParticipant('waiting-2', 'owner-1'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('throws NotFoundException when updating role for non-existing participation', async () => {
     const supabase = createSupabaseMock({
       jam_participants: [
