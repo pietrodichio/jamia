@@ -82,6 +82,18 @@ export class ParticipantsController {
     );
   }
 
+  @Patch(':id/promote')
+  async promoteWaitingParticipant(
+    @Param('id') id: string,
+    @User() user: AuthUser,
+  ) {
+    return this.participantsService.promoteWaitingParticipant(
+      id,
+      user.id,
+      user.isSuperAdmin,
+    );
+  }
+
   @Delete(':id')
   async removeParticipant(@Param('id') id: string, @User() user: AuthUser) {
     return this.participantsService.removeParticipant(

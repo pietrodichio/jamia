@@ -90,10 +90,27 @@ export const createSupabaseMock = (tableConfigs: TableConfigs) => {
     return createQueryBuilder(configs[index]);
   });
 
+  const auth = {
+    admin: {
+      getUserById: jest.fn().mockResolvedValue({
+        data: {
+          user: {
+            id: 'mock-user',
+            email_confirmed_at: new Date().toISOString(),
+            confirmed_at: new Date().toISOString(),
+          },
+        },
+        error: null,
+      }),
+    },
+  };
+
   return {
     client: {
       from,
+      auth,
     } as unknown as import('@supabase/supabase-js').SupabaseClient,
     from,
+    auth,
   };
 };

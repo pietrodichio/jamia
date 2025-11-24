@@ -674,6 +674,118 @@ export class ParticipantsService {
     }
 
 
+
+    return updated;
+  }
+
+  async promoteWaitingParticipant(
+    participantId: string,
+    userId: string,
+    isSuperAdmin = false,
+  ) {
+    const { data: participation, error: fetchError } = await this.supabase
+      .from('jam_participants')
+      .select('id, jam_id, user_id, role, state')
+      .eq('id', participantId)
+      .single();
+
+    if (fetchError || !participation) {
+      throw new NotFoundException('Participation not found');
+    }
+
+    if (participation.state !== 'waiting') {
+      throw new BadRequestException(
+        'Only waiting list participants can be promoted',
+      );
+    }
+
+    const jam = await this.fetchJamWithConfig(participation.jam_id);
+
+    let hasPermission = isSuperAdmin || jam.owner_id === userId;
+
+    if (!hasPermission && !isSuperAdmin) {
+      const { data: managerRecord, error: managerError } = await this.supabase
+        .from('jam_managers')
+        .select('id')
+        .eq('jam_id', participation.jam_id)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (managerError) {
+        throw new Error(
+          `Failed to verify manager permissions: ${managerError.message}`,
+        );
+      }
+
+      hasPermission = Boolean(managerRecord);
+    }
+
+    if (!hasPermission) {
+      throw new ForbiddenException(
+        'Only the jam owner or managers can promote participants',
+      );
+    }
+
+    if (jam.auto_promote) {
+      throw new BadRequestException(
+        'Manual promotion is disabled when auto-promote is active',
+      );
+    }
+
+    const activeParticipants = await this.fetchActiveParticipants(
+      participation.jam_id,
+    );
+    const roleCounts = this.calculateRoleCounts(activeParticipants);
+    const effectiveRole = this.resolveEffectiveRole(
+      participation.role as ParticipantRole,
+    );
+
+    if (
+      jam.capacity !== null &&
+      jam.capacity !== undefined &&
+      roleCounts.total >= jam.capacity
+    ) {
+      throw new BadRequestException(
+        'Jam is currently at capacity. Cannot promote from waiting list.',
+      );
+    }
+
+    if (this.isRoleAtMax(effectiveRole, roleCounts, jam)) {
+      throw new BadRequestException(
+        `Cannot promote this participant because ${effectiveRole} capacity is full`,
+      );
+    }
+
+    const { data: updated, error: updateError } = await this.supabase
+      .from('jam_participants')
+      .update({
+        state: 'participant',
+        promoted_at: new Date().toISOString(),
+      })
+      .eq('id', participantId)
+      .select()
+      .single();
+
+    if (updateError || !updated) {
+      throw new Error(
+        `Failed to promote participant: ${
+          updateError?.message || 'unknown error'
+        }`,
+      );
+    }
+
+    await this.auditService.log(participation.jam_id, userId, 'promoted', {
+      target_user_id: participation.user_id,
+    });
+
+    await this.notifyParticipantPromoted({
+      userId: participation.user_id,
+      jamId: participation.jam_id,
+      jamName: jam.name || 'la jam',
+      jamStartsAt: jam.starts_at,
+      jamLocation: jam.location_text,
+    });
+
     return updated;
   }
 
