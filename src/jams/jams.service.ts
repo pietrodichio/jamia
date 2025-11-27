@@ -283,7 +283,7 @@ export class JamsService {
     isSuperAdmin = false,
   ) {
     // Check ownership or management
-    const jam = await this.getJamById(jamId);
+    const jam = await this.getJamById(jamId, userId, isSuperAdmin);
 
     const isOwnerOrManager = await this.isManagerOrOwner(
       jamId,
