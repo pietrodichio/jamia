@@ -16,7 +16,8 @@ type AuditAction =
   | 'manager_removed'
   | 'cloned'
   | 'email_sent'
-  | 'email_test_sent';
+  | 'email_test_sent'
+  | 'role_updated';
 
 @Injectable()
 export class AuditService {

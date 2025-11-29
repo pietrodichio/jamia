@@ -54,10 +54,31 @@ const createQueryBuilder = (config: QueryConfig = {}) => {
 
       return builder;
     },
-    delete: () => builder,
+    delete: () => {
+      // For delete operations, eq() should support chaining
+      // Return a special object that allows chaining eq() calls
+      let eqCallCount = 0;
+      const deleteBuilder: any = {
+        eq: () => {
+          eqCallCount++;
+          // Return the builder itself to allow chaining
+          // The promise resolution happens via then() method
+          return deleteBuilder;
+        },
+        then: (
+          resolve: (value: unknown) => unknown,
+          reject?: (reason: unknown) => unknown,
+        ) => Promise.resolve(currentResponse).then(resolve, reject),
+        catch: (reject: (reason: unknown) => unknown) =>
+          Promise.resolve(currentResponse).catch(reject),
+      };
+      return deleteBuilder;
+    },
     eq: () => builder,
     neq: () => builder,
     in: () => builder,
+    or: () => builder,
+    ilike: () => builder,
     order: () => builder,
     limit: () => builder,
     single: () => Promise.resolve(currentResponse),
@@ -105,12 +126,18 @@ export const createSupabaseMock = (tableConfigs: TableConfigs) => {
     },
   };
 
-  return {
-    client: {
-      from,
-      auth,
-    } as unknown as import('@supabase/supabase-js').SupabaseClient,
+  const rpc = jest.fn().mockResolvedValue({ data: null, error: null });
+
+  const client = {
     from,
     auth,
+    rpc,
+  } as unknown as import('@supabase/supabase-js').SupabaseClient;
+
+  return {
+    client,
+    from,
+    auth,
+    rpc,
   };
 };

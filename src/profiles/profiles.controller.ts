@@ -19,8 +19,12 @@ export class ProfilesController {
   constructor(private readonly profilesService: ProfilesService) {}
 
   @Get('search')
-  async searchUsers(@Query('q') query: string, @Query('limit') limit?: number) {
-    return this.profilesService.searchUsers(query, limit);
+  async searchUsers(
+    @Query('q') query: string,
+    @Query('limit') limit?: number,
+    @Query('jamId') jamId?: string,
+  ) {
+    return this.profilesService.searchUsers(query, limit, jamId);
   }
 
   @Get(':id')

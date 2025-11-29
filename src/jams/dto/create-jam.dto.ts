@@ -5,18 +5,40 @@ import {
   IsNumber,
   IsBoolean,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class JamLocationDto {
+  @IsString()
+  description: string;
+
+  @IsOptional()
+  @IsString()
+  place_id?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  google_maps_url?: string;
+}
 
 export class CreateJamDto {
   @IsString()
   name: string;
 
-  @IsString()
-  location_text: string;
-
-  @IsString()
-  @IsOptional()
-  gmaps_link?: string;
+  @ValidateNested()
+  @Type(() => JamLocationDto)
+  location: JamLocationDto;
 
   @IsDateString()
   starts_at: string;
