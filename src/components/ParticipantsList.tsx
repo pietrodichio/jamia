@@ -77,8 +77,8 @@ const ParticipantsCard = ({
 }) => (
   <Card className="border-primary/10 rounded-2xl mb-6">
     <CardHeader>
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
+      <div className="flex items-start justify-between gap-x-2">
+        <div className="flex-1 flex flex-col gap-y-2">
           <CardTitle>{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </div>

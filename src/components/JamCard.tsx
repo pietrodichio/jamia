@@ -82,7 +82,7 @@ const JamCard = ({
       onClick={handleCardClick}
     >
       <CardHeader>
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-x-2">
           <CardTitle className="text-xl group-hover:text-primary transition-colors">
             {jam.name}
           </CardTitle>
