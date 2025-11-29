@@ -11,6 +11,7 @@ import { jamsApi } from "@/api/jams.api";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeHtml } from "@/lib/sanitize";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface JamHeaderProps {
   jam: any;
@@ -45,6 +46,8 @@ export const JamHeader = ({
   const [updatingVisibility, setUpdatingVisibility] = useState(false);
   const participantDisplayCount = jam.participant_count ?? participants.length ?? 0;
   const waitingDisplayCount = jam.waiting_count ?? waitingList.length ?? 0;
+  const locationLabel = jam.location?.description || jam.location_text;
+  const mapsUrl = jam.location?.google_maps_url || jam.gmaps_link;
 
   const handleTogglePublicParticipants = async (checked: boolean) => {
     try {
@@ -70,11 +73,24 @@ export const JamHeader = ({
               {jam.status === "draft" && <Badge variant="secondary">Bozza</Badge>}
               {jam.status === "published" && <Badge className="bg-primary">Pubblicata</Badge>}
             </div>
-            <CardDescription className="flex items-center gap-1 text-base">
-              <MapPin className="h-4 w-4" />
-              {jam.location_text}
-              {jam.gmaps_link && (
-                <a href={jam.gmaps_link} target="_blank" rel="noopener noreferrer" className="ml-2 text-primary hover:underline">
+            <CardDescription className="flex items-center gap-1 text-base min-w-0">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              {locationLabel && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="truncate max-w-[200px] sm:max-w-[400px]">
+                        {locationLabel}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>{locationLabel}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {mapsUrl && (
+                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-primary hover:underline flex-shrink-0">
                   (Mappa)
                 </a>
               )}

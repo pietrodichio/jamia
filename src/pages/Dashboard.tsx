@@ -7,7 +7,7 @@ import { managersApi } from "@/api/managers.api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar, Users, LogOut, Loader2, User } from "lucide-react";
+import { Plus, Calendar, Users, LogOut, Loader2, User, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import JamCard from "@/components/JamCard";
 
@@ -26,26 +26,9 @@ const Dashboard = () => {
     checkAuth();
   }, []);
 
-  useEffect(() => {
-    console.log("[Dashboard] isLoading updated:", isLoading);
-  }, [isLoading]);
-
-  useEffect(() => {
-    console.log("[Dashboard] upcomingJams count:", upcomingJams.length);
-  }, [upcomingJams]);
-
-  useEffect(() => {
-    console.log("[Dashboard] myJams count:", myJams.length);
-  }, [myJams]);
-
   const checkAuth = async () => {
     const startTimestamp = performance.now();
-    console.log("[Dashboard] checkAuth start");
     const { data: { session } } = await supabase.auth.getSession();
-    console.log(
-      "[Dashboard] checkAuth session fetched",
-      { hasSession: Boolean(session), durationMs: performance.now() - startTimestamp }
-    );
     
     if (!session) {
       navigate("/auth");
@@ -62,10 +45,6 @@ const Dashboard = () => {
 
     try {
       const profileData = await profilesApi.getProfile(session.user.id);
-      console.log(
-        "[Dashboard] checkAuth profile fetched",
-        { durationMs: performance.now() - startTimestamp }
-      );
       setProfile(profileData);
 
       if (profileData && !profileData.phone) {
@@ -91,55 +70,44 @@ const Dashboard = () => {
 
   const loadJams = async (userId: string) => {
     const startTimestamp = performance.now();
-    console.log("[Dashboard] loadJams start", { userId });
+
     setIsLoading(true);
     try {
       // Load jams created by user
       const ownedJams = await jamsApi.getMyJams();
-      console.log("[Dashboard] loadJams owned jams fetched", {
-        count: ownedJams.length,
-        durationMs: performance.now() - startTimestamp
-      });
       setMyJams(ownedJams);
 
       // Load jams user is participating in
       const participatedJams = await jamsApi.getParticipatingJams();
-      console.log("[Dashboard] loadJams participating jams fetched", {
-        count: participatedJams.length,
-        durationMs: performance.now() - startTimestamp
-      });
       setUpcomingJams(participatedJams);
 
       // Load managers for all jams to check permissions
       const allJams = [...ownedJams, ...participatedJams];
       const managersMap: Record<string, any[]> = {};
       
-      for (const jam of allJams) {
+      if (allJams.length > 0) {
         try {
-          const jamStart = performance.now();
-          const managers = await managersApi.getJamManagers(jam.id);
-          console.log("[Dashboard] loadJams managers fetched", {
-            jamId: jam.id,
-            managerCount: managers.length,
-            durationMs: performance.now() - jamStart
-          });
-          managersMap[jam.id] = managers;
+          // Deduplicate jam IDs (a jam could be both owned and participated)
+          const uniqueJamIds = Array.from(new Set(allJams.map((jam) => jam.id)));
+          const batchManagers = await managersApi.getJamManagersBatch(uniqueJamIds);
+          // Batch endpoint returns managers for all accessible jams
+          // Jams user can't access will have empty arrays
+          Object.assign(managersMap, batchManagers);
         } catch (error) {
-          // If user can't access managers, they're not a manager
-          console.warn("[Dashboard] loadJams managers fetch failed", {
-            jamId: jam.id,
+          // If batch fetch fails, log warning but don't block dashboard load
+          console.warn("[Dashboard] loadJams batch managers fetch failed", {
+            jamCount: allJams.length,
             durationMs: performance.now() - startTimestamp,
             error
           });
-          managersMap[jam.id] = [];
+          // Initialize with empty arrays for all jams
+          for (const jam of allJams) {
+            managersMap[jam.id] = [];
+          }
         }
       }
       
       setManagersByJam(managersMap);
-      console.log("[Dashboard] loadJams completed", {
-        totalManagersFetched: Object.keys(managersMap).length,
-        totalDurationMs: performance.now() - startTimestamp
-      });
     } catch (error: any) {
       toast({
         title: "Errore",
@@ -207,6 +175,25 @@ const Dashboard = () => {
   }
 
   const totalParticipations = upcomingJams.length;
+
+  const now = new Date();
+  const isJamPast = (jam: any) => new Date(jam.ends_at) < now;
+
+  const activeParticipatedJams = upcomingJams
+    .filter(jam => !isJamPast(jam))
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+
+  const pastParticipatedJams = upcomingJams
+    .filter(jam => isJamPast(jam))
+    .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+
+  const activeOwnedJams = myJams
+    .filter(jam => !isJamPast(jam))
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+
+  const pastOwnedJams = myJams
+    .filter(jam => isJamPast(jam))
+    .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
@@ -289,9 +276,10 @@ const Dashboard = () => {
 
         {/* Jams Tabs */}
         <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-xl">
+          <TabsList className="grid w-full grid-cols-3 rounded-xl">
             <TabsTrigger value="upcoming" className="rounded-xl">Prossime Jam</TabsTrigger>
             <TabsTrigger value="my-jams" className="rounded-xl">Le mie Jam</TabsTrigger>
+            <TabsTrigger value="history" className="rounded-xl">Storico</TabsTrigger>
           </TabsList>
           
           <TabsContent value="upcoming" className="mt-6">
@@ -305,7 +293,7 @@ const Dashboard = () => {
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                ) : upcomingJams.length === 0 ? (
+                ) : activeParticipatedJams.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">Non hai ancora prenotato nessuna jam</p>
@@ -313,7 +301,7 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <div className="grid gap-4">
-                    {upcomingJams.map((jam) => (
+                    {activeParticipatedJams.map((jam) => (
                       <JamCard 
                         key={jam.id} 
                         jam={jam} 
@@ -340,7 +328,7 @@ const Dashboard = () => {
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
-                ) : myJams.length === 0 ? (
+                ) : activeOwnedJams.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Users className="h-12 w-12 text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">Non hai ancora creato nessuna jam</p>
@@ -354,11 +342,80 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <div className="grid gap-4">
-                    {myJams.map((jam) => (
+                    {activeOwnedJams.map((jam) => (
                       <JamCard 
                         key={jam.id} 
                         jam={jam} 
                         showStatus 
+                        isOwnerOrManager={isOwnerOrManager(jam)}
+                        isOwner={isOwner(jam)}
+                        onClone={() => handleClone(jam)}
+                        onManageManagers={handleManageManagers}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-6 space-y-6">
+            {/* Past Managed Jams */}
+            <Card className="border-primary/10 rounded-2xl">
+              <CardHeader>
+                <CardTitle>Jam Gestite</CardTitle>
+                <CardDescription>Jam che hai organizzato nel passato</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : pastOwnedJams.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <History className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Nessuna jam gestita nel passato</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {pastOwnedJams.map((jam) => (
+                      <JamCard 
+                        key={jam.id} 
+                        jam={jam} 
+                        showStatus 
+                        isOwnerOrManager={isOwnerOrManager(jam)}
+                        isOwner={isOwner(jam)}
+                        onClone={() => handleClone(jam)}
+                        onManageManagers={handleManageManagers}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Past Participations */}
+            <Card className="border-primary/10 rounded-2xl">
+              <CardHeader>
+                <CardTitle>Partecipazioni Passate</CardTitle>
+                <CardDescription>Jam a cui hai partecipato nel passato</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : pastParticipatedJams.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <History className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Nessuna partecipazione passata</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {pastParticipatedJams.map((jam) => (
+                      <JamCard 
+                        key={jam.id} 
+                        jam={jam} 
                         isOwnerOrManager={isOwnerOrManager(jam)}
                         isOwner={isOwner(jam)}
                         onClone={() => handleClone(jam)}

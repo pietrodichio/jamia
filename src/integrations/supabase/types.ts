@@ -106,6 +106,9 @@ export type Database = {
           ends_at: string
           gmaps_link: string | null
           id: string
+          location: Json | null
+          location_lat: number | null
+          location_lng: number | null
           location_text: string
           name: string
           owner_id: string
@@ -125,6 +128,9 @@ export type Database = {
           ends_at: string
           gmaps_link?: string | null
           id?: string
+          location?: Json | null
+          location_lat?: number | null
+          location_lng?: number | null
           location_text: string
           name: string
           owner_id: string
@@ -144,6 +150,9 @@ export type Database = {
           ends_at?: string
           gmaps_link?: string | null
           id?: string
+          location?: Json | null
+          location_lat?: number | null
+          location_lng?: number | null
           location_text?: string
           name?: string
           owner_id?: string

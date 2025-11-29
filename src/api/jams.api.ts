@@ -1,11 +1,22 @@
 import { apiClient, publicApiClient } from './client';
 
+export interface JamLocation {
+  description: string;
+  place_id?: string;
+  latitude?: number;
+  longitude?: number;
+  google_maps_url?: string;
+}
+
 export interface Jam {
   id: string;
   owner_id: string;
   name: string;
-  location_text: string;
+  location?: JamLocation;
+  location_text?: string;
   gmaps_link?: string;
+  location_lat?: number;
+  location_lng?: number;
   starts_at: string;
   ends_at: string;
   description?: string;
@@ -25,8 +36,7 @@ export interface Jam {
 
 export interface CreateJamDto {
   name: string;
-  location_text: string;
-  gmaps_link?: string;
+  location: JamLocation;
   starts_at: string;
   ends_at: string;
   description?: string;
@@ -41,8 +51,7 @@ export interface CreateJamDto {
 
 export interface UpdateJamDto {
   name?: string;
-  location_text?: string;
-  gmaps_link?: string;
+  location?: JamLocation;
   starts_at?: string;
   ends_at?: string;
   description?: string;

@@ -1,11 +1,18 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { participantsApi, type ManagedParticipantDto, type Participant } from "@/api/participants.api";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -34,17 +41,19 @@ const addParticipantSchema = z.object({
 
 type AddParticipantFormValues = z.infer<typeof addParticipantSchema>;
 
-interface AddParticipantCardProps {
+interface AddParticipantDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   jamId: string;
-  canManage: boolean;
   onParticipantsUpdated?: () => void;
 }
 
-export const AddParticipantCard = ({
+export const AddParticipantDialog = ({
+  open,
+  onOpenChange,
   jamId,
-  canManage,
   onParticipantsUpdated,
-}: AddParticipantCardProps) => {
+}: AddParticipantDialogProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -70,9 +79,10 @@ export const AddParticipantCard = ({
           ? "Abbiamo inviato un invito via email al partecipante."
           : "Il partecipante è stato aggiunto con successo.",
       });
-      reset({ firstName: "", lastName: "", email: "", phone: "", role: "both" });
+      reset({ firstName: "", lastName: "", email: "", phone: "", role: "flyer" });
       onParticipantsUpdated?.();
       queryClient.invalidateQueries({ queryKey: ["jam-participants", jamId] });
+      onOpenChange(false);
     },
     onError: (error: any) => {
       toast({
@@ -93,23 +103,27 @@ export const AddParticipantCard = ({
     });
   };
 
+  useEffect(() => {
+    if (!open) {
+      reset({ firstName: "", lastName: "", email: "", phone: "", role: "flyer" });
+    }
+  }, [open, reset]);
+
   const isSubmitting = addParticipantMutation.isPending;
   const isDisabled = useMemo(
     () => isSubmitting || !formState.isValid || !formState.isDirty,
     [formState.isDirty, formState.isValid, isSubmitting],
   );
 
-  if (!canManage) {
-    return null;
-  }
-
   return (
-    <Card className="border-primary/10 rounded-2xl mb-6">
-      <CardHeader>
-        <CardTitle>Aggiungi partecipante</CardTitle>
-        <CardDescription>Invita partecipanti o prenota un posto per chi non ha ancora un account.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="rounded-2xl max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Aggiungi partecipante</DialogTitle>
+          <DialogDescription>
+            Invita partecipanti o prenota un posto per chi non ha ancora un account.
+          </DialogDescription>
+        </DialogHeader>
         <Form {...form}>
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-4 md:grid-cols-2">
@@ -194,17 +208,27 @@ export const AddParticipantCard = ({
               />
             </div>
 
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm text-muted-foreground">
-                Se la persona non ha un account riceverà un invito automatico via email.
-              </p>
+            <p className="text-sm text-muted-foreground">
+              Se la persona non ha un account riceverà un invito automatico via email.
+            </p>
+
+            <DialogFooter className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="rounded-xl"
+              >
+                Annulla
+              </Button>
               <Button type="submit" className="rounded-xl" disabled={isDisabled}>
                 {isSubmitting ? "Aggiugendo..." : "Aggiungi partecipante"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
   );
 };
+

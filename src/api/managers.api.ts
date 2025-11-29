@@ -20,6 +20,13 @@ export const managersApi = {
     return response.data;
   },
 
+  async getJamManagersBatch(jamIds: string[]): Promise<Record<string, JamManager[]>> {
+    const response = await apiClient.post('/jams/managers/batch', {
+      jamIds,
+    });
+    return response.data;
+  },
+
   async addJamManager(jamId: string, userId: string): Promise<JamManager> {
     const response = await apiClient.post(`/jams/${jamId}/managers`, {
       userId,

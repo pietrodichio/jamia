@@ -14,7 +14,6 @@ import Dashboard from "./pages/Dashboard";
 import CreateJam from "./pages/CreateJam";
 import JamDetailsLayout from "./pages/jam-details/JamDetailsLayout";
 import JamOverviewPage from "./pages/jam-details/JamOverviewPage";
-import JamParticipantsPage from "./pages/jam-details/JamParticipantsPage";
 import JamCommunicationPage from "./pages/jam-details/JamCommunicationPage";
 import EditJam from "./pages/EditJam";
 import ResetPassword from "./pages/ResetPassword";
@@ -72,7 +71,6 @@ const App = () => (
           <Route path="/create-jam" element={<CreateJam />} />
           <Route path="/jam/:id/*" element={<JamDetailsLayout />}>
             <Route index element={<JamOverviewPage />} />
-            <Route path="participants" element={<JamParticipantsPage />} />
             <Route path="communication" element={<JamCommunicationPage />} />
           </Route>
           <Route path="/jam/:id/edit" element={<EditJam />} />

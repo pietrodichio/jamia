@@ -40,6 +40,7 @@ export interface ManagedParticipantDto {
 export interface ParticipantsResponse {
   participants: Participant[];
   waitingList: Participant[];
+  cancelledList?: Participant[];
 }
 
 export const participantsApi = {

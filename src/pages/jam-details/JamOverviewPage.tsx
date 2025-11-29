@@ -1,5 +1,6 @@
 import { JamHeader } from "@/components/JamHeader";
 import { BookingSection } from "@/components/BookingSection";
+import { JamParticipantsSection } from "./JamParticipantsSection";
 import { useJamDetailsContext } from "./useJamDetailsContext";
 
 const JamOverviewPage = () => {
@@ -44,6 +45,8 @@ const JamOverviewPage = () => {
         onBook={actions.onBook}
         onCancelParticipation={actions.onCancelParticipation}
       />
+
+      <JamParticipantsSection />
     </div>
   );
 };

@@ -24,6 +24,7 @@ export type JamParticipant = Participant;
 type ParticipantsQueryResult = {
   participants: JamParticipant[];
   waitingList: JamParticipant[];
+  cancelledList: JamParticipant[];
   hasManagementAccess: boolean;
 };
 
@@ -77,6 +78,7 @@ export interface JamDetailsContextValue {
   profile: Profile | null;
   participants: JamParticipant[];
   waitingList: JamParticipant[];
+  cancelledList: JamParticipant[];
   userParticipation: JamParticipant | null;
   isOwner: boolean;
   isManager: boolean;
@@ -215,11 +217,12 @@ const JamDetailsLayout = () => {
           return {
             participants: mapParticipants(publicData.participants ?? []),
             waitingList: [],
+            cancelledList: [],
             hasManagementAccess: false,
           };
         } catch (error) {
           if (isForbiddenError(error)) {
-            return { participants: [], waitingList: [], hasManagementAccess: false };
+            return { participants: [], waitingList: [], cancelledList: [], hasManagementAccess: false };
           }
           throw error as Error;
         }
@@ -230,6 +233,7 @@ const JamDetailsLayout = () => {
         return {
           participants: mapParticipants(data.participants ?? []),
           waitingList: mapParticipants(data.waitingList ?? []),
+          cancelledList: mapParticipants(data.cancelledList ?? []),
           hasManagementAccess: true,
         };
       } catch (error) {
@@ -238,6 +242,7 @@ const JamDetailsLayout = () => {
           return {
             participants: mapParticipants(publicData.participants ?? []),
             waitingList: [],
+            cancelledList: [],
             hasManagementAccess: false,
           };
         }
@@ -258,9 +263,10 @@ const JamDetailsLayout = () => {
   });
 
   const participantData: ParticipantsQueryResult =
-    participantsQuery.data ?? { participants: [], waitingList: [], hasManagementAccess: false };
+    participantsQuery.data ?? { participants: [], waitingList: [], cancelledList: [], hasManagementAccess: false };
   const participants = participantData.participants;
   const waitingList = participantData.waitingList;
+  const cancelledList = participantData.cancelledList;
   const hasManagementAccess = participantData.hasManagementAccess;
   const userParticipation = userParticipationQuery.data ?? null;
   const currentUserId = currentUser?.id ?? null;
@@ -547,7 +553,6 @@ const JamDetailsLayout = () => {
 
   const navItems = [
     { label: "Panoramica", path: basePath },
-    { label: "Partecipanti", path: `${basePath}/participants` },
     ...(isOwnerOrManager
       ? [{ label: "Comunicazioni", path: `${basePath}/communication` }]
       : []),
@@ -559,6 +564,7 @@ const JamDetailsLayout = () => {
     profile: profileQuery.data ?? null,
     participants,
     waitingList,
+    cancelledList,
     userParticipation,
     isOwner,
     isManager,
@@ -595,18 +601,20 @@ const JamDetailsLayout = () => {
           {currentUser ? "Torna alla Dashboard" : "Torna alla Home"}
         </Button>
 
-        <div className="flex flex-wrap gap-2 border-b border-border pb-4">
-          {navItems.map((item) => (
-            <Button
-              key={item.path}
-              variant={location.pathname === item.path ? "default" : "ghost"}
-              className="rounded-xl"
-              asChild
-            >
-              <Link to={item.path}>{item.label}</Link>
-            </Button>
-          ))}
-        </div>
+        {navItems.length > 1 && (
+          <div className="flex flex-wrap gap-2 border-b border-border pb-4">
+            {navItems.map((item) => (
+              <Button
+                key={item.path}
+                variant={location.pathname === item.path ? "default" : "ghost"}
+                className="rounded-xl"
+                asChild
+              >
+                <Link to={item.path}>{item.label}</Link>
+              </Button>
+            ))}
+          </div>
+        )}
 
         <Outlet context={contextValue} />
       </div>

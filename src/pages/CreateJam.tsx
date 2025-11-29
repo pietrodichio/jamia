@@ -41,11 +41,15 @@ const CreateJam = () => {
       const startsAtUTC = start.toISOString();
       const endsAtUTC = end.toISOString();
       const sanitizedDescription = sanitizeHtml(data.description || "");
+      const location = {
+        ...data.location,
+        place_id: data.location.place_id || undefined,
+        google_maps_url: data.location.google_maps_url || undefined,
+      };
 
       const jam = await jamsApi.createJam({
         name: data.name,
-        location_text: data.location_text,
-        gmaps_link: data.gmaps_link || undefined,
+        location,
         starts_at: startsAtUTC,
         ends_at: endsAtUTC,
         description: sanitizedDescription || undefined,
