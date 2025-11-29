@@ -57,40 +57,113 @@ export class ProfilesService {
     return data;
   }
 
-  async searchUsers(query: string, limit: number = 10) {
-    if (query.length < 2) {
-      return [];
-    }
+  async searchUsers(
+    query: string,
+    limit: number = 10,
+    jamId?: string,
+  ) {
+    // If jamId is provided, only search among users who are (or have been) participants in that jam
+    // This prevents enumeration of all users in the platform
+    if (jamId) {
+      // Get the jam's owner_id to exclude from results
+      const { data: jam, error: jamError } = await this.supabase
+        .from('jams')
+        .select('owner_id')
+        .eq('id', jamId)
+        .single();
 
-    const { data, error } = await this.supabase
-      .from('profiles')
-      .select('id, name, email')
-      .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
-      .limit(limit);
+      if (jamError) {
+        throw new Error(`Failed to fetch jam: ${jamError.message}`);
+      }
 
-    if (error) {
-      console.error('Search users error:', error);
-      // If name column doesn't exist, try with first_name and last_name
-      const { data: fallbackData, error: fallbackError } = await this.supabase
+      const ownerId = jam?.owner_id;
+
+      // Get all managers for this jam to exclude from results
+      const { data: managers, error: managersError } = await this.supabase
+        .from('jam_managers')
+        .select('user_id')
+        .eq('jam_id', jamId);
+
+      if (managersError) {
+        throw new Error(
+          `Failed to fetch jam managers: ${managersError.message}`,
+        );
+      }
+
+      const managerIds = (managers || []).map((m) => m.user_id);
+      const excludedIds = ownerId
+        ? [...managerIds, ownerId]
+        : managerIds;
+
+      // First, get all user_ids who have participated in this jam (any state)
+      const { data: participants, error: participantsError } = await this.supabase
+        .from('jam_participants')
+        .select('user_id')
+        .eq('jam_id', jamId);
+
+      if (participantsError) {
+        throw new Error(
+          `Failed to fetch jam participants: ${participantsError.message}`,
+        );
+      }
+
+      const participantIds = (participants || [])
+        .map((p) => p.user_id)
+        .filter((id) => !excludedIds.includes(id));
+
+      if (participantIds.length === 0) {
+        return [];
+      }
+
+      // If query is empty or too short, return all participants (up to limit)
+      // Ordered alphabetically by first_name, then last_name
+      if (query.length < 2) {
+        const { data, error } = await this.supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email')
+          .in('id', participantIds)
+          .order('first_name', { ascending: true })
+          .order('last_name', { ascending: true, nullsFirst: false })
+          .limit(limit);
+
+        if (error) {
+          throw new Error(`Failed to search users: ${error.message}`);
+        }
+
+        return (data || []).map((user) => ({
+          id: user.id,
+          name: `${user.first_name} ${user.last_name || ''}`.trim(),
+          email: user.email,
+        }));
+      }
+
+      // Search only among these participants with the query
+      const { data, error } = await this.supabase
         .from('profiles')
         .select('id, first_name, last_name, email')
+        .in('id', participantIds)
         .or(
           `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`,
         )
         .limit(limit);
 
-      if (fallbackError) {
-        throw new Error(`Failed to search users: ${fallbackError.message}`);
+      if (error) {
+        throw new Error(`Failed to search users: ${error.message}`);
       }
 
       // Transform the data to match expected format
-      return (fallbackData || []).map((user) => ({
+      return (data || []).map((user) => ({
         id: user.id,
         name: `${user.first_name} ${user.last_name || ''}`.trim(),
         email: user.email,
       }));
     }
 
-    return data || [];
+    // If no jamId, require at least 2 characters for security
+    if (query.length < 2) {
+      return [];
+    }
+
+    return [];
   }
 }

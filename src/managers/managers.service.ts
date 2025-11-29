@@ -219,7 +219,6 @@ export class ManagersService {
     }
 
     const accessibleJamIds: string[] = [];
-    const jamMap = new Map(jams.map((jam) => [jam.id, jam]));
 
     if (isSuperAdmin) {
       // Super admin can access all jams
