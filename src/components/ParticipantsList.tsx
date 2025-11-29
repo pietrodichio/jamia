@@ -1,17 +1,7 @@
 import { type ReactNode, useState } from "react";
-import { format, formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Trash2 } from "lucide-react";
 import {
   participantsApi,
   type Participant,
@@ -28,9 +17,8 @@ import {
 } from "@/api/participants.api";
 import { type Jam } from "@/api/jams.api";
 import { useToast } from "@/hooks/use-toast";
-import { UserAvatar } from "@/components/UserAvatar";
-import { AddParticipantCard } from "@/components/AddParticipantCard";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AddParticipantDialog } from "@/components/AddParticipantDialog";
+import { Plus } from "lucide-react";
 
 type ParticipantWithProfile = Participant;
 
@@ -80,15 +68,22 @@ const ParticipantsCard = ({
   title,
   description,
   children,
+  headerAction,
 }: {
   title: string;
   description: string;
   children: ReactNode;
+  headerAction?: ReactNode;
 }) => (
   <Card className="border-primary/10 rounded-2xl mb-6">
     <CardHeader>
-      <CardTitle>{title}</CardTitle>
-      <CardDescription>{description}</CardDescription>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        {headerAction && <div className="flex-shrink-0">{headerAction}</div>}
+      </div>
     </CardHeader>
     <CardContent>{children}</CardContent>
   </Card>
@@ -201,6 +196,7 @@ export const ParticipantsList = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [addParticipantDialogOpen, setAddParticipantDialogOpen] = useState(false);
   const [participantToRemove, setParticipantToRemove] = useState<ParticipantSummary | null>(null);
   const [updatingParticipantId, setUpdatingParticipantId] = useState<string | null>(null);
   const effectiveCanManageParticipants =
@@ -306,18 +302,24 @@ export const ParticipantsList = ({
 
   return (
     <>
-      <AddParticipantCard
-        jamId={jam.id}
-        canManage={canManageParticipants}
-        onParticipantsUpdated={onParticipantsUpdated}
-      />
-
       <ParticipantsCard
         title={`Partecipanti (${participants.length})`}
         description={
           jam.status === "draft"
             ? "Le prenotazioni saranno disponibili dopo la pubblicazione"
             : "Lista dei partecipanti confermati"
+        }
+        headerAction={
+          effectiveCanManageParticipants ? (
+            <Button
+              onClick={() => setAddParticipantDialogOpen(true)}
+              className="rounded-xl"
+              size="sm"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Aggiungi
+            </Button>
+          ) : undefined
         }
       >
         {participants.length === 0 ? (
@@ -350,6 +352,13 @@ export const ParticipantsList = ({
         onOpenChange={setDialogOpen}
         onConfirm={confirmRemoveParticipant}
         isLoading={removeParticipantMutation.isPending}
+      />
+
+      <AddParticipantDialog
+        open={addParticipantDialogOpen}
+        onOpenChange={setAddParticipantDialogOpen}
+        jamId={jam.id}
+        onParticipantsUpdated={onParticipantsUpdated}
       />
     </>
   );

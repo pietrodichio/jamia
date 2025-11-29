@@ -553,7 +553,6 @@ const JamDetailsLayout = () => {
 
   const navItems = [
     { label: "Panoramica", path: basePath },
-    { label: "Partecipanti", path: `${basePath}/participants` },
     ...(isOwnerOrManager
       ? [{ label: "Comunicazioni", path: `${basePath}/communication` }]
       : []),
@@ -602,18 +601,20 @@ const JamDetailsLayout = () => {
           {currentUser ? "Torna alla Dashboard" : "Torna alla Home"}
         </Button>
 
-        <div className="flex flex-wrap gap-2 border-b border-border pb-4">
-          {navItems.map((item) => (
-            <Button
-              key={item.path}
-              variant={location.pathname === item.path ? "default" : "ghost"}
-              className="rounded-xl"
-              asChild
-            >
-              <Link to={item.path}>{item.label}</Link>
-            </Button>
-          ))}
-        </div>
+        {navItems.length > 1 && (
+          <div className="flex flex-wrap gap-2 border-b border-border pb-4">
+            {navItems.map((item) => (
+              <Button
+                key={item.path}
+                variant={location.pathname === item.path ? "default" : "ghost"}
+                className="rounded-xl"
+                asChild
+              >
+                <Link to={item.path}>{item.label}</Link>
+              </Button>
+            ))}
+          </div>
+        )}
 
         <Outlet context={contextValue} />
       </div>

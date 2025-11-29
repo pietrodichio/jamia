@@ -4,7 +4,7 @@ import { WaitingList } from "@/components/WaitingList";
 import { CancelledParticipantsList } from "@/components/CancelledParticipantsList";
 import { useJamDetailsContext } from "./useJamDetailsContext";
 
-const JamParticipantsPage = () => {
+export const JamParticipantsSection = () => {
   const {
     jam,
     participants,
@@ -67,4 +67,3 @@ const JamParticipantsPage = () => {
   );
 };
 
-export default JamParticipantsPage;
