@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +14,7 @@ import { UserPlus, X, Search, ShieldEllipsis } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { managersApi, JamManager } from "@/api/managers.api";
 import { profilesApi } from "@/api/profiles.api";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface ManageManagersDialogProps {
   jamId: string;
@@ -28,106 +30,131 @@ export const ManageManagersDialog = ({
   children,
 }: ManageManagersDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [managers, setManagers] = useState<JamManager[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (open) {
-      loadManagers();
-    }
-  }, [open, jamId]);
+  // Debounce search query to avoid too many API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const loadManagers = async () => {
-    try {
-      setIsLoading(true);
-      const managersData = await managersApi.getJamManagers(jamId);
-      setManagers(managersData);
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.response?.data?.message || error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Query for managers
+  const managersQuery = useQuery<JamManager[]>({
+    queryKey: ["jam-managers", jamId],
+    enabled: open,
+    queryFn: async () => {
+      try {
+        return await managersApi.getJamManagers(jamId);
+      } catch (error: unknown) {
+        const errorMessage =
+          error && typeof error === "object" && "response" in error
+            ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+            : error instanceof Error
+              ? error.message
+              : "Errore sconosciuto";
+        toast({
+          title: "Errore",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+  });
 
-  const searchUsers = async (query: string) => {
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
+  const managers = managersQuery.data || [];
+  const managerIds = managers.map((m) => m.user_id);
 
-    try {
-      setIsSearching(true);
-      const data = await profilesApi.searchUsers(query, 10);
+  // Query for user search - enabled when dialog is open
+  // Shows initial results when dialog opens (empty query), or filtered results when typing
+  const searchQueryEnabled = open && managersQuery.isSuccess;
+  const searchUsersQuery = useQuery<{ id: string; name: string; email: string }[]>({
+    queryKey: ["search-users", jamId, debouncedSearchQuery, managerIds.sort().join(",")],
+    enabled: searchQueryEnabled,
+    queryFn: async () => {
+      const data = await profilesApi.searchUsers(debouncedSearchQuery, 10, jamId);
 
       // Filter out users who are already managers
-      const managerIds = managers.map((m) => m.user_id);
-      const filteredResults = data.filter((user) => !managerIds.includes(user.id));
+      return data.filter((user) => !managerIds.includes(user.id));
+    },
+  });
 
-      setSearchResults(filteredResults);
-    } catch (error: any) {
-      console.error("Error searching users:", error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  const searchResults = searchUsersQuery.data || [];
+  const isSearching = searchUsersQuery.isFetching;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    searchUsers(query);
+    setSearchQuery(e.target.value);
   };
 
-  const handleAddManager = async (userId: string, userName: string) => {
-    try {
+  const addManagerMutation = useMutation({
+    mutationFn: async ({ userId, userName }: { userId: string; userName: string }) => {
       await managersApi.addJamManager(jamId, userId);
+      return { userId, userName };
+    },
+    onSuccess: ({ userName }) => {
       toast({
         title: "Manager aggiunto",
         description: `${userName} è ora un manager di questa jam`,
       });
       setSearchQuery("");
-      setSearchResults([]);
-      loadManagers();
+      queryClient.invalidateQueries({ queryKey: ["jam-managers", jamId] });
+      queryClient.invalidateQueries({ queryKey: ["search-users", jamId] });
       onManagersUpdated();
-    } catch (error: any) {
+    },
+    onError: (error: unknown) => {
+      const errorMessage =
+        error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : error instanceof Error
+            ? error.message
+            : "Errore sconosciuto";
       toast({
         title: "Errore",
-        description: error.response?.data?.message || error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-    }
-  };
+    },
+  });
 
-  const handleRemoveManager = async (managerUserId: string, managerName: string) => {
-    try {
+  const removeManagerMutation = useMutation({
+    mutationFn: async ({ managerUserId, managerName }: { managerUserId: string; managerName: string }) => {
       await managersApi.removeJamManager(jamId, managerUserId);
+      return { managerUserId, managerName };
+    },
+    onSuccess: ({ managerName }) => {
       toast({
         title: "Manager rimosso",
         description: `${managerName} non è più un manager di questa jam`,
       });
-      loadManagers();
+      queryClient.invalidateQueries({ queryKey: ["jam-managers", jamId] });
       onManagersUpdated();
-    } catch (error: any) {
+    },
+    onError: (error: unknown) => {
+      const errorMessage =
+        error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : error instanceof Error
+            ? error.message
+            : "Errore sconosciuto";
       toast({
         title: "Errore",
-        description: error.response?.data?.message || error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-    }
+    },
+  });
+
+  const handleAddManager = (userId: string, userName: string) => {
+    addManagerMutation.mutate({ userId, userName });
+  };
+
+  const handleRemoveManager = (managerUserId: string, managerName: string) => {
+    removeManagerMutation.mutate({ managerUserId, managerName });
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShieldEllipsis className="h-5 w-5" />
@@ -156,7 +183,7 @@ export const ManageManagersDialog = ({
 
             {/* Search results */}
             {searchResults.length > 0 && (
-              <div className="max-h-32 overflow-y-auto space-y-1">
+              <div className="max-h-48 overflow-y-auto space-y-1">
                 {searchResults.map((user) => (
                   <div
                     key={user.id}
@@ -169,7 +196,7 @@ export const ManageManagersDialog = ({
                     <Button
                       size="sm"
                       onClick={() => handleAddManager(user.id, user.name)}
-                      disabled={isSearching}
+                      disabled={isSearching || addManagerMutation.isPending}
                     >
                       <UserPlus className="h-4 w-4" />
                     </Button>
@@ -182,7 +209,7 @@ export const ManageManagersDialog = ({
           {/* Current managers */}
           <div className="space-y-2">
             <label htmlFor="managers" className="text-sm font-medium">Manager Attuali</label>
-            {isLoading ? (
+            {managersQuery.isLoading ? (
               <p className="text-sm text-muted-foreground">Caricamento...</p>
             ) : managers.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nessun manager aggiunto</p>
@@ -209,6 +236,7 @@ export const ManageManagersDialog = ({
                             `${manager.profiles.first_name} ${manager.profiles.last_name || ""}`.trim(),
                           )
                         }
+                        disabled={removeManagerMutation.isPending}
                       >
                         <X className="h-4 w-4" />
                       </Button>
