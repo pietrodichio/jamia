@@ -713,7 +713,12 @@ export class ParticipantsService {
       );
     }
 
-
+    // Log the role update
+    await this.auditService.log(participation.jam_id, userId, 'role_updated', {
+      previous_role: previousRole,
+      new_role: role,
+      target_user_id: participation.user_id,
+    });
 
     return updated;
   }
