@@ -6,20 +6,20 @@ import {
   IsBoolean,
   IsEnum,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { JamLocationDto } from './create-jam.dto';
 
 export class UpdateJamDto {
   @IsString()
   @IsOptional()
   name?: string;
 
-  @IsString()
+  @ValidateNested()
+  @Type(() => JamLocationDto)
   @IsOptional()
-  location_text?: string;
-
-  @IsString()
-  @IsOptional()
-  gmaps_link?: string;
+  location?: JamLocationDto;
 
   @IsDateString()
   @IsOptional()

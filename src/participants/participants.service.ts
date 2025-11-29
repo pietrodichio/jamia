@@ -54,6 +54,9 @@ type JamWithConfig = {
   auto_promote?: boolean | null;
   name?: string | null;
   starts_at?: string | null;
+  location?: Record<string, unknown> | null;
+  location_lat?: number | null;
+  location_lng?: number | null;
   location_text?: string | null;
 };
 
@@ -140,10 +143,29 @@ export class ParticipantsService {
       throw new Error(`Failed to fetch waiting list: ${waitingError.message}`);
     }
 
+    // Get cancelled participants (only for managers)
+    let cancelledData: any[] = [];
+    if (hasManagementAccess) {
+      const { data: cancelled, error: cancelledError } = await this.supabase
+        .from('jam_participants')
+        .select('*')
+        .eq('jam_id', jamId)
+        .eq('state', 'cancelled')
+        .order('cancelled_at', { ascending: false });
+
+      if (cancelledError) {
+        throw new Error(
+          `Failed to fetch cancelled participants: ${cancelledError.message}`,
+        );
+      }
+      cancelledData = cancelled || [];
+    }
+
     // Get profile data for participants
     const participantIds = participantsData?.map((p) => p.user_id) || [];
     const waitingIds = waitingData?.map((w) => w.user_id) || [];
-    const allUserIds = [...participantIds, ...waitingIds];
+    const cancelledIds = cancelledData?.map((c) => c.user_id) || [];
+    const allUserIds = [...participantIds, ...waitingIds, ...cancelledIds];
 
     let profilesData: any[] = [];
     if (allUserIds.length > 0) {
@@ -173,9 +195,17 @@ export class ParticipantsService {
         profiles: profilesData.find((p) => p.id === waiting.user_id),
       })) || [];
 
+    // Combine cancelled list with profile data
+    const cancelledList =
+      cancelledData?.map((cancelled) => ({
+        ...cancelled,
+        profiles: profilesData.find((p) => p.id === cancelled.user_id),
+      })) || [];
+
     return {
       participants: participants || [],
       waitingList: waitingList || [],
+      cancelledList: cancelledList || [],
     };
   }
 
@@ -183,7 +213,7 @@ export class ParticipantsService {
     const { data: jam, error: jamError } = await this.supabase
       .from('jams')
       .select(
-        'id, owner_id, status, capacity, desired_bases_max, desired_flyers_max, auto_promote, name, starts_at, location_text',
+        'id, owner_id, status, capacity, desired_bases_max, desired_flyers_max, auto_promote, name, starts_at, location_text, location, location_lat, location_lng',
       )
       .eq('id', jamId)
       .single();
@@ -267,6 +297,10 @@ export class ParticipantsService {
     const newState =
       totalCapacityReached || hasReachedRoleLimit ? 'waiting' : 'participant';
 
+    const jamLocationDescription =
+      (jam.location as { description?: string } | null)?.description ||
+      jam.location_text;
+
     const participationPayload = {
       role,
       state: newState,
@@ -326,7 +360,7 @@ export class ParticipantsService {
         jamId: jam.id,
         jamName: jam.name || 'la jam',
         jamStartsAt: jam.starts_at,
-        jamLocation: jam.location_text,
+        jamLocation: jamLocationDescription,
       });
     }
 
@@ -540,7 +574,9 @@ export class ParticipantsService {
     // Check if user is jam owner or manager
     const { data: jam } = await this.supabase
       .from('jams')
-      .select('owner_id, auto_promote, name, starts_at, location_text')
+      .select(
+        'owner_id, auto_promote, name, starts_at, location_text, location, location_lat, location_lng',
+      )
       .eq('id', participation.jam_id)
       .single();
 
@@ -573,6 +609,10 @@ export class ParticipantsService {
       );
     }
 
+    const jamLocationDescription =
+      (jam.location as { description?: string } | null)?.description ||
+      jam.location_text;
+
     // Delete participation
     const { error } = await this.supabase
       .from('jam_participants')
@@ -591,7 +631,7 @@ export class ParticipantsService {
       jamId: participation.jam_id,
       jamName: jam.name || 'la jam',
       jamStartsAt: jam.starts_at,
-      jamLocation: jam.location_text,
+      jamLocation: jamLocationDescription,
     });
 
     // If auto-promote is enabled, promote from waiting list
@@ -778,12 +818,16 @@ export class ParticipantsService {
       target_user_id: participation.user_id,
     });
 
+    const jamLocationDescription =
+      (jam.location as { description?: string } | null)?.description ||
+      jam.location_text;
+
     await this.notifyParticipantPromoted({
       userId: participation.user_id,
       jamId: participation.jam_id,
       jamName: jam.name || 'la jam',
       jamStartsAt: jam.starts_at,
-      jamLocation: jam.location_text,
+      jamLocation: jamLocationDescription,
     });
 
     return updated;
@@ -794,7 +838,7 @@ export class ParticipantsService {
     const { data: jam } = await this.supabase
       .from('jams')
       .select(
-        'capacity, auto_promote, desired_bases_max, desired_flyers_max, name, starts_at, location_text',
+        'capacity, auto_promote, desired_bases_max, desired_flyers_max, name, starts_at, location_text, location, location_lat, location_lng',
       )
       .eq('id', jamId)
       .single();
@@ -802,6 +846,10 @@ export class ParticipantsService {
     if (!jam || !jam.auto_promote) {
       return;
     }
+
+    const jamLocationDescription =
+      (jam.location as { description?: string } | null)?.description ||
+      jam.location_text;
 
     const activeParticipants = await this.fetchActiveParticipants(jamId);
     let roleCounts = this.calculateRoleCounts(activeParticipants);
@@ -873,7 +921,7 @@ export class ParticipantsService {
         jamId,
         jamName: jam.name || 'la jam',
         jamStartsAt: jam.starts_at,
-        jamLocation: jam.location_text,
+        jamLocation: jamLocationDescription,
       });
       break;
     }

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
-import { CreateJamDto } from './dto/create-jam.dto';
+import { CreateJamDto, JamLocationDto } from './dto/create-jam.dto';
 import { UpdateJamDto } from './dto/update-jam.dto';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
@@ -35,6 +35,40 @@ export class JamsService {
     private readonly auditService: AuditService,
     private readonly emailService: EmailService,
   ) {}
+
+  private buildLocationColumns(location?: JamLocationDto | null) {
+    if (!location || !location.description) {
+      return {};
+    }
+
+    const description = location.description.trim();
+    if (!description) {
+      throw new BadRequestException('Location description is required');
+    }
+
+    const latitude =
+      location.latitude !== undefined && Number.isFinite(Number(location.latitude))
+        ? Number(location.latitude)
+        : null;
+    const longitude =
+      location.longitude !== undefined && Number.isFinite(Number(location.longitude))
+        ? Number(location.longitude)
+        : null;
+
+    return {
+      location: {
+        description,
+        place_id: location.place_id?.trim() || null,
+        latitude,
+        longitude,
+        google_maps_url: location.google_maps_url?.trim() || null,
+      },
+      location_text: description,
+      gmaps_link: location.google_maps_url?.trim() || null,
+      location_lat: latitude,
+      location_lng: longitude,
+    };
+  }
 
   async getPublishedJams() {
     const { data, error } = await this.supabase
@@ -68,7 +102,8 @@ export class JamsService {
   }
 
   async getMyJams(userId: string) {
-    const { data, error } = await this.supabase
+    // 1. Get owned jams
+    const { data: ownedJams, error: ownedError } = await this.supabase
       .from('jams')
       .select(
         `
@@ -79,15 +114,59 @@ export class JamsService {
         )
       `,
       )
-      .eq('owner_id', userId)
-      .order('starts_at', { ascending: true });
+      .eq('owner_id', userId);
 
-    if (error) {
-      throw new Error(`Failed to fetch user jams: ${error.message}`);
+    if (ownedError) {
+      throw new Error(`Failed to fetch owned jams: ${ownedError.message}`);
     }
 
-    // Calculate participant counts
-    return (data || []).map((jam) => ({
+    // 2. Get managed jams
+    const { data: managedRelations, error: managedError } = await this.supabase
+      .from('jam_managers')
+      .select('jam_id')
+      .eq('user_id', userId);
+
+    if (managedError) {
+      throw new Error(`Failed to fetch managed jams: ${managedError.message}`);
+    }
+
+    let managedJams: any[] = [];
+    if (managedRelations && managedRelations.length > 0) {
+      const jamIds = managedRelations.map((r) => r.jam_id);
+      const { data: jams, error: jamsError } = await this.supabase
+        .from('jams')
+        .select(
+          `
+          *,
+          jam_participants (
+            id,
+            state
+          )
+        `,
+        )
+        .in('id', jamIds);
+
+      if (jamsError) {
+        throw new Error(`Failed to fetch managed jam details: ${jamsError.message}`);
+      }
+      managedJams = jams || [];
+    }
+
+    // 3. Combine and deduplicate (just in case)
+    const allJamsMap = new Map();
+    [...(ownedJams || []), ...managedJams].forEach((jam) => {
+      allJamsMap.set(jam.id, jam);
+    });
+
+    const allJams = Array.from(allJamsMap.values());
+
+    // 4. Sort by starts_at
+    allJams.sort((a, b) => {
+      return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
+    });
+
+    // 5. Calculate participant counts
+    return allJams.map((jam) => ({
       ...jam,
       participant_count:
         jam.jam_participants?.filter((p: any) => p.state === 'participant')
@@ -252,11 +331,21 @@ export class JamsService {
       throw new BadRequestException('End date must be after start date');
     }
 
+    const locationColumns = this.buildLocationColumns(createJamDto.location);
+    if (!locationColumns.location_text) {
+      throw new BadRequestException('Location description is required');
+    }
+    const {
+      location: _ignoredLocation,
+      ...createJamWithoutLocation
+    } = createJamDto as unknown as Record<string, unknown>;
+
     const { data, error } = await this.supabase
       .from('jams')
       .insert({
         owner_id: userId,
-        ...createJamDto,
+        ...createJamWithoutLocation,
+        ...locationColumns,
         status: 'draft',
       })
       .select()
@@ -306,9 +395,18 @@ export class JamsService {
       }
     }
 
+    const { location, ...updateWithoutLocation } =
+      updateJamDto as Record<string, unknown>;
+    const locationColumns = location
+      ? this.buildLocationColumns(location as JamLocationDto)
+      : {};
+
     const { data, error } = await this.supabase
       .from('jams')
-      .update(updateJamDto)
+      .update({
+        ...updateWithoutLocation,
+        ...locationColumns,
+      })
       .eq('id', jamId)
       .select()
       .single();
@@ -457,16 +555,25 @@ export class JamsService {
     // Create new jam with basic details (no dates, no participants)
     const { data, error } = await this.supabase
       .from('jams')
-      .insert({
-        owner_id: userId,
-        name: `${originalJam.name} (Copia)`,
-        location_text: originalJam.location_text,
-        gmaps_link: originalJam.gmaps_link,
-        description: originalJam.description,
-        capacity: originalJam.capacity,
-        desired_bases_min: originalJam.desired_bases_min,
-        desired_bases_max: originalJam.desired_bases_max,
-        desired_flyers_min: originalJam.desired_flyers_min,
+        .insert({
+          owner_id: userId,
+          name: `${originalJam.name} (Copia)`,
+          location: originalJam.location || null,
+          location_text: originalJam.location?.description || originalJam.location_text,
+          gmaps_link: originalJam.location?.google_maps_url || originalJam.gmaps_link,
+          location_lat:
+            originalJam.location?.latitude !== undefined
+              ? originalJam.location?.latitude
+              : originalJam.location_lat,
+          location_lng:
+            originalJam.location?.longitude !== undefined
+              ? originalJam.location?.longitude
+              : originalJam.location_lng,
+          description: originalJam.description,
+          capacity: originalJam.capacity,
+          desired_bases_min: originalJam.desired_bases_min,
+          desired_bases_max: originalJam.desired_bases_max,
+          desired_flyers_min: originalJam.desired_flyers_min,
         desired_flyers_max: originalJam.desired_flyers_max,
         auto_promote: originalJam.auto_promote,
         status: 'draft',

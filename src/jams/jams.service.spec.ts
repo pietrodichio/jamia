@@ -59,12 +59,29 @@ describe('JamsService', () => {
 
     await service.createJam('owner-1', {
       name: 'Morning Jam',
-      location_text: 'Park',
+      location: {
+        description: 'Park',
+        latitude: 45.1,
+        longitude: 9.1,
+        google_maps_url: 'https://maps.google.com/?q=park',
+      },
       starts_at: new Date().toISOString(),
       ends_at: new Date(Date.now() + 3600000).toISOString(),
     });
 
     expect(jamInsertPayloads).toHaveLength(1);
+    expect(jamInsertPayloads[0]).toMatchObject({
+      owner_id: 'owner-1',
+      location_text: 'Park',
+      location_lat: 45.1,
+      location_lng: 9.1,
+      location: {
+        description: 'Park',
+        latitude: 45.1,
+        longitude: 9.1,
+        google_maps_url: 'https://maps.google.com/?q=park',
+      },
+    });
     expect(participantInsertPayloads).toHaveLength(1);
     expect(participantInsertPayloads[0]).toMatchObject({
       jam_id: 'jam-create',

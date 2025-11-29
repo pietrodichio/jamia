@@ -11,12 +11,24 @@ import { ManagersService } from './managers.service';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { User, AuthUser } from '../auth/user.decorator';
 
-@Controller('jams/:jamId/managers')
+@Controller()
 @UseGuards(SupabaseAuthGuard)
 export class ManagersController {
   constructor(private readonly managersService: ManagersService) {}
 
-  @Get()
+  @Post('jams/managers/batch')
+  async getJamManagersBatch(
+    @Body() body: { jamIds: string[] },
+    @User() user: AuthUser,
+  ) {
+    return this.managersService.getJamManagersBatch(
+      body.jamIds,
+      user.id,
+      user.isSuperAdmin,
+    );
+  }
+
+  @Get('jams/:jamId/managers')
   async getJamManagers(@Param('jamId') jamId: string, @User() user: AuthUser) {
     return this.managersService.getJamManagers(
       jamId,
@@ -25,7 +37,7 @@ export class ManagersController {
     );
   }
 
-  @Post()
+  @Post('jams/:jamId/managers')
   async addJamManager(
     @Param('jamId') jamId: string,
     @Body() body: { userId: string },
@@ -39,7 +51,7 @@ export class ManagersController {
     );
   }
 
-  @Delete(':managerUserId')
+  @Delete('jams/:jamId/managers/:managerUserId')
   async removeJamManager(
     @Param('jamId') jamId: string,
     @Param('managerUserId') managerUserId: string,

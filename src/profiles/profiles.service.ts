@@ -15,8 +15,6 @@ export class ProfilesService {
   ) {}
 
   async getProfile(profileId: string) {
-    console.log('Fetching profile for ID:', profileId);
-
     const { data, error } = await this.supabase
       .from('profiles')
       .select('*')
@@ -44,11 +42,6 @@ export class ProfilesService {
     if (profileId !== userId) {
       throw new ForbiddenException('You can only update your own profile');
     }
-
-    console.log('Updating profile for ID:', profileId);
-    console.log('Update data:', updateProfileDto);
-
-    console.log('type of updateProfileDto:', typeof updateProfileDto);
 
     const { data, error } = await this.supabase
       .from('profiles')

@@ -194,4 +194,117 @@ export class ManagersService {
 
     return data || false;
   }
+
+  async getJamManagersBatch(
+    jamIds: string[],
+    userId: string,
+    isSuperAdmin = false,
+  ): Promise<Record<string, any[]>> {
+    if (!jamIds || jamIds.length === 0) {
+      return {};
+    }
+
+    // Get all jams to check ownership
+    const { data: jams, error: jamsError } = await this.supabase
+      .from('jams')
+      .select('id, owner_id')
+      .in('id', jamIds);
+
+    if (jamsError) {
+      throw new Error(`Failed to fetch jams: ${jamsError.message}`);
+    }
+
+    if (!jams || jams.length === 0) {
+      return {};
+    }
+
+    const accessibleJamIds: string[] = [];
+    const jamMap = new Map(jams.map((jam) => [jam.id, jam]));
+
+    if (isSuperAdmin) {
+      // Super admin can access all jams
+      accessibleJamIds.push(...jamIds);
+    } else {
+      // Check which jams user can access (owner or manager)
+      const ownedJamIds = jams
+        .filter((jam) => jam.owner_id === userId)
+        .map((jam) => jam.id);
+
+      const remainingJamIds = jamIds.filter(
+        (id) => !ownedJamIds.includes(id),
+      );
+
+      if (remainingJamIds.length > 0) {
+        // Check if user is a manager for any remaining jams
+        const { data: managerRelations } = await this.supabase
+          .from('jam_managers')
+          .select('jam_id')
+          .in('jam_id', remainingJamIds)
+          .eq('user_id', userId);
+
+        const managedJamIds =
+          managerRelations?.map((r) => r.jam_id) || [];
+
+        accessibleJamIds.push(...ownedJamIds, ...managedJamIds);
+      } else {
+        accessibleJamIds.push(...ownedJamIds);
+      }
+    }
+
+    if (accessibleJamIds.length === 0) {
+      // User has no access to any jams, return empty map
+      return jamIds.reduce((acc, id) => {
+        acc[id] = [];
+        return acc;
+      }, {} as Record<string, any[]>);
+    }
+
+    // Fetch all managers for accessible jams in one query
+    const { data: allManagers, error: managersError } = await this.supabase
+      .from('jam_managers')
+      .select(
+        `
+        id,
+        jam_id,
+        user_id,
+        added_by,
+        created_at,
+        profiles (
+          id,
+          first_name,
+          last_name,
+          email
+        )
+      `,
+      )
+      .in('jam_id', accessibleJamIds)
+      .order('created_at', { ascending: true });
+
+    if (managersError) {
+      throw new Error(
+        `Failed to fetch jam managers: ${managersError.message}`,
+      );
+    }
+
+    // Group managers by jam_id
+    const managersByJam: Record<string, any[]> = {};
+
+    // Initialize all jam IDs with empty arrays
+    for (const jamId of jamIds) {
+      managersByJam[jamId] = [];
+    }
+
+    // Populate managers for accessible jams
+    if (allManagers) {
+      for (const manager of allManagers) {
+        const jamId = manager.jam_id;
+        if (!managersByJam[jamId]) {
+          managersByJam[jamId] = [];
+        }
+        managersByJam[jamId].push(manager);
+      }
+    }
+
+    return managersByJam;
+  }
 }
