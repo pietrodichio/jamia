@@ -1,13 +1,10 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format, formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
-import { UserX } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { participantsApi } from "@/api/participants.api";
+import { participantsApi, type ParticipantUpdatableRole } from "@/api/participants.api";
 import { useToast } from "@/hooks/use-toast";
-import { UserAvatar } from "@/components/UserAvatar";
+import { ParticipantRow } from "./ParticipantRow";
 
 interface WaitingListProps {
   waitingList: any[];
@@ -24,6 +21,7 @@ export const WaitingList = ({
 }: WaitingListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [updatingParticipantId, setUpdatingParticipantId] = useState<string | null>(null);
 
   const removeParticipantMutation = useMutation({
     mutationFn: (participantId: string) => participantsApi.removeParticipant(participantId),
@@ -64,9 +62,39 @@ export const WaitingList = ({
     },
   });
 
-  const handleRemoveParticipant = (participantId: string, participantName: string) => {
-    if (confirm(`Sei sicuro di voler rimuovere ${participantName} dalla lista d'attesa?`)) {
-      removeParticipantMutation.mutate(participantId);
+  const updateRoleMutation = useMutation<
+    void,
+    unknown,
+    { participantId: string; role: ParticipantUpdatableRole }
+  >({
+    mutationFn: async ({ participantId, role }) => {
+      setUpdatingParticipantId(participantId);
+      await participantsApi.updateRole(participantId, role);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Ruolo aggiornato",
+        description: "Il ruolo del partecipante è stato aggiornato",
+      });
+      onParticipantsUpdated?.();
+      queryClient.invalidateQueries({ queryKey: ['jam-participants', jamId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Errore",
+        description: error.response?.data?.message || "Impossibile aggiornare il ruolo del partecipante",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
+      setUpdatingParticipantId(null);
+    },
+  });
+
+  const handleRemoveParticipant = (participant: any) => {
+    const name = participant.profiles?.first_name || 'questo partecipante';
+    if (confirm(`Sei sicuro di voler rimuovere ${name} dalla lista d'attesa?`)) {
+      removeParticipantMutation.mutate(participant.id);
     }
   };
 
@@ -76,29 +104,14 @@ export const WaitingList = ({
     }
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "base": return "bg-blue-500/10 text-blue-600";
-      case "flyer": return "bg-pink-500/10 text-pink-600";
-      default: return "bg-purple-500/10 text-purple-600";
+  const handleChangeRole = (
+    participant: any,
+    role: ParticipantUpdatableRole,
+  ) => {
+    if (participant.role === role) {
+      return;
     }
-  };
-
-  const formatJoinedDate = (joinedAt: string) => {
-    const date = new Date(joinedAt);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
-    if (diffInHours < 24) {
-      // If less than 24 hours, show relative time
-      return formatDistanceToNow(date, { addSuffix: true, locale: it });
-    } else if (diffInHours < 24 * 7) {
-      // If less than a week, show day and time
-      return format(date, "EEEE 'alle' HH:mm", { locale: it });
-    } else {
-      // If more than a week, show full date
-      return format(date, "d MMMM 'alle' HH:mm", { locale: it });
-    }
+    updateRoleMutation.mutate({ participantId: participant.id, role });
   };
 
   if (waitingList.length === 0) {
@@ -117,58 +130,30 @@ export const WaitingList = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {waitingList.map((w, index) => (
-            <div
+          {waitingList.map((w) => (
+            <ParticipantRow
               key={w.id}
-              className="flex items-center justify-between p-3 bg-accent/20 rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
-                <UserAvatar
-                  photoUrl={w.profiles?.photo_url}
-                  firstName={w.profiles?.first_name}
-                  lastName={w.profiles?.last_name}
-                  size="md"
-                />
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">
-                      {w.profiles?.first_name} {w.profiles?.last_name || ''}
-                    </p>
-                    <Badge className={getRoleBadgeColor(w.role)}>
-                      {w.role === "base" ? "Base" : w.role === "flyer" ? "Flyer" : "Both"}
-                    </Badge>
-                  </div>
-                  {w.profiles?.phone && (
-                    <p className="text-sm text-muted-foreground">{w.profiles.phone}</p>
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {formatJoinedDate(w.joined_at)}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {canPromote && (
+              participant={w}
+              isOwner={true} // Assuming if they can see this component they have management rights (as per usage in JamParticipantsPage)
+              canEditRole={true}
+              onRemove={handleRemoveParticipant}
+              isRemoving={removeParticipantMutation.isPending}
+              onChangeRole={(role) => handleChangeRole(w, role)}
+              isUpdatingRole={updatingParticipantId === w.id && updateRoleMutation.isPending}
+              extraActions={
+                canPromote && (
                   <Button
                     size="sm"
                     variant="secondary"
+                    className="w-full sm:w-fit"
                     onClick={() => handlePromoteParticipant(w.id, w.profiles?.first_name || 'questo partecipante')}
                     disabled={promoteParticipantMutation.isPending}
                   >
                     Promuovi
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveParticipant(w.id, w.profiles?.first_name || 'questo partecipante')}
-                  disabled={removeParticipantMutation.isPending}
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <UserX className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+                )
+              }
+            />
           ))}
         </div>
       </CardContent>

@@ -6,12 +6,16 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { ManageManagersDialog } from "./ManageManagersDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface JamCardProps {
   jam: {
     id: string;
     name: string;
-    location_text: string;
+    location_text?: string;
+    location?: {
+      description?: string;
+    };
     starts_at: string;
     ends_at: string;
     status: "draft" | "published" | "archived";
@@ -70,6 +74,8 @@ const JamCard = ({
     action();
   };
 
+  const locationLabel = jam.location?.description || jam.location_text;
+
   return (
     <Card
       className="border-primary/10 rounded-2xl hover:shadow-lg transition-all cursor-pointer group relative"
@@ -119,7 +125,20 @@ const JamCard = ({
         </div>
         <CardDescription className="flex items-center gap-1 text-sm">
           <MapPin className="h-3 w-3" />
-          {jam.location_text}
+          {locationLabel && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="truncate max-w-[200px] sm:max-w-[400px]">
+                        {locationLabel}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>{locationLabel}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -144,7 +163,7 @@ const JamCard = ({
               </span>
               {isFull && <Badge variant="secondary" className="text-xs">Completo</Badge>}
               {waitingCount > 0 && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs whitespace-nowrap">
                   {waitingCount} in attesa
                 </Badge>
               )}

@@ -69,9 +69,7 @@ export const ManageManagersDialog = ({
 
       // Filter out users who are already managers
       const managerIds = managers.map((m) => m.user_id);
-      const filteredResults = data.filter(
-        (user) => !managerIds.includes(user.id)
-      );
+      const filteredResults = data.filter((user) => !managerIds.includes(user.id));
 
       setSearchResults(filteredResults);
     } catch (error: any) {
@@ -136,18 +134,19 @@ export const ManageManagersDialog = ({
             Gestisci Manager
           </DialogTitle>
           <DialogDescription>
-            Aggiungi o rimuovi manager per questa jam. I manager hanno gli stessi
-            permessi del proprietario.
+            Aggiungi o rimuovi manager per questa jam. I manager hanno gli stessi permessi del
+            proprietario.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Search for new managers */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Aggiungi Manager</label>
+            <label htmlFor="search" className="text-sm font-medium">Aggiungi Manager</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                id="search"
                 placeholder="Cerca per nome o email..."
                 value={searchQuery}
                 onChange={handleSearchChange}
@@ -182,13 +181,11 @@ export const ManageManagersDialog = ({
 
           {/* Current managers */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Manager Attuali</label>
+            <label htmlFor="managers" className="text-sm font-medium">Manager Attuali</label>
             {isLoading ? (
               <p className="text-sm text-muted-foreground">Caricamento...</p>
             ) : managers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Nessun manager aggiunto
-              </p>
+              <p className="text-sm text-muted-foreground">Nessun manager aggiunto</p>
             ) : (
               <div className="space-y-2">
                 {managers.map((manager) => (
@@ -198,18 +195,19 @@ export const ManageManagersDialog = ({
                   >
                     <div>
                       <p className="font-medium">
-                        {manager.profiles.first_name} {manager.profiles.last_name || ''}
+                        {manager.profiles.first_name} {manager.profiles.last_name || ""}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        {manager.profiles.email}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{manager.profiles.email}</p>
                     </div>
                     {isOwner && (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() =>
-                          handleRemoveManager(manager.user_id, `${manager.profiles.first_name} ${manager.profiles.last_name || ''}`.trim())
+                          handleRemoveManager(
+                            manager.user_id,
+                            `${manager.profiles.first_name} ${manager.profiles.last_name || ""}`.trim(),
+                          )
                         }
                       >
                         <X className="h-4 w-4" />

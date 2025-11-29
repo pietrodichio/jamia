@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { ParticipantsList } from "@/components/ParticipantsList";
 import { WaitingList } from "@/components/WaitingList";
+import { CancelledParticipantsList } from "@/components/CancelledParticipantsList";
 import { useJamDetailsContext } from "./useJamDetailsContext";
 
 const JamParticipantsPage = () => {
@@ -8,6 +9,7 @@ const JamParticipantsPage = () => {
     jam,
     participants,
     waitingList,
+    cancelledList,
     isOwner,
     isAuthenticated,
     isManager,
@@ -51,12 +53,15 @@ const JamParticipantsPage = () => {
       />
 
       {isOwnerOrManager && (
-        <WaitingList
-          waitingList={waitingList}
-          jamId={jam.id}
-          onParticipantsUpdated={actions.onParticipantsUpdated}
-          canPromote={canManuallyPromote}
-        />
+        <>
+          <WaitingList
+            waitingList={waitingList}
+            jamId={jam.id}
+            onParticipantsUpdated={actions.onParticipantsUpdated}
+            canPromote={canManuallyPromote}
+          />
+          <CancelledParticipantsList cancelledList={cancelledList} />
+        </>
       )}
     </div>
   );

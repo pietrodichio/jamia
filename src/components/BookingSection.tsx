@@ -1,17 +1,10 @@
 import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Loader2, UserCheck, UserX, AlertTriangle } from "lucide-react";
+import { Loader2, UserCheck, UserX } from "lucide-react";
 import { type Jam } from "@/api/jams.api";
 import { type Participant } from "@/api/participants.api";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { CancelParticipationDialog } from "@/components/CancelParticipationDialog";
 
 const redirectToAuth = (mode: "login" | "signup") => {
   localStorage.setItem("jamia_redirect_url", window.location.pathname);
@@ -91,41 +84,6 @@ const ParticipationBanner = ({
     onCancelParticipation();
   };
 
-  const CancelParticipationDialog = () => (
-    <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
-      <DialogContent className="rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-            Annulla partecipazione
-          </DialogTitle>
-          <DialogDescription>
-            Sei sicuro di voler annullare la tua partecipazione a questa jam? 
-            Potresti perdere il tuo posto e non essere in grado di rientrare se la jam è piena.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setIsCancelDialogOpen(false)}
-            className="rounded-xl"
-          >
-            Mantieni partecipazione
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleConfirmCancel}
-            disabled={isCancelling}
-            className="rounded-xl"
-          >
-            {isCancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Annulla partecipazione
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
   return (
     <div className="space-y-3">
       <div
@@ -151,7 +109,12 @@ const ParticipationBanner = ({
         {isCancelling ? "Annullamento..." : "Annulla partecipazione"}
       </Button>
       
-      <CancelParticipationDialog />
+      <CancelParticipationDialog
+        open={isCancelDialogOpen}
+        onOpenChange={setIsCancelDialogOpen}
+        onConfirm={handleConfirmCancel}
+        isCancelling={isCancelling}
+      />
     </div>
   );
 };

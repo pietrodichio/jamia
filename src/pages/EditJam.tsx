@@ -1,8 +1,9 @@
 import { useEffect } from "react";
+
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { jamsApi } from "@/api/jams.api";
+import { jamsApi, type JamLocation } from "@/api/jams.api";
 import { managersApi } from "@/api/managers.api";
 import { profilesApi } from "@/api/profiles.api";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { sanitizeHtml } from "@/lib/sanitize";
 import JamForm from "@/components/jams/JamForm";
 import { useJamForm } from "@/hooks/useJamForm";
-import { JamFormValues } from "@/lib/jam-form";
+import { JamFormValues, formatDateTimeLocalInput } from "@/lib/jam-form";
 
 const EditJam = () => {
   const { id } = useParams<{ id: string }>();
@@ -91,10 +92,15 @@ const EditJam = () => {
     if (jam) {
       reset({
         name: jam.name,
-        location_text: jam.location_text,
-        gmaps_link: jam.gmaps_link || "",
-        starts_at: jam.starts_at ? new Date(jam.starts_at).toISOString().slice(0, 16) : "",
-        ends_at: jam.ends_at ? new Date(jam.ends_at).toISOString().slice(0, 16) : "",
+        location: {
+          description: jam.location?.description || jam.location_text || "",
+          place_id: jam.location?.place_id,
+          latitude: jam.location?.latitude ?? jam.location_lat,
+          longitude: jam.location?.longitude ?? jam.location_lng,
+          google_maps_url: jam.location?.google_maps_url || jam.gmaps_link || undefined,
+        },
+        starts_at: jam.starts_at ? formatDateTimeLocalInput(new Date(jam.starts_at)) : "",
+        ends_at: jam.ends_at ? formatDateTimeLocalInput(new Date(jam.ends_at)) : "",
         description: jam.description || "",
         capacity: jam.capacity ?? undefined,
         desired_bases_min: jam.desired_bases_min ?? undefined,
@@ -127,11 +133,17 @@ const EditJam = () => {
       const startsAtUTC = start.toISOString();
       const endsAtUTC = end.toISOString();
       const sanitizedDescription = sanitizeHtml(data.description || "");
+      const location: JamLocation = {
+        description: data.location.description,
+        place_id: data.location.place_id || undefined,
+        google_maps_url: data.location.google_maps_url || undefined,
+        latitude: data.location.latitude,
+        longitude: data.location.longitude,
+      };
 
       await jamsApi.updateJam(id, {
         name: data.name,
-        location_text: data.location_text,
-        gmaps_link: data.gmaps_link || undefined,
+        location,
         starts_at: startsAtUTC,
         ends_at: endsAtUTC,
         description: sanitizedDescription || undefined,
