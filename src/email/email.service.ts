@@ -48,7 +48,7 @@ export class EmailService {
 
     if (!this.fromEmail) {
       this.logger.warn(
-        'RESEND_FROM_EMAIL is not configured. Email delivery is disabled.',
+        'RESEND_FROM_EMAIL is not configured. Email delivery is disabled',
       );
     }
 
