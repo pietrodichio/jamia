@@ -35,6 +35,7 @@ describe('ParticipantsService', () => {
             error: null,
           },
         },
+        { response: { data: [], error: null } },
         {
           response: {
             data: {
@@ -52,6 +53,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     const result = await service.joinJam('jam-1', 'user-both', {
@@ -95,6 +97,7 @@ describe('ParticipantsService', () => {
             error: null,
           },
         },
+        { response: { data: [], error: null } },
         {
           response: {
             data: {
@@ -112,6 +115,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     const result = await service.joinJam('jam-2', 'user-both', {
@@ -153,6 +157,7 @@ describe('ParticipantsService', () => {
           },
         },
         { response: { data: [], error: null } },
+        { response: { data: [], error: null } },
         {
           response: {
             data: {
@@ -178,6 +183,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     const result = await service.joinJam('jam-3', 'user-cancelled', {
@@ -231,6 +237,7 @@ describe('ParticipantsService', () => {
             error: null,
           },
         },
+        { response: { data: [], error: null } },
         {
           response: {
             data: {
@@ -256,6 +263,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     const result = await service.joinJam('jam-4', 'user-waiting', {
@@ -365,6 +373,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     await service.cancelParticipation('participant-1', 'user-original');
@@ -393,6 +402,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     await expect(
@@ -440,6 +450,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     const result = await service.updateParticipantRole(
@@ -511,6 +522,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     await expect(
@@ -587,6 +599,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     const result = await service.promoteWaitingParticipant(
@@ -644,6 +657,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     await expect(
@@ -666,6 +680,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     await expect(
@@ -724,6 +739,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     const result = await service.joinJam('jam-fair-1', 'new-user', {
@@ -749,7 +765,7 @@ describe('ParticipantsService', () => {
       id: 'jam-fair-2',
       status: 'published',
       capacity: 2,
-      desired_bases_max: 2,
+      desired_bases_max: 1,
       desired_flyers_max: 1,
       auto_promote: false,
     };
@@ -763,21 +779,21 @@ describe('ParticipantsService', () => {
         { response: { data: null, error: null } },
         // cancelledParticipation
         { response: { data: null, error: null } },
-        // activeParticipants
+        // activeParticipants: 1 base (base capacity is now full at 1/1)
         {
           response: {
-            data: [{ id: 'p-flyer', role: 'flyer' }],
+            data: [{ id: 'p-base', role: 'base' }],
             error: null,
           },
         },
-        // waitingList - only bases, but base capacity is already full (1/1)
+        // waitingList: 1 base (cannot be admitted because base is at max 1/1)
         {
           response: {
             data: [{ id: 'w-base', role: 'base' }],
             error: null,
           },
         },
-        // insert new participant (flyer)
+        // insert new participant (flyer) - should be admitted because flyer capacity is 0/1
         {
           response: {
             data: {
@@ -795,6 +811,7 @@ describe('ParticipantsService', () => {
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
+      null as any,
     );
 
     const result = await service.joinJam('jam-fair-2', 'new-flyer', {
