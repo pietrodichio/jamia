@@ -104,3 +104,17 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Prevent iOS zoom on React-Quill editor by ensuring minimum 16px font-size on mobile */
+/* iOS Safari automatically zooms when input/textarea/contentEditable has font-size < 16px */
+@media (max-width: 767px) {
+  .description-editor-wrapper .ql-editor {
+    font-size: 16px !important;
+    min-height: 1.5rem;
+  }
+  
+  /* Ensure placeholder text also respects minimum size */
+  .description-editor-wrapper .ql-editor.ql-blank::before {
+    font-size: 16px !important;
+  }
+}

@@ -29,7 +29,7 @@ export const DescriptionEditor = ({ value, onChange, disabled }: DescriptionEdit
   return (
     <div className="space-y-2">
       <Label htmlFor="jam-description">Descrizione</Label>
-      <div className="rounded-xl border border-input focus-within:ring-2 focus-within:ring-ring">
+      <div className="description-editor-wrapper rounded-xl border border-input focus-within:ring-2 focus-within:ring-ring">
         <ReactQuill
           theme="snow"
           value={value}
