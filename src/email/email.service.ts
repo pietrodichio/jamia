@@ -31,7 +31,9 @@ export class EmailService {
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    this.fromEmail = this.configService.get<string>('RESEND_FROM_EMAIL') || '';
+    const rawFromEmail =
+      this.configService.get<string>('RESEND_FROM_EMAIL') || '';
+    this.fromEmail = this.normalizeFromEmail(rawFromEmail);
     this.frontendBaseUrl =
       this.configService.get<string>('FRONTEND_BASE_URL') || null;
 
@@ -334,5 +336,31 @@ export class EmailService {
 
     const trimmedBase = this.frontendBaseUrl.replace(/\/+$/, '');
     return `${trimmedBase}/jams/${jamId}`;
+  }
+
+  /**
+   * Normalizes the configured "from" email so it always matches
+   * the format Resend expects: `email@example.com` or `Name <email@example.com>`.
+   *
+   * This is especially important in production where environment
+   * variables are often written with surrounding quotes, e.g.:
+   * RESEND_FROM_EMAIL="Jamia <noreply@notifications.jamia.app>"
+   */
+  private normalizeFromEmail(value: string): string {
+    if (!value) {
+      return '';
+    }
+
+    let normalized = value.trim();
+
+    // Strip one level of surrounding single or double quotes, if present
+    if (
+      (normalized.startsWith('"') && normalized.endsWith('"')) ||
+      (normalized.startsWith("'") && normalized.endsWith("'"))
+    ) {
+      normalized = normalized.slice(1, -1).trim();
+    }
+
+    return normalized;
   }
 }

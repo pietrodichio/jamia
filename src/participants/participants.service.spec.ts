@@ -672,4 +672,147 @@ describe('ParticipantsService', () => {
       service.updateParticipantRole('missing', 'user-1', 'base'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('waitlists a new signup when a waiting participant could be admitted and auto-promote is disabled', async () => {
+    const jam = {
+      id: 'jam-fair-1',
+      status: 'published',
+      capacity: 2,
+      desired_bases_max: 1,
+      desired_flyers_max: 1,
+      auto_promote: false,
+    };
+
+    const insertedRecords: unknown[] = [];
+
+    const supabase = createSupabaseMock({
+      jams: [{ response: { data: jam, error: null } }],
+      jam_participants: [
+        // existingParticipation
+        { response: { data: null, error: null } },
+        // cancelledParticipation
+        { response: { data: null, error: null } },
+        // activeParticipants
+        {
+          response: {
+            data: [{ id: 'p-base', role: 'base' }],
+            error: null,
+          },
+        },
+        // waitingList
+        {
+          response: {
+            data: [{ id: 'w-flyer', role: 'flyer' }],
+            error: null,
+          },
+        },
+        // insert new participant
+        {
+          response: {
+            data: {
+              id: 'new-user',
+              role: 'base',
+              state: 'waiting',
+            },
+            error: null,
+          },
+          onInsert: (payload) => insertedRecords.push(payload),
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    const result = await service.joinJam('jam-fair-1', 'new-user', {
+      role: 'base',
+    });
+
+    expect(result.state).toBe('waiting');
+    expect(insertedRecords).toHaveLength(1);
+    expect(insertedRecords[0]).toMatchObject({
+      state: 'waiting',
+      role: 'base',
+    });
+    expect(auditService.log).toHaveBeenCalledWith(
+      'jam-fair-1',
+      'new-user',
+      'joined',
+      expect.objectContaining({ state: 'waiting', role: 'base' }),
+    );
+  });
+
+  it('admits a new signup as participant when only their role fits remaining capacity and auto-promote is disabled', async () => {
+    const jam = {
+      id: 'jam-fair-2',
+      status: 'published',
+      capacity: 2,
+      desired_bases_max: 2,
+      desired_flyers_max: 1,
+      auto_promote: false,
+    };
+
+    const insertedRecords: unknown[] = [];
+
+    const supabase = createSupabaseMock({
+      jams: [{ response: { data: jam, error: null } }],
+      jam_participants: [
+        // existingParticipation
+        { response: { data: null, error: null } },
+        // cancelledParticipation
+        { response: { data: null, error: null } },
+        // activeParticipants
+        {
+          response: {
+            data: [{ id: 'p-flyer', role: 'flyer' }],
+            error: null,
+          },
+        },
+        // waitingList - only bases, but base capacity is already full (1/1)
+        {
+          response: {
+            data: [{ id: 'w-base', role: 'base' }],
+            error: null,
+          },
+        },
+        // insert new participant (flyer)
+        {
+          response: {
+            data: {
+              id: 'new-flyer',
+              role: 'flyer',
+              state: 'participant',
+            },
+            error: null,
+          },
+          onInsert: (payload) => insertedRecords.push(payload),
+        },
+      ],
+    });
+
+    const service = new ParticipantsService(
+      supabase.client,
+      auditService as any,
+    );
+
+    const result = await service.joinJam('jam-fair-2', 'new-flyer', {
+      role: 'flyer',
+    });
+
+    expect(result.state).toBe('participant');
+    expect(result.role).toBe('flyer');
+    expect(insertedRecords).toHaveLength(1);
+    expect(insertedRecords[0]).toMatchObject({
+      state: 'participant',
+      role: 'flyer',
+    });
+    expect(auditService.log).toHaveBeenCalledWith(
+      'jam-fair-2',
+      'new-flyer',
+      'joined',
+      expect.objectContaining({ state: 'participant', role: 'flyer' }),
+    );
+  });
 });

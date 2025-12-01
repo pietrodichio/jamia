@@ -293,9 +293,17 @@ export class ParticipantsService {
       jam.capacity !== undefined &&
       roleCounts.total >= jam.capacity;
 
+    const waitingList = await this.fetchWaitingList(jam.id);
+    const canWaitingUserBeAdmitted =
+      !jam.auto_promote &&
+      !totalCapacityReached &&
+      this.canAnyWaitingUserBeAdmitted(waitingList, roleCounts, jam);
+
     // Determine if user should be participant or on waiting list
     const newState =
-      totalCapacityReached || hasReachedRoleLimit ? 'waiting' : 'participant';
+      totalCapacityReached || hasReachedRoleLimit || canWaitingUserBeAdmitted
+        ? 'waiting'
+        : 'participant';
 
     const jamLocationDescription =
       (jam.location as { description?: string } | null)?.description ||
@@ -1156,6 +1164,24 @@ export class ParticipantsService {
     }>;
   }
 
+  private async fetchWaitingList(jamId: string) {
+    const { data, error } = await this.supabase
+      .from('jam_participants')
+      .select('id, role')
+      .eq('jam_id', jamId)
+      .eq('state', 'waiting')
+      .order('joined_at', { ascending: true });
+
+    if (error) {
+      throw new Error(`Failed to fetch waiting list: ${error.message}`);
+    }
+
+    return (data || []) as Array<{
+      id: string;
+      role: ParticipantRole;
+    }>;
+  }
+
   private resolveEffectiveRole(role: ParticipantRole): 'base' | 'flyer' {
     if (role === 'both') {
       return 'flyer';
@@ -1219,5 +1245,29 @@ export class ParticipantsService {
 
     const current = role === 'base' ? counts.base : counts.flyer;
     return current >= max;
+  }
+
+  private canAnyWaitingUserBeAdmitted(
+    waitingList: Array<{ role: ParticipantRole }>,
+    counts: RoleCounts,
+    jam: JamRoleConfig,
+  ): boolean {
+    if (!Array.isArray(waitingList) || waitingList.length === 0) {
+      return false;
+    }
+
+    const capacityReached =
+      jam.capacity !== null &&
+      jam.capacity !== undefined &&
+      counts.total >= jam.capacity;
+
+    if (capacityReached) {
+      return false;
+    }
+
+    return waitingList.some((waiting) => {
+      const effectiveRole = this.resolveEffectiveRole(waiting.role);
+      return !this.isRoleAtMax(effectiveRole, counts, jam);
+    });
   }
 }
