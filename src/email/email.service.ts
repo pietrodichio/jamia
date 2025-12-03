@@ -307,6 +307,7 @@ export class EmailService {
     const formatted = new Intl.DateTimeFormat('it-IT', {
       dateStyle: 'full',
       timeStyle: 'short',
+      timeZone: 'Europe/Rome',
     }).format(date);
 
     return `Quando: ${formatted}`;
