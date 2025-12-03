@@ -112,12 +112,12 @@ export class EmailService {
       this.logger.warn(
         `Skipped email "${subject}" because Resend is not configured.`,
       );
-      return;
+      throw new Error('Email service is not configured');
     }
 
     if (!to) {
       this.logger.warn(`Skipped email "${subject}" because recipient is empty.`);
-      return;
+      throw new Error('Email recipient is required');
     }
 
     try {
@@ -140,6 +140,7 @@ export class EmailService {
           error instanceof Error ? error.message : String(error)
         }`,
       );
+      throw error instanceof Error ? error : new Error(String(error));
     }
   }
 

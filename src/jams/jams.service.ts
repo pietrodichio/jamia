@@ -624,18 +624,26 @@ export class JamsService {
       );
     }
 
-    await Promise.all(
-      recipients.map((recipient) =>
-        this.emailService.sendCustomEmail({
-          to: recipient.email,
-          subject: dto.subject,
-          htmlContent: dto.htmlContent,
-          textContent: dto.textContent,
-          previewText: dto.previewText,
-          replyTo: senderEmail || null,
-        }),
-      ),
-    );
+    try {
+      await Promise.all(
+        recipients.map((recipient) =>
+          this.emailService.sendCustomEmail({
+            to: recipient.email,
+            subject: dto.subject,
+            htmlContent: dto.htmlContent,
+            textContent: dto.textContent,
+            previewText: dto.previewText,
+            replyTo: senderEmail || null,
+          }),
+        ),
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Invio email non riuscito. Riprovare più tardi.';
+      throw new BadRequestException(message);
+    }
 
     await this.auditService.log(jamId, userId, 'email_sent', {
       recipient_count: recipients.length,
@@ -666,14 +674,22 @@ export class JamsService {
 
     const normalizedRecipient = dto.recipientEmail.trim();
 
-    await this.emailService.sendCustomEmail({
-      to: normalizedRecipient,
-      subject: dto.subject,
-      htmlContent: dto.htmlContent,
-      textContent: dto.textContent,
-      previewText: dto.previewText,
-      replyTo: senderEmail || null,
-    });
+    try {
+      await this.emailService.sendCustomEmail({
+        to: normalizedRecipient,
+        subject: dto.subject,
+        htmlContent: dto.htmlContent,
+        textContent: dto.textContent,
+        previewText: dto.previewText,
+        replyTo: senderEmail || null,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Invio email di test non riuscito. Riprovare più tardi.';
+      throw new BadRequestException(message);
+    }
 
     await this.auditService.log(jamId, userId, 'email_test_sent', {
       recipient: normalizedRecipient,
@@ -699,8 +715,9 @@ export class JamsService {
     });
 
     if (error) {
-      console.error('Error checking owner/manager status:', error);
-      return false;
+      throw new Error(
+        `Failed to verify owner/manager permissions: ${error.message}`,
+      );
     }
 
     return data || false;
