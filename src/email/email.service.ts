@@ -13,7 +13,7 @@ type ParticipantEmailContext = {
 };
 
 type CustomEmailContext = {
-  to: string;
+  to: string | string[];
   subject: string;
   htmlContent: string;
   textContent?: string;
@@ -102,7 +102,7 @@ export class EmailService {
     text,
     replyTo,
   }: {
-    to: string;
+    to: string | string[];
     subject: string;
     html: string;
     text: string;
@@ -115,12 +115,34 @@ export class EmailService {
       throw new Error('Email service is not configured');
     }
 
-    if (!to) {
+    if (!to || (Array.isArray(to) && to.length === 0)) {
       this.logger.warn(`Skipped email "${subject}" because recipient is empty.`);
       throw new Error('Email recipient is required');
     }
 
-    try {
+    const isBatch = Array.isArray(to) && to.length > 1;
+
+    if (isBatch) {
+      await this.sendBatchEmail(to, subject, html, text, replyTo);
+    } else {
+      const recipient = Array.isArray(to) ? to[0] : to;
+      await this.sendSingleEmail(recipient, subject, html, text, replyTo);
+    }
+  }
+
+  private async sendSingleEmail(
+    to: string,
+    subject: string,
+    html: string,
+    text: string,
+    replyTo?: string,
+  ) {
+    if (!this.resend) {
+      throw new Error('Email service is not configured');
+    }
+
+    const resend = this.resend;
+    const sendEmail = async () => {
       const payload: Parameters<Resend['emails']['send']>[0] = {
         from: this.fromEmail,
         to,
@@ -133,15 +155,105 @@ export class EmailService {
         payload.replyTo = replyTo;
       }
 
-      await this.resend.emails.send(payload);
-    } catch (error) {
-      this.logger.error(
-        `Failed to send email "${subject}" to ${to}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-      throw error instanceof Error ? error : new Error(String(error));
+      await resend.emails.send(payload);
+    };
+
+    await this.retryWithBackoff(sendEmail, subject, to);
+  }
+
+  private async sendBatchEmail(
+    recipients: string[],
+    subject: string,
+    html: string,
+    text: string,
+    replyTo?: string,
+  ) {
+    if (!this.resend) {
+      throw new Error('Email service is not configured');
     }
+
+    const resend = this.resend;
+    const sendBatch = async () => {
+      const batchPayload = recipients.map((recipient) => {
+        const item: Parameters<Resend['batch']['send']>[0][number] = {
+          from: this.fromEmail,
+          to: [recipient],
+          subject,
+          html,
+          text,
+        };
+
+        if (replyTo) {
+          item.replyTo = replyTo;
+        }
+
+        return item;
+      });
+
+      await resend.batch.send(batchPayload);
+    };
+
+    await this.retryWithBackoff(
+      sendBatch,
+      subject,
+      `${recipients.length} recipients`,
+    );
+  }
+
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    subject: string,
+    recipientInfo: string,
+  ): Promise<T> {
+    const maxRetries = 3;
+    const initialDelay = 1000; // 1 second
+    const maxDelay = 10000; // 10 seconds
+
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+
+        const isRateLimitError =
+          (error as { statusCode?: number; name?: string }).statusCode ===
+            429 ||
+          (error as { statusCode?: number; name?: string }).name ===
+            'rate_limit_exceeded';
+
+        if (!isRateLimitError || attempt === maxRetries) {
+          this.logger.error(
+            `Failed to send email "${subject}" to ${recipientInfo}: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+          throw error instanceof Error ? error : new Error(String(error));
+        }
+
+        const delay = Math.min(
+          initialDelay * Math.pow(2, attempt),
+          maxDelay,
+        );
+        const jitter = Math.random() * 0.3 * delay; // Add up to 30% jitter
+        const finalDelay = Math.floor(delay + jitter);
+
+        this.logger.warn(
+          `Rate limit hit for email "${subject}" to ${recipientInfo}. Retrying in ${finalDelay}ms (attempt ${attempt + 1}/${maxRetries})`,
+        );
+
+        await this.sleep(finalDelay);
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(String(lastError));
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private buildParticipantConfirmationEmail(

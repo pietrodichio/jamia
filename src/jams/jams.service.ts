@@ -625,18 +625,15 @@ export class JamsService {
     }
 
     try {
-      await Promise.all(
-        recipients.map((recipient) =>
-          this.emailService.sendCustomEmail({
-            to: recipient.email,
-            subject: dto.subject,
-            htmlContent: dto.htmlContent,
-            textContent: dto.textContent,
-            previewText: dto.previewText,
-            replyTo: senderEmail || null,
-          }),
-        ),
-      );
+      const recipientEmails = recipients.map((recipient) => recipient.email);
+      await this.emailService.sendCustomEmail({
+        to: recipientEmails,
+        subject: dto.subject,
+        htmlContent: dto.htmlContent,
+        textContent: dto.textContent,
+        previewText: dto.previewText,
+        replyTo: senderEmail || null,
+      });
     } catch (error) {
       const message =
         error instanceof Error
@@ -709,18 +706,24 @@ export class JamsService {
       return true;
     }
 
-    const { data, error } = await this.supabase.rpc('is_owner_or_manager', {
-      jam_id: jamId,
-      user_id: userId,
-    });
+    try {
+      const { data, error } = await this.supabase.rpc('is_owner_or_manager', {
+        jam_id: jamId,
+        user_id: userId,
+      });
 
-    if (error) {
-      throw new Error(
-        `Failed to verify owner/manager permissions: ${error.message}`,
-      );
+      if (error) {
+        console.error(
+          `Failed to verify owner/manager permissions: ${error.message}`,
+        );
+        return false;
+      }
+
+      return data || false;
+    } catch (error) {
+      console.error('Failed to verify owner/manager permissions', error);
+      return false;
     }
-
-    return data || false;
   }
 
   private resolveAudienceStates(
