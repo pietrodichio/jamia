@@ -1,64 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { profilesApi } from "@/api/profiles.api";
-import { jamsApi } from "@/api/jams.api";
-import { managersApi } from "@/api/managers.api";
+import { profilesApi, type Profile } from "@/api/profiles.api";
+import { jamsApi, type Jam } from "@/api/jams.api";
+import { managersApi, type JamManager } from "@/api/managers.api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Calendar, Users, LogOut, Loader2, User, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import JamCard from "@/components/JamCard";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const Dashboard = () => {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [myJams, setMyJams] = useState<any[]>([]);
-  const [upcomingJams, setUpcomingJams] = useState<any[]>([]);
-  const [managersByJam, setManagersByJam] = useState<Record<string, any[]>>({});
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isSuperAdmin = Boolean(profile?.is_super_admin);
+  const queryClient = useQueryClient();
 
+  // Auth state listener for sign out
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const startTimestamp = performance.now();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      navigate("/auth");
-      return;
-    }
-
-    // Check if email is confirmed
-    if (!session.user.email_confirmed_at) {
-      navigate("/email-confirmation");
-      return;
-    }
-
-    setUser(session.user);
-
-    try {
-      const profileData = await profilesApi.getProfile(session.user.id);
-      setProfile(profileData);
-
-      if (profileData && !profileData.phone) {
-        navigate("/profile-setup");
-        return;
-      }
-
-      await loadJams(session.user.id);
-    } catch (error) {
-      console.error("Error loading profile:", error);
-    }
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
+        queryClient.clear();
         navigate("/auth");
       } else if (event === "SIGNED_IN" && session?.user && !session.user.email_confirmed_at) {
         navigate("/email-confirmation");
@@ -66,107 +30,188 @@ const Dashboard = () => {
     });
 
     return () => subscription.unsubscribe();
-  };
+  }, [navigate, queryClient]);
 
-  const loadJams = async (userId: string) => {
-    const startTimestamp = performance.now();
-
-    setIsLoading(true);
-    try {
-      // Load jams created by user
-      const ownedJams = await jamsApi.getMyJams();
-      setMyJams(ownedJams);
-
-      // Load jams user is participating in
-      const participatedJams = await jamsApi.getParticipatingJams();
-      setUpcomingJams(participatedJams);
-
-      // Load managers for all jams to check permissions
-      const allJams = [...ownedJams, ...participatedJams];
-      const managersMap: Record<string, any[]> = {};
-      
-      if (allJams.length > 0) {
-        try {
-          // Deduplicate jam IDs (a jam could be both owned and participated)
-          const uniqueJamIds = Array.from(new Set(allJams.map((jam) => jam.id)));
-          const batchManagers = await managersApi.getJamManagersBatch(uniqueJamIds);
-          // Batch endpoint returns managers for all accessible jams
-          // Jams user can't access will have empty arrays
-          Object.assign(managersMap, batchManagers);
-        } catch (error) {
-          // If batch fetch fails, log warning but don't block dashboard load
-          console.warn("[Dashboard] loadJams batch managers fetch failed", {
-            jamCount: allJams.length,
-            durationMs: performance.now() - startTimestamp,
-            error
-          });
-          // Initialize with empty arrays for all jams
-          for (const jam of allJams) {
-            managersMap[jam.id] = [];
-          }
-        }
+  // Current user query
+  const currentUserQuery = useQuery<SupabaseUser | null>({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/auth");
+        return null;
       }
-      
-      setManagersByJam(managersMap);
-    } catch (error: any) {
-      toast({
-        title: "Errore",
-        description: error.response?.data?.message || error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      return session.user;
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  const currentUser = currentUserQuery.data ?? null;
+  const isEmailConfirmed = Boolean(
+    currentUser?.email_confirmed_at || currentUser?.confirmed_at,
+  );
+
+  // Profile query
+  const profileQuery = useQuery<Profile | null>({
+    queryKey: ["profile", currentUser?.id],
+    enabled: Boolean(currentUser?.id),
+    queryFn: async () => {
+      if (!currentUser?.id) {
+        return null;
+      }
+      return profilesApi.getProfile(currentUser.id);
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  const profile = profileQuery.data ?? null;
+  const isSuperAdmin = Boolean(profile?.is_super_admin);
+
+  // Handle auth redirects
+  useEffect(() => {
+    if (currentUserQuery.isSuccess && !currentUser) {
+      navigate("/auth");
+      return;
     }
-  };
+
+    if (currentUser && !isEmailConfirmed) {
+      navigate("/email-confirmation");
+      return;
+    }
+
+    if (profile && !profile.phone) {
+      navigate("/profile-setup");
+      return;
+    }
+  }, [currentUser, currentUserQuery.isSuccess, isEmailConfirmed, navigate, profile]);
+
+  // My jams query
+  const myJamsQuery = useQuery<Jam[]>({
+    queryKey: ["jams", "my"],
+    enabled: Boolean(currentUser?.id && profile && profile.phone),
+    queryFn: async () => {
+      return jamsApi.getMyJams();
+    },
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  // Participating jams query
+  const participatingJamsQuery = useQuery<Jam[]>({
+    queryKey: ["jams", "participating"],
+    enabled: Boolean(currentUser?.id && profile && profile.phone),
+    queryFn: async () => {
+      return jamsApi.getParticipatingJams();
+    },
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  const myJams = myJamsQuery.data ?? [];
+  const upcomingJams = participatingJamsQuery.data ?? [];
+
+  // Compute all jams and unique jam IDs for managers query
+  const allJams = useMemo(() => {
+    return [...myJams, ...upcomingJams];
+  }, [myJams, upcomingJams]);
+
+  const uniqueJamIds = useMemo(() => {
+    return Array.from(new Set(allJams.map((jam) => jam.id)));
+  }, [allJams]);
+
+  // Managers batch query
+  const managersQuery = useQuery<Record<string, JamManager[]>>({
+    queryKey: ["jam-managers-batch", uniqueJamIds.sort().join(",")],
+    enabled: Boolean(
+      uniqueJamIds.length > 0 &&
+      myJamsQuery.isSuccess &&
+      participatingJamsQuery.isSuccess
+    ),
+    queryFn: async () => {
+      try {
+        return await managersApi.getJamManagersBatch(uniqueJamIds);
+      } catch (error) {
+        console.warn("[Dashboard] batch managers fetch failed", { error });
+        // Return empty object on error - jams will have no managers
+        return {};
+      }
+    },
+    staleTime: 2 * 60 * 1000,
+    refetchOnMount: true,
+  });
+
+  const managersByJam = managersQuery.data ?? {};
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    queryClient.clear();
     toast({
       title: "Disconnesso",
       description: "Alla prossima!",
     });
   };
 
-  const isOwnerOrManager = (jam: any) => {
+  const isOwnerOrManager = (jam: Jam) => {
     if (isSuperAdmin) return true;
-    if (!user) return false;
-    if (jam.owner_id === user.id) return true;
+    if (!currentUser) return false;
+    if (jam.owner_id === currentUser.id) return true;
     const managers = managersByJam[jam.id] || [];
-    return managers.some((manager) => manager.user_id === user.id);
+    return managers.some((manager) => manager.user_id === currentUser.id);
   };
 
-  const isOwner = (jam: any) => {
+  const isOwner = (jam: Jam) => {
     if (isSuperAdmin) return true;
-    if (!user) return false;
-    return jam.owner_id === user.id;
+    if (!currentUser) return false;
+    return jam.owner_id === currentUser.id;
   };
 
-  const handleClone = async (jam: any) => {
-    try {
-      const clonedJam = await jamsApi.cloneJam(jam.id);
+  // Clone jam mutation
+  const cloneMutation = useMutation({
+    mutationFn: async (jamId: string) => {
+      return jamsApi.cloneJam(jamId);
+    },
+    onSuccess: (clonedJam) => {
+      // Invalidate jams queries to refetch data
+      queryClient.invalidateQueries({ queryKey: ["jams"] });
       toast({
         title: "Jam clonata!",
         description: "La jam è stata clonata con successo",
       });
       navigate(`/jam/${clonedJam.id}/edit`);
-    } catch (error: any) {
+    },
+    onError: (error: unknown) => {
+      const errorMessage =
+        error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : error instanceof Error
+            ? error.message
+            : "Errore sconosciuto";
       toast({
         title: "Errore",
-        description: error.response?.data?.message || error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-    }
+    },
+  });
+
+  const handleClone = (jam: Jam) => {
+    cloneMutation.mutate(jam.id);
   };
 
   const handleManageManagers = () => {
-    // This will be handled by the ManageManagersDialog component
-    // We just need to reload the managers when the dialog closes
-    if (user) {
-      loadJams(user.id);
-    }
+    // Invalidate managers queries to refetch when dialog closes
+    queryClient.invalidateQueries({ queryKey: ["jam-managers"] });
+    queryClient.invalidateQueries({ queryKey: ["jam-managers-batch"] });
   };
 
-  if (!user || !profile) {
+  // Show loading while auth/profile is loading
+  if (currentUserQuery.isLoading || (currentUser && profileQuery.isLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -174,10 +219,15 @@ const Dashboard = () => {
     );
   }
 
+  // Don't render if no user or profile (redirects are handled in useEffect)
+  if (!currentUser || !profile) {
+    return null;
+  }
+
   const totalParticipations = upcomingJams.length;
 
   const now = new Date();
-  const isJamPast = (jam: any) => new Date(jam.ends_at) < now;
+  const isJamPast = (jam: Jam) => new Date(jam.ends_at) < now;
 
   const activeParticipatedJams = upcomingJams
     .filter(jam => !isJamPast(jam))
@@ -289,7 +339,7 @@ const Dashboard = () => {
                 <CardDescription>Jam a cui hai deciso di partecipare</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {participatingJamsQuery.isLoading ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
@@ -324,7 +374,7 @@ const Dashboard = () => {
                 <CardDescription>Jam che hai creato e stai organizzando</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {myJamsQuery.isLoading ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
@@ -367,7 +417,7 @@ const Dashboard = () => {
                 <CardDescription>Jam che hai organizzato nel passato</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {myJamsQuery.isLoading ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
@@ -401,7 +451,7 @@ const Dashboard = () => {
                 <CardDescription>Jam a cui hai partecipato nel passato</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoading ? (
+                {participatingJamsQuery.isLoading ? (
                   <div className="flex justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>

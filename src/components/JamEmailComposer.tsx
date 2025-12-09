@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import "quill-emoji/dist/quill-emoji.css";
@@ -64,6 +64,37 @@ export const JamEmailComposer = ({ jamId, jamName, senderEmail }: JamEmailCompos
   const [previewText, setPreviewText] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
   const [testRecipient, setTestRecipient] = useState(senderEmail || "");
+  const previousJamNameRef = useRef<string | null>(jamName ?? null);
+  const previousSenderRef = useRef<string | null>(senderEmail ?? null);
+
+  const defaultSubjectFor = (name?: string | null) => `Aggiornamenti per ${name ?? ""}`;
+
+  useEffect(() => {
+    const currentDefault = defaultSubjectFor(jamName);
+    const previousDefault = defaultSubjectFor(previousJamNameRef.current);
+    const subjectIsUntouched =
+      !subject.trim() ||
+      subject === previousDefault ||
+      subject === defaultSubjectFor(undefined);
+
+    if (subjectIsUntouched && subject !== currentDefault) {
+      setSubject(currentDefault);
+    }
+
+    previousJamNameRef.current = jamName ?? null;
+  }, [jamName, subject]);
+
+  useEffect(() => {
+    const normalizedSender = senderEmail?.trim() || "";
+    const recipientIsUntouched =
+      !testRecipient.trim() || testRecipient === (previousSenderRef.current || "");
+
+    if (recipientIsUntouched && normalizedSender !== testRecipient) {
+      setTestRecipient(normalizedSender);
+    }
+
+    previousSenderRef.current = senderEmail ?? null;
+  }, [senderEmail, testRecipient]);
 
   const toolbarModules = useMemo(
     () => ({
