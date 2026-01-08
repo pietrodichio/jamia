@@ -449,7 +449,7 @@ export class EmailService {
     }
 
     const trimmedBase = this.frontendBaseUrl.replace(/\/+$/, '');
-    return `${trimmedBase}/jams/${jamId}`;
+    return `${trimmedBase}/jam/${jamId}`;
   }
 
   /**
