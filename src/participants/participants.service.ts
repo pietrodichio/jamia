@@ -14,6 +14,7 @@ import { JoinJamDto } from './dto/join-jam.dto';
 import { AddParticipantDto } from './dto/add-participant.dto';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
+import { TelegramService } from '../telegram/telegram.service';
 
 type ParticipantRole = 'base' | 'flyer' | 'both';
 
@@ -69,6 +70,7 @@ export class ParticipantsService {
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly auditService: AuditService,
     private readonly emailService: EmailService,
+    private readonly telegramService: TelegramService,
     @Optional() configService?: ConfigService,
   ) {
     this.frontendBaseUrl =
@@ -370,6 +372,23 @@ export class ParticipantsService {
         jamStartsAt: jam.starts_at,
         jamLocation: jamLocationDescription,
       });
+
+      // Send Telegram notification to jam manager
+      const chatId = await this.getJamOwnerTelegramChatId(jam.id);
+      if (chatId) {
+        const participantName = await this.getParticipantDisplayName(userId);
+        const currentCount = await this.getJamParticipantCount(jam.id);
+        await this.telegramService.notifyJamManager({
+          chatId,
+          jamName: jam.name || 'la jam',
+          participantName,
+          participantRole: role,
+          action: 'joined',
+          jamId: jam.id,
+          currentCount,
+          capacity: jam.capacity ?? null,
+        });
+      }
     }
 
     return {
@@ -484,8 +503,7 @@ export class ParticipantsService {
 
       if (inviteResult.error || !inviteResult.data?.user) {
         throw new Error(
-          `Failed to invite participant: ${
-            inviteResult.error?.message || 'unknown error'
+          `Failed to invite participant: ${inviteResult.error?.message || 'unknown error'
           }`,
         );
       }
@@ -555,8 +573,33 @@ export class ParticipantsService {
       previous_state: participation.state,
     });
 
-    // If auto-promote is enabled and user was a participant, promote from waiting list
+    // Send Telegram notification to jam manager if user was a confirmed participant
     if (participation.state === 'participant') {
+      const chatId = await this.getJamOwnerTelegramChatId(participation.jam_id);
+      if (chatId) {
+        const participantName = await this.getParticipantDisplayName(userId);
+
+        const { data: jam } = await this.supabase
+          .from('jams')
+          .select('name, capacity')
+          .eq('id', participation.jam_id)
+          .single();
+
+        const currentCount = await this.getJamParticipantCount(participation.jam_id);
+
+        await this.telegramService.notifyJamManager({
+          chatId,
+          jamName: jam?.name || 'la jam',
+          participantName,
+          participantRole: participation.role as 'base' | 'flyer' | 'both',
+          action: 'cancelled',
+          jamId: participation.jam_id,
+          currentCount, // Count is already correct (excludes cancelled user)
+          capacity: jam?.capacity ?? null,
+        });
+      }
+
+      // If auto-promote is enabled and user was a participant, promote from waiting list
       await this.promoteFromWaitingList(participation.jam_id);
     }
 
@@ -571,7 +614,7 @@ export class ParticipantsService {
     // Get participation
     const { data: participation, error: fetchError } = await this.supabase
       .from('jam_participants')
-      .select('jam_id, user_id')
+      .select('jam_id, user_id, role')
       .eq('id', participantId)
       .single();
 
@@ -583,7 +626,7 @@ export class ParticipantsService {
     const { data: jam } = await this.supabase
       .from('jams')
       .select(
-        'owner_id, auto_promote, name, starts_at, location_text, location, location_lat, location_lng',
+        'owner_id, auto_promote, name, starts_at, location_text, location, location_lat, location_lng, capacity',
       )
       .eq('id', participation.jam_id)
       .single();
@@ -641,6 +684,23 @@ export class ParticipantsService {
       jamStartsAt: jam.starts_at,
       jamLocation: jamLocationDescription,
     });
+
+    // Send Telegram notification to jam manager
+    const chatId = await this.getJamOwnerTelegramChatId(participation.jam_id);
+    if (chatId) {
+      const participantName = await this.getParticipantDisplayName(participation.user_id);
+      const currentCount = await this.getJamParticipantCount(participation.jam_id);
+      await this.telegramService.notifyJamManager({
+        chatId,
+        jamName: jam.name || 'la jam',
+        participantName,
+        participantRole: participation.role as 'base' | 'flyer' | 'both',
+        action: 'left',
+        jamId: participation.jam_id,
+        currentCount, // Count is already correct (excludes removed user)
+        capacity: jam.capacity ?? null,
+      });
+    }
 
     // If auto-promote is enabled, promote from waiting list
     if (jam.auto_promote) {
@@ -821,8 +881,7 @@ export class ParticipantsService {
 
     if (updateError || !updated) {
       throw new Error(
-        `Failed to promote participant: ${
-          updateError?.message || 'unknown error'
+        `Failed to promote participant: ${updateError?.message || 'unknown error'
         }`,
       );
     }
@@ -1033,8 +1092,7 @@ export class ParticipantsService {
       });
     } catch (error) {
       this.logger.error(
-        `Failed to send participant email for jam ${payload.jamName} and user ${payload.userId}: ${
-          error instanceof Error ? error.message : String(error)
+        `Failed to send participant email for jam ${payload.jamName} and user ${payload.userId}: ${error instanceof Error ? error.message : String(error)
         }`,
       );
     }
@@ -1102,8 +1160,7 @@ export class ParticipantsService {
       return url.toString();
     } catch (error) {
       this.logger.warn(
-        `Invalid FRONTEND_BASE_URL configuration: ${
-          error instanceof Error ? error.message : String(error)
+        `Invalid FRONTEND_BASE_URL configuration: ${error instanceof Error ? error.message : String(error)
         }`,
       );
       return null;
@@ -1269,5 +1326,74 @@ export class ParticipantsService {
       const effectiveRole = this.resolveEffectiveRole(waiting.role);
       return !this.isRoleAtMax(effectiveRole, counts, jam);
     });
+  }
+
+  /**
+   * Get current participant count for a jam
+   */
+  private async getJamParticipantCount(jamId: string): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('jam_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('jam_id', jamId)
+      .eq('state', 'participant');
+
+    if (error) {
+      this.logger.warn(`Failed to get participant count: ${error.message}`);
+      return 0;
+    }
+
+    return count || 0;
+  }
+
+  /**
+   * Fetch jam owner's Telegram chat_id if set and notifications are enabled
+   */
+  private async getJamOwnerTelegramChatId(jamId: string): Promise<number | null> {
+    const { data: jam, error: jamError } = await this.supabase
+      .from('jams')
+      .select('owner_id, telegram_notifications_enabled')
+      .eq('id', jamId)
+      .single();
+
+    if (jamError || !jam) {
+      return null;
+    }
+
+    // Check if notifications are enabled for this jam (default to true if not set)
+    if (jam.telegram_notifications_enabled === false) {
+      return null;
+    }
+
+    const { data: profile, error: profileError } = await this.supabase
+      .from('profiles')
+      .select('telegram_chat_id')
+      .eq('id', jam.owner_id)
+      .single();
+
+    if (profileError || !profile || !profile.telegram_chat_id) {
+      return null;
+    }
+
+    return profile.telegram_chat_id;
+  }
+
+  /**
+   * Get participant's display name for notifications
+   */
+  private async getParticipantDisplayName(userId: string): Promise<string> {
+    const { data: profile } = await this.supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', userId)
+      .single();
+
+    if (!profile) {
+      return 'Un partecipante';
+    }
+
+    const firstName = profile.first_name || '';
+    const lastName = profile.last_name || '';
+    return `${firstName} ${lastName}`.trim() || 'Un partecipante';
   }
 }
