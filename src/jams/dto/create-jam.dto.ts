@@ -82,4 +82,8 @@ export class CreateJamDto {
   @IsBoolean()
   @IsOptional()
   public_participants?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  telegram_notifications_enabled?: boolean;
 }

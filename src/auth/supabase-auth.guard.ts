@@ -20,7 +20,7 @@ export class SupabaseAuthGuard implements CanActivate {
   constructor(
     private configService: ConfigService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -35,6 +35,7 @@ export class SupabaseAuthGuard implements CanActivate {
     try {
       const jwtSecret = this.configService.get<string>('SUPABASE_JWT_SECRET');
       if (!jwtSecret) {
+        console.error('❌ SUPABASE_JWT_SECRET not found in environment variables');
         throw new Error('JWT secret not configured');
       }
 
@@ -50,6 +51,8 @@ export class SupabaseAuthGuard implements CanActivate {
 
       return true;
     } catch (error) {
+      console.error('❌ Authentication error:', error.message);
+      console.error('Error details:', error);
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
