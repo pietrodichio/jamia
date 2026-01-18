@@ -290,6 +290,28 @@ ${capacityText}${urlPart}`;
     }
 
     /**
+     * Clear any active webhook to allow polling.
+     */
+    async clearWebhook(): Promise<void> {
+        if (!this.botToken) {
+            throw new Error('Telegram bot token not configured');
+        }
+
+        const url = `https://api.telegram.org/bot${this.botToken}/deleteWebhook`;
+        const response = await fetch(url, { method: 'POST' });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Telegram API error: ${response.status} - ${error}`);
+        }
+
+        const result = await response.json();
+        if (!result.ok) {
+            throw new Error(`Telegram API returned error: ${result.description}`);
+        }
+    }
+
+    /**
      * Unlink a user's Telegram account
      */
     async unlinkTelegramAccount(userId: string): Promise<void> {
