@@ -32,6 +32,15 @@ export class TelegramPoller implements OnModuleInit {
     private async startPolling() {
         this.isPolling = true;
 
+        try {
+            await this.telegramService.clearWebhook();
+            this.logger.log('Telegram webhook cleared for polling');
+        } catch (error) {
+            this.logger.warn(
+                `Failed to clear Telegram webhook before polling: ${error instanceof Error ? error.message : String(error)}`,
+            );
+        }
+
         while (this.isPolling) {
             try {
                 await this.poll();
@@ -48,6 +57,12 @@ export class TelegramPoller implements OnModuleInit {
 
         const url = `https://api.telegram.org/bot${this.botToken}/getUpdates`;
         const response = await fetch(`${url}?offset=${this.offset}&timeout=30`);
+
+        if (response.status === 409) {
+            this.logger.warn('Telegram polling conflict (webhook active). Clearing webhook and retrying...');
+            await this.telegramService.clearWebhook();
+            return;
+        }
 
         if (!response.ok) {
             throw new Error(`Telegram API error: ${response.status}`);
