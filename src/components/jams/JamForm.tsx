@@ -195,6 +195,17 @@ export const JamForm = ({
       return;
     }
 
+    // Skip auto-calculation if any desired values are already set
+    // This preserves user-set or backend-provided values when editing
+    if (
+      basesMin !== undefined ||
+      basesMax !== undefined ||
+      flyersMin !== undefined ||
+      flyersMax !== undefined
+    ) {
+      return;
+    }
+
     const timer = setTimeout(() => {
       const totalCapacity = Number(capacity);
       const idealBases = Math.floor(totalCapacity / 3);
@@ -217,7 +228,7 @@ export const JamForm = ({
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [capacity, setValue]);
+  }, [capacity, basesMin, basesMax, flyersMin, flyersMax, setValue]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <I don't think this should be exhaustive>
   useEffect(() => {

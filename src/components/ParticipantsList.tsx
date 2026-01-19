@@ -18,7 +18,7 @@ import {
 import { type Jam } from "@/api/jams.api";
 import { useToast } from "@/hooks/use-toast";
 import { AddParticipantDialog } from "@/components/AddParticipantDialog";
-import { Plus } from "lucide-react";
+import { Plus, Copy } from "lucide-react";
 
 type ParticipantWithProfile = Participant;
 
@@ -278,6 +278,40 @@ export const ParticipantsList = ({
     updateRoleMutation.mutate({ participantId: participant.id, role });
   };
 
+  const handleCopyNames = async () => {
+    try {
+      const names = participants
+        .map((participant) => {
+          const firstName = participant.profiles?.first_name ?? "";
+          const lastName = participant.profiles?.last_name ?? "";
+          return `${firstName} ${lastName}`.trim();
+        })
+        .filter((name) => name.length > 0)
+        .join("\n");
+
+      if (names.length === 0) {
+        toast({
+          title: "Nessun nome disponibile",
+          description: "Non ci sono nomi da copiare",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(names);
+      toast({
+        title: "Nomi copiati",
+        description: "I nomi sono stati copiati negli appunti",
+      });
+    } catch {
+      toast({
+        title: "Errore",
+        description: "Impossibile copiare i nomi negli appunti",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!isAuthenticated) {
     const participantCount = jam.participant_count ?? participants.length ?? "?";
     return (
@@ -310,17 +344,25 @@ export const ParticipantsList = ({
             : "Lista dei partecipanti confermati"
         }
         headerAction={
-          effectiveCanManageParticipants ? (
-            <Button
-              onClick={() => setAddParticipantDialogOpen(true)}
-              className="rounded-xl"
-              size="sm"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Aggiungi
-            </Button>
-          ) : undefined
-        }
+          effectiveCanManageParticipants && (
+            <div className="flex items-right gap-2">
+              <Button
+                onClick={() => setAddParticipantDialogOpen(true)}
+                className="rounded-xl"
+                size="sm"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={handleCopyNames}
+                className="rounded-xl"
+                size="sm"
+                disabled={participants.length === 0}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
       >
         {participants.length === 0 ? (
           <ParticipantsEmptyState jamStatus={jam.status} />
@@ -344,7 +386,7 @@ export const ParticipantsList = ({
             ))}
           </div>
         )}
-      </ParticipantsCard>
+      </ParticipantsCard >
 
       <ParticipantRemovalDialog
         open={dialogOpen}
