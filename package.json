@@ -1,0 +1,19 @@
+{
+  "name": "jamia-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Jamia - Acroyoga Event Platform Monorepo",
+  "packageManager": "pnpm@10.22.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "test": "turbo run test",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  }
+}

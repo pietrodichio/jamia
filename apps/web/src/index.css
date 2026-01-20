@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Jamia Brand Colors - Indigo Flow palette */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 231 100% 68%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 231 100% 94%;
+    --secondary-foreground: 231 100% 68%;
+
+    --muted: 231 100% 94%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 28 100% 85%;
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 231 100% 94%;
+    --input: 231 50% 96%;
+    --ring: 231 100% 68%;
+
+    --radius: 1rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 231 100% 68%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 231 50% 20%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 231 30% 18%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 28 100% 75%;
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 231 30% 18%;
+    --input: 231 30% 18%;
+    --ring: 231 100% 68%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Prevent iOS zoom on React-Quill editor by ensuring minimum 16px font-size on mobile */
+/* iOS Safari automatically zooms when input/textarea/contentEditable has font-size < 16px */
+@media (max-width: 767px) {
+  .description-editor-wrapper .ql-editor {
+    font-size: 16px !important;
+    min-height: 1.5rem;
+  }
+  
+  /* Ensure placeholder text also respects minimum size */
+  .description-editor-wrapper .ql-editor.ql-blank::before {
+    font-size: 16px !important;
+  }
+}
