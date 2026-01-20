@@ -1,10 +1,12 @@
 import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import type {
+  SendJamEmailDto as ISendJamEmailDto,
+  TestJamEmailDto as ITestJamEmailDto,
+} from '@jamia/types/jam';
+import { JamEmailAudience } from '@jamia/types/jam';
 
-export enum JamEmailAudience {
-  ALL = 'all',
-  PARTICIPANTS = 'participants',
-  WAITING = 'waiting',
-}
+// Re-export the shared enum for backward compatibility
+export { JamEmailAudience } from '@jamia/types/jam';
 
 class BaseJamEmailDto {
   @IsString()
@@ -15,21 +17,20 @@ class BaseJamEmailDto {
   @MinLength(1)
   htmlContent: string;
 
+  @IsString()
+  textContent: string;
+
   @IsOptional()
   @IsString()
   previewText?: string;
-
-  @IsOptional()
-  @IsString()
-  textContent?: string;
 }
 
-export class SendJamEmailDto extends BaseJamEmailDto {
+export class SendJamEmailDto extends BaseJamEmailDto implements ISendJamEmailDto {
   @IsEnum(JamEmailAudience)
   audience: JamEmailAudience;
 }
 
-export class TestJamEmailDto extends BaseJamEmailDto {
+export class TestJamEmailDto extends BaseJamEmailDto implements ITestJamEmailDto {
   @IsEmail()
   recipientEmail: string;
 }

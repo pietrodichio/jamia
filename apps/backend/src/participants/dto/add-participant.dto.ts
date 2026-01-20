@@ -1,6 +1,7 @@
 import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import type { AddParticipantDto as IAddParticipantDto } from '@jamia/types/participant';
 
-export class AddParticipantDto {
+export class AddParticipantDto implements IAddParticipantDto {
   @IsEmail()
   email: string;
 

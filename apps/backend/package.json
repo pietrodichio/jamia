@@ -26,6 +26,7 @@
     "supabase:link": "supabase link"
   },
   "dependencies": {
+    "@jamia/types": "workspace:*",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -72,6 +73,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@jamia/types/(.*)$": "/Users/pietrodichio/development/personal/jamia/packages/types/src/$1.ts",
+      "^@jamia/types$": "/Users/pietrodichio/development/personal/jamia/packages/types/src/index.ts"
+    }
   }
 }

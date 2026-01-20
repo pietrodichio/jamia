@@ -8,9 +8,11 @@ import { createSupabaseMock } from '../test-utils/supabase-mock';
 
 describe('ParticipantsService', () => {
   const auditService = { log: jest.fn() };
+  const telegramService = { notifyJamManager: jest.fn() };
 
   beforeEach(() => {
     auditService.log = jest.fn().mockResolvedValue(undefined);
+    telegramService.notifyJamManager = jest.fn().mockResolvedValue(undefined);
   });
 
   it('waitlists a "both" signup when flyer capacity is full', async () => {
@@ -54,6 +56,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     const result = await service.joinJam('jam-1', 'user-both', {
@@ -87,7 +90,10 @@ describe('ParticipantsService', () => {
     const insertedRecords: unknown[] = [];
 
     const supabase = createSupabaseMock({
-      jams: [{ response: { data: jam, error: null } }],
+      jams: [
+        { response: { data: jam, error: null } },
+        { response: { data: { owner_id: 'owner-1', telegram_notifications_enabled: true }, error: null } },
+      ],
       jam_participants: [
         { response: { data: null, error: null } },
         { response: { data: null, error: null } },
@@ -110,12 +116,16 @@ describe('ParticipantsService', () => {
           onInsert: (payload) => insertedRecords.push(payload),
         },
       ],
+      profiles: [
+        { response: { data: { telegram_chat_id: null }, error: null } },
+      ],
     });
 
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     const result = await service.joinJam('jam-2', 'user-both', {
@@ -141,7 +151,10 @@ describe('ParticipantsService', () => {
     const updatedRecords: unknown[] = [];
 
     const supabase = createSupabaseMock({
-      jams: [{ response: { data: jam, error: null } }],
+      jams: [
+        { response: { data: jam, error: null } },
+        { response: { data: { owner_id: 'owner-1', telegram_notifications_enabled: true }, error: null } },
+      ],
       jam_participants: [
         { response: { data: null, error: null } },
         {
@@ -178,12 +191,16 @@ describe('ParticipantsService', () => {
           onUpdate: (payload) => updatedRecords.push(payload),
         },
       ],
+      profiles: [
+        { response: { data: { telegram_chat_id: null }, error: null } },
+      ],
     });
 
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     const result = await service.joinJam('jam-3', 'user-cancelled', {
@@ -264,6 +281,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     const result = await service.joinJam('jam-4', 'user-waiting', {
@@ -318,15 +336,16 @@ describe('ParticipantsService', () => {
             error: null,
           },
         },
+        // promoteFromWaitingList: fetchActiveParticipants
         {
           response: {
             data: [
               { id: 'base-1', role: 'base' },
-              { id: 'flyer-1', role: 'flyer' },
             ],
             error: null,
           },
         },
+        // promoteFromWaitingList: waitingList query
         {
           response: {
             data: [
@@ -336,6 +355,14 @@ describe('ParticipantsService', () => {
             error: null,
           },
         },
+        // cancelParticipation: getJamParticipantCount (count query)
+        {
+          response: {
+            count: 1,
+            error: null,
+          },
+        },
+        // promoteFromWaitingList: update wait-flyer to participant
         {
           response: {
             data: {
@@ -367,6 +394,41 @@ describe('ParticipantsService', () => {
             error: null,
           },
         },
+        // cancelParticipation: Telegram notification jam query
+        {
+          response: {
+            data: {
+              name: 'Test Jam',
+              capacity: 3,
+              owner_id: 'owner-1',
+              telegram_notifications_enabled: true,
+            },
+            error: null,
+          },
+        },
+        // promoteFromWaitingList: jam details query
+        {
+          response: {
+            data: {
+              capacity: 3,
+              auto_promote: true,
+              desired_bases_max: 1,
+              desired_flyers_max: 2,
+              name: 'Test Jam',
+              starts_at: '2024-01-01T10:00:00Z',
+              location_text: 'Test Location',
+              location: null,
+              location_lat: null,
+              location_lng: null,
+            },
+            error: null,
+          },
+        },
+      ],
+      profiles: [
+        { response: { data: { telegram_chat_id: null }, error: null } },
+        { response: { data: { first_name: 'John', last_name: 'Doe' }, error: null } },
+        { response: { data: { first_name: 'Jane', last_name: 'Smith' }, error: null } },
       ],
     });
 
@@ -374,6 +436,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     await service.cancelParticipation('participant-1', 'user-original');
@@ -403,6 +466,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     await expect(
@@ -451,6 +515,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     const result = await service.updateParticipantRole(
@@ -523,6 +588,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     await expect(
@@ -600,6 +666,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     const result = await service.promoteWaitingParticipant(
@@ -658,6 +725,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     await expect(
@@ -681,6 +749,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     await expect(
@@ -740,6 +809,7 @@ describe('ParticipantsService', () => {
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     const result = await service.joinJam('jam-fair-1', 'new-user', {
@@ -773,7 +843,10 @@ describe('ParticipantsService', () => {
     const insertedRecords: unknown[] = [];
 
     const supabase = createSupabaseMock({
-      jams: [{ response: { data: jam, error: null } }],
+      jams: [
+        { response: { data: jam, error: null } },
+        { response: { data: { owner_id: 'owner-1', telegram_notifications_enabled: true }, error: null } },
+      ],
       jam_participants: [
         // existingParticipation
         { response: { data: null, error: null } },
@@ -806,12 +879,16 @@ describe('ParticipantsService', () => {
           onInsert: (payload) => insertedRecords.push(payload),
         },
       ],
+      profiles: [
+        { response: { data: { telegram_chat_id: null }, error: null } },
+      ],
     });
 
     const service = new ParticipantsService(
       supabase.client,
       auditService as any,
       null as any,
+      telegramService as any,
     );
 
     const result = await service.joinJam('jam-fair-2', 'new-flyer', {

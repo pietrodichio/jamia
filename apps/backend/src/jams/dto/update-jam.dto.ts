@@ -10,8 +10,9 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { JamLocationDto } from './create-jam.dto';
+import type { UpdateJamDto as IUpdateJamDto } from '@jamia/types/jam';
 
-export class UpdateJamDto {
+export class UpdateJamDto implements IUpdateJamDto {
   @IsString()
   @IsOptional()
   name?: string;

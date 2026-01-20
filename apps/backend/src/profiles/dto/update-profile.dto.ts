@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsEnum } from 'class-validator';
+import type { UpdateProfileDto as IUpdateProfileDto } from '@jamia/types/profile';
 
-export class UpdateProfileDto {
+export class UpdateProfileDto implements IUpdateProfileDto {
   @IsString()
   @IsOptional()
   first_name?: string;

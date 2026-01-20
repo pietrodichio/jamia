@@ -8,8 +8,12 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import type {
+  CreateJamDto as ICreateJamDto,
+  JamLocation as IJamLocation,
+} from '@jamia/types/jam';
 
-export class JamLocationDto {
+export class JamLocationDto implements IJamLocation {
   @IsString()
   description: string;
 
@@ -32,7 +36,7 @@ export class JamLocationDto {
   google_maps_url?: string;
 }
 
-export class CreateJamDto {
+export class CreateJamDto implements ICreateJamDto {
   @IsString()
   name: string;
 

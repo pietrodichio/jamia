@@ -727,7 +727,6 @@ describe('ProfilesService', () => {
       const result = await service.updateProfile('user-1', 'user-1', {
         first_name: 'John Updated',
         last_name: 'Doe Updated',
-        email: 'john.updated@example.com',
         main_role: 'flyer',
         phone: '+1111111111',
       });
