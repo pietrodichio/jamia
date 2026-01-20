@@ -1,0 +1,9 @@
+[build]
+  base = "/"
+  command = "pnpm build --filter=@jamia/web"
+  publish = "apps/web/dist"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF apps/web packages"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--version"
