@@ -18,6 +18,8 @@ const Index = () => {
     checkAuth();
   }, [navigate]);
 
+  //this is just a test
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       {/* Hero Section */}
@@ -27,16 +29,16 @@ const Index = () => {
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">Il primo sito per le tue jam di AcroYoga</span>
           </div>
-          
+
           <h1 className="text-5xl md:text-7xl font-bold leading-tight">
             Trova e organizza{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
               jam di AcroYoga
             </span>
           </h1>
-          
+
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Jamia semplifica la gestione dei tuoi eventi AcroYoga con prenotazioni intelligenti, 
+            Jamia semplifica la gestione dei tuoi eventi AcroYoga con prenotazioni intelligenti,
             liste d'attesa bilanciate per ruolo e notifiche automatiche.
           </p>
 
