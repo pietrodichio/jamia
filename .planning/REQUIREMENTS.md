@@ -139,13 +139,69 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TBD | TBD | Pending |
+| MONO-01 | Phase 1 | Pending |
+| MONO-02 | Phase 1 | Pending |
+| MONO-03 | Phase 1 | Pending |
+| MONO-04 | Phase 1 | Pending |
+| MONO-05 | Phase 1 | Pending |
+| MONO-06 | Phase 1 | Pending |
+| MONO-07 | Phase 1 | Pending |
+| OSS-01 | Phase 2 | Pending |
+| OSS-02 | Phase 2 | Pending |
+| OSS-03 | Phase 2 | Pending |
+| OSS-04 | Phase 2 | Pending |
+| OSS-05 | Phase 2 | Pending |
+| OSS-06 | Phase 2 | Pending |
+| OSS-07 | Phase 2 | Pending |
+| OSS-08 | Phase 2 | Pending |
+| OSS-09 | Phase 2 | Pending |
+| EVENT-01 | Phase 3 | Pending |
+| EVENT-02 | Phase 3 | Pending |
+| EVENT-03 | Phase 3 | Pending |
+| EVENT-04 | Phase 3 | Pending |
+| EVENT-05 | Phase 3 | Pending |
+| EVENT-06 | Phase 3 | Pending |
+| EVENT-07 | Phase 3 | Pending |
+| EVENT-08 | Phase 3 | Pending |
+| EVENT-09 | Phase 3 | Pending |
+| EVENT-10 | Phase 3 | Pending |
+| LOC-01 | Phase 4 | Pending |
+| LOC-02 | Phase 4 | Pending |
+| LOC-03 | Phase 4 | Pending |
+| LOC-04 | Phase 4 | Pending |
+| LOC-05 | Phase 4 | Pending |
+| FILTER-01 | Phase 4 | Pending |
+| FILTER-02 | Phase 4 | Pending |
+| FILTER-03 | Phase 4 | Pending |
+| FILTER-04 | Phase 4 | Pending |
+| FILTER-05 | Phase 4 | Pending |
+| FILTER-06 | Phase 4 | Pending |
+| VIEW-01 | Phase 4 | Pending |
+| VIEW-02 | Phase 4 | Pending |
+| VIEW-03 | Phase 4 | Pending |
+| VIEW-04 | Phase 4 | Pending |
+| VIEW-05 | Phase 4 | Pending |
+| VIEW-06 | Phase 4 | Pending |
+| RECUR-01 | Phase 5 | Pending |
+| RECUR-02 | Phase 5 | Pending |
+| RECUR-03 | Phase 5 | Pending |
+| RECUR-04 | Phase 5 | Pending |
+| RECUR-05 | Phase 5 | Pending |
+| TEACH-01 | Phase 5 | Pending |
+| TEACH-02 | Phase 5 | Pending |
+| TEACH-03 | Phase 5 | Pending |
+| TEACH-04 | Phase 5 | Pending |
+| JAM-01 | Phase 5 | Pending |
+| JAM-02 | Phase 5 | Pending |
+| JAM-03 | Phase 5 | Pending |
+| JAM-04 | Phase 5 | Pending |
+| JAM-05 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: TBD total
-- Mapped to phases: TBD
-- Unmapped: TBD
+- v1 requirements: 57 total
+- Mapped to phases: 57
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-20 after initial definition*
+*Last updated: 2026-01-20 after roadmap creation*
