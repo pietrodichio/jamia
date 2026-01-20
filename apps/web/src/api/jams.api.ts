@@ -1,130 +1,67 @@
 import { apiClient, publicApiClient } from './client';
+import type {
+  JamLocation,
+  CreateJamDto,
+  UpdateJamDto,
+  JamResponse,
+  JamEmailAudience,
+  SendJamEmailDto,
+  TestJamEmailDto,
+} from '@jamia/types/jam';
 
-export interface JamLocation {
-  description: string;
-  place_id?: string;
-  latitude?: number;
-  longitude?: number;
-  google_maps_url?: string;
-}
-
-export interface Jam {
-  id: string;
-  owner_id: string;
-  name: string;
-  location?: JamLocation;
-  location_text?: string;
-  gmaps_link?: string;
-  location_lat?: number;
-  location_lng?: number;
-  starts_at: string;
-  ends_at: string;
-  description?: string;
-  capacity?: number;
-  desired_bases_min?: number;
-  desired_bases_max?: number;
-  desired_flyers_min?: number;
-  desired_flyers_max?: number;
-  status: 'draft' | 'published' | 'archived';
-  auto_promote?: boolean;
-  created_at?: string;
-  updated_at?: string;
-  participant_count?: number;
-  waiting_count?: number;
-  public_participants?: boolean;
-}
-
-export interface CreateJamDto {
-  name: string;
-  location: JamLocation;
-  starts_at: string;
-  ends_at: string;
-  description?: string;
-  capacity?: number;
-  desired_bases_min?: number;
-  desired_bases_max?: number;
-  desired_flyers_min?: number;
-  desired_flyers_max?: number;
-  auto_promote?: boolean;
-  public_participants?: boolean;
-}
-
-export interface UpdateJamDto {
-  name?: string;
-  location?: JamLocation;
-  starts_at?: string;
-  ends_at?: string;
-  description?: string;
-  capacity?: number;
-  desired_bases_min?: number;
-  desired_bases_max?: number;
-  desired_flyers_min?: number;
-  desired_flyers_max?: number;
-  auto_promote?: boolean;
-  status?: 'draft' | 'published' | 'archived';
-  public_participants?: boolean;
-}
-
-export type JamEmailAudience = "all" | "participants" | "waiting";
-
-export interface SendJamEmailPayload {
-  subject: string;
-  htmlContent: string;
-  previewText?: string;
-  textContent?: string;
-  audience: JamEmailAudience;
-}
+// Re-export for backward compatibility
+export type {
+  JamLocation,
+  CreateJamDto,
+  UpdateJamDto,
+  JamResponse as Jam,
+  JamEmailAudience,
+  SendJamEmailDto as SendJamEmailPayload,
+  TestJamEmailDto as TestJamEmailPayload,
+};
 
 export interface SendJamEmailResponse {
   recipientCount: number;
   audience: JamEmailAudience;
 }
 
-export interface TestJamEmailPayload {
-  subject: string;
-  htmlContent: string;
-  previewText?: string;
-  textContent?: string;
-  recipientEmail: string;
-}
-
 export const jamsApi = {
-  getPublishedJams: async (): Promise<Jam[]> => {
+  getPublishedJams: async (): Promise<JamResponse[]> => {
     const response = await apiClient.get('/jams');
     return response.data;
   },
 
-  getMyJams: async (): Promise<Jam[]> => {
+  getMyJams: async (): Promise<JamResponse[]> => {
     const response = await apiClient.get('/jams/my');
     return response.data;
   },
 
-  getParticipatingJams: async (): Promise<Jam[]> => {
+  getParticipatingJams: async (): Promise<JamResponse[]> => {
     const response = await apiClient.get('/jams/participating');
     return response.data;
   },
 
-  getJamById: async (jamId: string): Promise<Jam> => {
+  getJamById: async (jamId: string): Promise<JamResponse> => {
     const response = await apiClient.get(`/jams/${jamId}`);
     return response.data;
   },
 
-  getPublicJamById: async (jamId: string): Promise<Jam> => {
+  getPublicJamById: async (jamId: string): Promise<JamResponse> => {
     const response = await publicApiClient.get(`/public/jams/${jamId}`);
     return response.data;
   },
 
-  createJam: async (data: CreateJamDto): Promise<Jam> => {
+  createJam: async (data: CreateJamDto): Promise<JamResponse> => {
     const response = await apiClient.post('/jams', data);
     return response.data;
   },
 
-  updateJam: async (jamId: string, data: UpdateJamDto): Promise<Jam> => {
+  updateJam: async (jamId: string, data: UpdateJamDto): Promise<JamResponse> => {
     const response = await apiClient.patch(`/jams/${jamId}`, data);
     return response.data;
   },
 
-  publishJam: async (jamId: string): Promise<Jam> => {
+  publishJam: async (jamId: string): Promise<JamResponse> => {
     const response = await apiClient.post(`/jams/${jamId}/publish`);
     return response.data;
   },
@@ -133,14 +70,14 @@ export const jamsApi = {
     await apiClient.delete(`/jams/${jamId}`);
   },
 
-  cloneJam: async (jamId: string): Promise<Jam> => {
+  cloneJam: async (jamId: string): Promise<JamResponse> => {
     const response = await apiClient.post(`/jams/${jamId}/clone`);
     return response.data;
   },
 
   sendJamEmail: async (
     jamId: string,
-    payload: SendJamEmailPayload
+    payload: SendJamEmailDto
   ): Promise<SendJamEmailResponse> => {
     const response = await apiClient.post(`/jams/${jamId}/email`, payload);
     return response.data;
@@ -148,7 +85,7 @@ export const jamsApi = {
 
   sendJamEmailTest: async (
     jamId: string,
-    payload: TestJamEmailPayload
+    payload: TestJamEmailDto
   ): Promise<{ recipientCount: number }> => {
     const response = await apiClient.post(`/jams/${jamId}/email/test`, payload);
     return response.data;

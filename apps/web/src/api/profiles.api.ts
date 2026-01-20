@@ -1,37 +1,24 @@
 import { apiClient } from './client';
+import type {
+  UpdateProfileDto,
+  ProfileResponse,
+  UserSearchResult,
+} from '@jamia/types/profile';
 
-export interface Profile {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name?: string;
-  phone?: string;
-  bio?: string;
-  city?: string;
-  main_role: 'base' | 'flyer' | 'both';
-  photo_url?: string;
-  verified?: boolean;
-  created_at?: string;
-  is_super_admin?: boolean;
-}
-
-export interface UpdateProfileDto {
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  bio?: string;
-  city?: string;
-  main_role?: 'base' | 'flyer' | 'both';
-  photo_url?: string;
-}
+// Re-export for backward compatibility
+export type {
+  UpdateProfileDto,
+  ProfileResponse as Profile,
+  UserSearchResult,
+};
 
 export const profilesApi = {
-  getProfile: async (profileId: string): Promise<Profile> => {
+  getProfile: async (profileId: string): Promise<ProfileResponse> => {
     const response = await apiClient.get(`/profiles/${profileId}`);
     return response.data;
   },
 
-  updateProfile: async (profileId: string, data: UpdateProfileDto): Promise<Profile> => {
+  updateProfile: async (profileId: string, data: UpdateProfileDto): Promise<ProfileResponse> => {
     const response = await apiClient.patch(`/profiles/${profileId}`, data);
     return response.data;
   },
@@ -40,7 +27,7 @@ export const profilesApi = {
     query: string,
     limit: number = 10,
     jamId?: string,
-  ): Promise<{ id: string; name: string; email: string }[]> => {
+  ): Promise<UserSearchResult[]> => {
     const params = new URLSearchParams({
       q: query,
       limit: limit.toString(),
