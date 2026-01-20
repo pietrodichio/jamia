@@ -30,10 +30,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. All existing tests pass in monorepo structure
   4. Frontend deploys to Netlify independently when only frontend changes
   5. Backend deploys to Railway independently when only backend changes
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] TBD
+- [ ] 01-01-PLAN.md — Initialize monorepo structure and shared types package
+- [ ] 01-02-PLAN.md — Migrate repositories preserving git history
+- [ ] 01-03-PLAN.md — Wire shared types and verify tests pass
+- [ ] 01-04-PLAN.md — Configure selective deployment for Netlify and Railway
 
 ### Phase 2: Open Source Preparation
 **Goal**: Repository is ready for external contributors with clear documentation and guidelines
@@ -103,7 +106,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Monorepo Migration | 0/TBD | Not started | - |
+| 1. Monorepo Migration | 0/4 | Not started | - |
 | 2. Open Source Preparation | 0/TBD | Not started | - |
 | 3. Event Foundation | 0/TBD | Not started | - |
 | 4. Event Discovery | 0/TBD | Not started | - |
