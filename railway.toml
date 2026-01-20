@@ -1,0 +1,7 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "pnpm install && pnpm build --filter=@jamia/backend"
+
+[deploy]
+startCommand = "cd apps/backend && pnpm start:prod"
+watchPaths = ["/apps/backend/**", "/packages/**"]
