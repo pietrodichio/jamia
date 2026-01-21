@@ -83,10 +83,15 @@ Plans:
   4. User can view events in list view (sorted by date) or calendar view
   5. User can view full event details including distance from search point
   6. User can search events by keyword in title or description
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] TBD
+- [ ] 04-01-PLAN.md — PostGIS database with geography column, spatial indexes, and search RPC function
+- [ ] 04-02-PLAN.md — Backend search API with location/filter endpoint
+- [ ] 04-03-PLAN.md — Frontend search infrastructure (hooks for geolocation, filters, URL params)
+- [ ] 04-04-PLAN.md — Event list view with filters and keyword search
+- [ ] 04-05-PLAN.md — Calendar view with react-big-calendar
+- [ ] 04-06-PLAN.md — Event detail page with distance display
 
 ### Phase 5: Event Enhancements
 **Goal**: Events support recurring patterns, teacher associations, and managed jams appear in directory
@@ -114,5 +119,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Monorepo Migration | 4/4 | Complete | 2026-01-20 |
 | 2. Open Source Preparation | 3/3 | Complete | 2026-01-21 |
 | 3. Event Foundation | 4/4 | Complete | 2026-01-21 |
-| 4. Event Discovery | 0/TBD | Not started | - |
+| 4. Event Discovery | 0/6 | Not started | - |
 | 5. Event Enhancements | 0/TBD | Not started | - |
