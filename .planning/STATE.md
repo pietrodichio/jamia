@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 4 of 5 (Event Discovery) - IN PROGRESS
-Plan: 5 of 7 in Phase 4 complete (04-01, 04-02, 04-03, 04-04, 04-05)
-Status: Database foundation, API search endpoint, frontend hooks, filter UI, and calendar view complete
-Last activity: 2026-01-21 — Completed 04-05-PLAN.md (Calendar View)
+Plan: 6 of 7 in Phase 4 complete (04-01, 04-02, 04-03, 04-04, 04-05, 04-07)
+Status: Database foundation, API search endpoint, frontend hooks, filter UI, calendar view, and discovery page complete
+Last activity: 2026-01-21 — Completed 04-07-PLAN.md (Event Discovery Page)
 
-Progress: [███████████████░░░] 89% (16/18 plans complete)
+Progress: [████████████████░░] 94% (17/18 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
+- Total plans completed: 17
 - Average duration: 2 min
 - Total execution time: 0.5 hours
 
@@ -30,10 +30,10 @@ Progress: [███████████████░░░] 89% (16/18 pl
 | 1. Monorepo Migration | 4/4 | 17 min | 4 min |
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
-| 4. Event Discovery | 5/7 | 11 min | 2 min |
+| 4. Event Discovery | 6/7 | 13 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-02 (3 min), 04-03 (2 min), 04-04 (2 min), 04-05 (2 min)
+- Last 5 plans: 04-03 (2 min), 04-04 (2 min), 04-05 (2 min), 04-07 (2 min)
 - Trend: Consistent 2 minute execution velocity across Phase 4
 
 *Updated after each plan completion*
@@ -98,6 +98,12 @@ Recent decisions affecting current work:
 - Store full event data in calendar event resource property (enables easy detail navigation)
 - Set explicit height on calendar container (required for react-big-calendar rendering)
 - Defer DiscoverEvents view toggle integration until plan 04-04 executes
+- Distance formatting threshold: < 1 km instead of 0.X km for readability
+- React Query enabled only when lat/lng filters present (prevents unnecessary API calls)
+- Empty state guidance: "Set your location" when filters missing
+- Event type badge variants: differentiate types visually (jam=default, class=secondary, workshop=outline, convention=destructive)
+- Description truncation: 150 characters with ellipsis for list preview
+- Loading skeleton count: 3 placeholder cards to indicate content loading
 
 ### Pending Todos
 
@@ -109,7 +115,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T16:54:54Z
-Stopped at: Completed 04-05-PLAN.md - Calendar View
+Last session: 2026-01-21T17:53:30Z
+Stopped at: Completed 04-07-PLAN.md - Event Discovery Page
 Resume file: None
-Next: Continue Phase 4 with remaining plans (04-06 and 04-07)
+Next: Complete Phase 4 with final plan 04-06 (Event Detail Page)
