@@ -28,6 +28,10 @@ pop3_port = 54426
 enabled = true
 ip_version = "IPv4"
 
+[analytics]
+enabled = true
+port = 54427
+
 [auth]
 enabled = true
 site_url = "http://localhost:5173"

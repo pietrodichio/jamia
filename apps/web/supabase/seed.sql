@@ -8,4 +8,6 @@
 -- For now, this file is intentionally minimal
 -- Add sample data here after you've created test users through the app
 
-RAISE NOTICE 'Seed file executed. Create test users through the app signup flow first.';
+DO $$ BEGIN
+  RAISE NOTICE 'Seed file executed. Create test users through the app signup flow first.';
+END $$;
