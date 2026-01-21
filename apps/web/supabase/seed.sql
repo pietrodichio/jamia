@@ -11,12 +11,12 @@
 -- but we can create additional ones for testing
 
 -- Insert sample profiles (matching auth.users that exist in local dev)
-INSERT INTO public.profiles (id, first_name, last_name, username, bio, is_admin)
+INSERT INTO public.profiles (id, email, first_name, last_name, bio, is_admin)
 VALUES
   -- Default test user (this ID may vary, adjust after first supabase start)
-  (gen_random_uuid(), 'Test', 'User', 'testuser', 'Test user for development', false),
-  (gen_random_uuid(), 'Admin', 'User', 'adminuser', 'Admin user for testing permissions', true),
-  (gen_random_uuid(), 'Co-Organizer', 'User', 'coorg', 'Co-organizer test user', false)
+  (gen_random_uuid(), 'test@example.com', 'Test', 'User', 'Test user for development', false),
+  (gen_random_uuid(), 'admin@example.com', 'Admin', 'User', 'Admin user for testing permissions', true),
+  (gen_random_uuid(), 'coorg@example.com', 'Co-Organizer', 'User', 'Co-organizer test user', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Get user IDs for use in seeds (these will be the first 3 profiles created)
@@ -30,15 +30,15 @@ DECLARE
   test_event_2_id uuid;
 BEGIN
   -- Get the first three user IDs from profiles
-  SELECT id INTO test_user_id FROM public.profiles WHERE username = 'testuser' LIMIT 1;
+  SELECT id INTO test_user_id FROM public.profiles WHERE email = 'test@example.com' LIMIT 1;
   SELECT id INTO admin_user_id FROM public.profiles WHERE is_admin = true LIMIT 1;
-  SELECT id INTO coorg_user_id FROM public.profiles WHERE username = 'coorg' LIMIT 1;
+  SELECT id INTO coorg_user_id FROM public.profiles WHERE email = 'coorg@example.com' LIMIT 1;
 
   -- Insert sample jams
-  INSERT INTO public.jams (name, owner_id, jam_date, location, description, share_by_link)
+  INSERT INTO public.jams (name, owner_id, location_text, starts_at, ends_at, description)
   VALUES
-    ('Weekly Acroyoga Jam', test_user_id, CURRENT_DATE + INTERVAL '7 days', 'Golden Gate Park, San Francisco', 'Join us for our weekly acroyoga practice in the park!', false),
-    ('Private Training Session', coorg_user_id, CURRENT_DATE + INTERVAL '3 days', 'Berkeley Studio', 'Private session for advanced practitioners', true)
+    ('Weekly Acroyoga Jam', test_user_id, 'Golden Gate Park, San Francisco', CURRENT_DATE + INTERVAL '7 days' + INTERVAL '14 hours', CURRENT_DATE + INTERVAL '7 days' + INTERVAL '17 hours', 'Join us for our weekly acroyoga practice in the park!'),
+    ('Private Training Session', coorg_user_id, 'Berkeley Studio', CURRENT_DATE + INTERVAL '3 days' + INTERVAL '10 hours', CURRENT_DATE + INTERVAL '3 days' + INTERVAL '12 hours', 'Private session for advanced practitioners')
   RETURNING id INTO test_jam_id;
 
   -- Insert sample events
