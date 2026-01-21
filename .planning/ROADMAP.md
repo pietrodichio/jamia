@@ -96,9 +96,9 @@ Plans:
 - [x] 04-07-PLAN.md — Event list view and page assembly
 
 ### Phase 5: Event Enhancements
-**Goal**: Events support recurring patterns, teacher associations, jam integration, city search, and advanced filters
+**Goal**: Events support recurring patterns, teacher associations, jam integration, and advanced filters
 **Depends on**: Phase 4
-**Requirements**: RECUR-01, RECUR-02, RECUR-03, RECUR-04, RECUR-05, TEACH-01, TEACH-02, TEACH-03, TEACH-04, JAM-01, JAM-02, JAM-03, JAM-04, JAM-05, LOC-01, FILTER-03, FILTER-04, FILTER-05
+**Requirements**: RECUR-01, RECUR-02, RECUR-03, RECUR-04, RECUR-05, TEACH-01, TEACH-02, TEACH-03, TEACH-04, JAM-01, JAM-02, JAM-03, JAM-04, JAM-05, FILTER-03, FILTER-04, FILTER-05
 **Success Criteria** (what must be TRUE):
   1. User can create recurring event with frequency and end date, generating separate occurrences
   2. User can cancel or edit single occurrence without affecting other occurrences
@@ -106,12 +106,20 @@ Plans:
   4. User can add existing users as teachers for classes/workshops/conventions, viewable on event page
   5. Public managed jams automatically appear in event directory and stay in sync with jam data
   6. Share-by-link jams do not appear in directory
-  7. User can search events by city name (geocoding integration)
-  8. User can filter events by tags, accommodation options, and food options
-**Plans**: TBD
+  7. User can filter events by tags, accommodation options, and food options
+**Plans**: 10 plans
 
 Plans:
-- [ ] TBD
+- [ ] 05-01-PLAN.md — Recurring events database (RRULE columns, event_occurrences table)
+- [ ] 05-02-PLAN.md — Teachers database (event_teachers junction table)
+- [ ] 05-03-PLAN.md — Advanced filters database (ARRAY columns with GIN indexes)
+- [ ] 05-04-PLAN.md — Recurring events backend (service methods, RRULE validation)
+- [ ] 05-05-PLAN.md — Teachers backend (CRUD for event_teachers, authorization)
+- [ ] 05-06-PLAN.md — Advanced filters backend (extend search API with tag filters)
+- [ ] 05-07-PLAN.md — Managed jam integration backend (application-level sync)
+- [ ] 05-08-PLAN.md — Recurring events frontend (RecurrenceEditor, occurrence generation)
+- [ ] 05-09-PLAN.md — Teachers frontend (TeacherSelect, display on event detail)
+- [ ] 05-10-PLAN.md — Advanced filters frontend (TagFilter, AmenityFilters components)
 
 ## Progress
 
@@ -124,4 +132,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Open Source Preparation | 3/3 | Complete | 2026-01-21 |
 | 3. Event Foundation | 4/4 | Complete | 2026-01-21 |
 | 4. Event Discovery | 7/7 | Complete | 2026-01-21 |
-| 5. Event Enhancements | 0/TBD | Not started | - |
+| 5. Event Enhancements | 0/10 | Not started | - |
