@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Open Source Preparation** - Documentation and contribution infrastructure
 - [x] **Phase 3: Event Foundation** - Core event types, creation, and management
 - [ ] **Phase 4: Event Discovery** - Location-based search, filtering, and views
-- [ ] **Phase 5: Event Enhancements** - Recurring events, teachers, and jam integration
+- [ ] **Phase 5: Event Enhancements** - Recurring events, teachers, jam integration, and advanced filters
 
 ## Phase Details
 
@@ -73,30 +73,32 @@ Plans:
 - [x] 03-04-PLAN.md — Frontend API layer with type-safe event clients
 
 ### Phase 4: Event Discovery
-**Goal**: Users can find events by location, date, type, and filters in list or calendar view
+**Goal**: Users can find events by location, date, type, and keyword in list or calendar view
 **Depends on**: Phase 3
-**Requirements**: LOC-01, LOC-02, LOC-03, LOC-04, LOC-05, FILTER-01, FILTER-02, FILTER-03, FILTER-04, FILTER-05, FILTER-06, VIEW-01, VIEW-02, VIEW-03, VIEW-04, VIEW-05, VIEW-06
+**Requirements**: LOC-02, LOC-03, LOC-04, LOC-05, FILTER-01, FILTER-02, FILTER-06, VIEW-01, VIEW-02, VIEW-03, VIEW-04, VIEW-05, VIEW-06
 **Success Criteria** (what must be TRUE):
-  1. User can search events by city name or current location (geolocation)
+  1. User can search events using current location (browser geolocation) or manual lat/lng coordinates
   2. Search results show events sorted by distance with configurable radius
-  3. User can filter events by type, date range, tags, accommodation, and food
-  4. User can view events in list view (sorted by date) or calendar view
+  3. User can filter events by type and date range
+  4. User can view events in list view (sorted by distance) or calendar view
   5. User can view full event details including distance from search point
   6. User can search events by keyword in title or description
-**Plans**: 6 plans
+**Deferred to Phase 5**: LOC-01 (city name geocoding), FILTER-03 (tags), FILTER-04 (accommodation), FILTER-05 (food)
+**Plans**: 7 plans
 
 Plans:
 - [ ] 04-01-PLAN.md — PostGIS database with geography column, spatial indexes, and search RPC function
 - [ ] 04-02-PLAN.md — Backend search API with location/filter endpoint
 - [ ] 04-03-PLAN.md — Frontend search infrastructure (hooks for geolocation, filters, URL params)
-- [ ] 04-04-PLAN.md — Event list view with filters and keyword search
+- [ ] 04-04-PLAN.md — Filter and search UI components
 - [ ] 04-05-PLAN.md — Calendar view with react-big-calendar
 - [ ] 04-06-PLAN.md — Event detail page with distance display
+- [ ] 04-07-PLAN.md — Event list view and page assembly
 
 ### Phase 5: Event Enhancements
-**Goal**: Events support recurring patterns, teacher associations, and managed jams appear in directory
+**Goal**: Events support recurring patterns, teacher associations, jam integration, city search, and advanced filters
 **Depends on**: Phase 4
-**Requirements**: RECUR-01, RECUR-02, RECUR-03, RECUR-04, RECUR-05, TEACH-01, TEACH-02, TEACH-03, TEACH-04, JAM-01, JAM-02, JAM-03, JAM-04, JAM-05
+**Requirements**: RECUR-01, RECUR-02, RECUR-03, RECUR-04, RECUR-05, TEACH-01, TEACH-02, TEACH-03, TEACH-04, JAM-01, JAM-02, JAM-03, JAM-04, JAM-05, LOC-01, FILTER-03, FILTER-04, FILTER-05
 **Success Criteria** (what must be TRUE):
   1. User can create recurring event with frequency and end date, generating separate occurrences
   2. User can cancel or edit single occurrence without affecting other occurrences
@@ -104,6 +106,8 @@ Plans:
   4. User can add existing users as teachers for classes/workshops/conventions, viewable on event page
   5. Public managed jams automatically appear in event directory and stay in sync with jam data
   6. Share-by-link jams do not appear in directory
+  7. User can search events by city name (geocoding integration)
+  8. User can filter events by tags, accommodation options, and food options
 **Plans**: TBD
 
 Plans:
@@ -119,5 +123,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Monorepo Migration | 4/4 | Complete | 2026-01-20 |
 | 2. Open Source Preparation | 3/3 | Complete | 2026-01-21 |
 | 3. Event Foundation | 4/4 | Complete | 2026-01-21 |
-| 4. Event Discovery | 0/6 | Not started | - |
+| 4. Event Discovery | 0/7 | Not started | - |
 | 5. Event Enhancements | 0/TBD | Not started | - |
