@@ -9,6 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { SearchEventsDto } from './dto/search-events.dto';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -277,6 +278,27 @@ export class EventsService {
 
     // Log publication
     await this.auditService.log(eventId, userId, 'event_published');
+
+    return data;
+  }
+
+  async searchEvents(dto: SearchEventsDto) {
+    const { data, error } = await this.supabase.rpc(
+      'search_events_by_location',
+      {
+        search_lng: dto.lng,
+        search_lat: dto.lat,
+        radius_meters: dto.radius || 50000,
+        event_types: dto.types || null,
+        date_from: dto.dateFrom || null,
+        date_to: dto.dateTo || null,
+        keyword: dto.keyword || null,
+      },
+    );
+
+    if (error) {
+      throw new Error(`Failed to search events: ${error.message}`);
+    }
 
     return data;
   }
