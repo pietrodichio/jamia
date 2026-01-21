@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Monorepo Migration** - Restructure into Turborepo with selective deployment
 - [x] **Phase 2: Open Source Preparation** - Documentation and contribution infrastructure
 - [x] **Phase 3: Event Foundation** - Core event types, creation, and management
-- [ ] **Phase 4: Event Discovery** - Location-based search, filtering, and views
+- [x] **Phase 4: Event Discovery** - Location-based search, filtering, and views
 - [ ] **Phase 5: Event Enhancements** - Recurring events, teachers, jam integration, and advanced filters
 
 ## Phase Details
@@ -87,13 +87,13 @@ Plans:
 **Plans**: 7 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — PostGIS database with geography column, spatial indexes, and search RPC function
-- [ ] 04-02-PLAN.md — Backend search API with location/filter endpoint
-- [ ] 04-03-PLAN.md — Frontend search infrastructure (hooks for geolocation, filters, URL params)
-- [ ] 04-04-PLAN.md — Filter and search UI components
-- [ ] 04-05-PLAN.md — Calendar view with react-big-calendar
-- [ ] 04-06-PLAN.md — Event detail page with distance display
-- [ ] 04-07-PLAN.md — Event list view and page assembly
+- [x] 04-01-PLAN.md — PostGIS database with geography column, spatial indexes, and search RPC function
+- [x] 04-02-PLAN.md — Backend search API with location/filter endpoint
+- [x] 04-03-PLAN.md — Frontend search infrastructure (hooks for geolocation, filters, URL params)
+- [x] 04-04-PLAN.md — Filter and search UI components
+- [x] 04-05-PLAN.md — Calendar view with react-big-calendar
+- [x] 04-06-PLAN.md — Event detail page with distance display
+- [x] 04-07-PLAN.md — Event list view and page assembly
 
 ### Phase 5: Event Enhancements
 **Goal**: Events support recurring patterns, teacher associations, jam integration, city search, and advanced filters
@@ -123,5 +123,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Monorepo Migration | 4/4 | Complete | 2026-01-20 |
 | 2. Open Source Preparation | 3/3 | Complete | 2026-01-21 |
 | 3. Event Foundation | 4/4 | Complete | 2026-01-21 |
-| 4. Event Discovery | 0/7 | Not started | - |
+| 4. Event Discovery | 7/7 | Complete | 2026-01-21 |
 | 5. Event Enhancements | 0/TBD | Not started | - |
