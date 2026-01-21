@@ -9,9 +9,18 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "pnpm supabase:start && turbo run dev",
     "test": "turbo run test",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "supabase:start": "cd apps/web && supabase start",
+    "supabase:stop": "cd apps/web && supabase stop",
+    "supabase:status": "cd apps/web && supabase status",
+    "supabase:reset": "cd apps/web && supabase db reset",
+    "supabase:push": "cd apps/web && supabase db push",
+    "supabase:link": "cd apps/web && supabase link",
+    "db:migrate": "pnpm supabase:push",
+    "db:reset": "pnpm supabase:reset",
+    "db:seed": "cd apps/web && supabase db reset --db-only"
   },
   "devDependencies": {
     "turbo": "latest"
