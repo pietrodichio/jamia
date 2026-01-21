@@ -26,7 +26,8 @@ type AuditAction =
   | 'organizer_removed'
   | 'cancel_occurrence'
   | 'update_occurrence'
-  | 'split_recurring_series';
+  | 'split_recurring_series'
+  | 'sync_jam_to_event';
 
 @Injectable()
 export class AuditService {
