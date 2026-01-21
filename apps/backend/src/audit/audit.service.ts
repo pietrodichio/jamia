@@ -17,7 +17,13 @@ type AuditAction =
   | 'cloned'
   | 'email_sent'
   | 'email_test_sent'
-  | 'role_updated';
+  | 'role_updated'
+  | 'event_created'
+  | 'event_updated'
+  | 'event_published'
+  | 'event_deleted'
+  | 'organizer_added'
+  | 'organizer_removed';
 
 @Injectable()
 export class AuditService {
