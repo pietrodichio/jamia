@@ -146,15 +146,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MONO-05 | Phase 1 | Complete |
 | MONO-06 | Phase 1 | Complete |
 | MONO-07 | Phase 1 | Complete |
-| OSS-01 | Phase 2 | Pending |
-| OSS-02 | Phase 2 | Pending |
-| OSS-03 | Phase 2 | Pending |
-| OSS-04 | Phase 2 | Pending |
-| OSS-05 | Phase 2 | Pending |
-| OSS-06 | Phase 2 | Pending |
-| OSS-07 | Phase 2 | Pending |
-| OSS-08 | Phase 2 | Pending |
-| OSS-09 | Phase 2 | Pending |
+| OSS-01 | Phase 2 | Complete |
+| OSS-02 | Phase 2 | Complete |
+| OSS-03 | Phase 2 | Complete |
+| OSS-04 | Phase 2 | Complete |
+| OSS-05 | Phase 2 | Complete |
+| OSS-06 | Phase 2 | Complete |
+| OSS-07 | Phase 2 | Complete |
+| OSS-08 | Phase 2 | Complete |
+| OSS-09 | Phase 2 | Complete |
 | EVENT-01 | Phase 3 | Pending |
 | EVENT-02 | Phase 3 | Pending |
 | EVENT-03 | Phase 3 | Pending |
@@ -204,4 +204,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-20*
-*Last updated: 2026-01-20 after Phase 1 completion*
+*Last updated: 2026-01-21 after Phase 2 completion*
