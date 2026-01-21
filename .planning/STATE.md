@@ -19,9 +19,9 @@ Progress: [████████░░] 80% (4/5 phases complete, Phase 5 sta
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 19
-- Average duration: 2 min
-- Total execution time: 0.7 hours
+- Total plans completed: 21
+- Average duration: 3 min
+- Total execution time: 0.9 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████░░] 80% (4/5 phases complete, Phase 5 sta
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
-| 5. Event Enhancements | 1/? | 7 min | 7 min |
+| 5. Event Enhancements | 3/? | 23 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-05 (2 min), 04-06 (2 min), 04-07 (2 min), 05-01 (7 min)
-- Trend: Phase 5 started with recurring events database schema
+- Last 5 plans: 04-06 (2 min), 04-07 (2 min), 05-01 (7 min), 05-02 (8 min), 05-03 (8 min)
+- Trend: Phase 5 plans averaging 8 minutes (database schema work)
 
 *Updated after each plan completion*
 
@@ -116,6 +116,10 @@ Recent decisions affecting current work:
 - Add parent_event_id for series splitting pattern (enables 'edit future events' functionality)
 - Partial filtered indexes on recurrence columns (only index non-NULL values for efficiency)
 - Check constraint ensures recurrence_rule and recurrence_dtstart are set together
+- PostgreSQL ARRAY columns instead of many-to-many junction tables for tag filtering (3-5x faster)
+- GIN indexes enable fast @> (contains) and && (overlaps) operators on ARRAY columns
+- Empty array defaults ('{}') eliminate need for NULL checks in WHERE clauses
+- Document suggested tag values in column comments for consistency
 
 ### Pending Todos
 
@@ -127,7 +131,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T19:18:24Z
-Stopped at: Completed 05-01-PLAN.md (recurring events database schema)
+Last session: 2026-01-21T19:26:10Z
+Stopped at: Completed 05-03-PLAN.md (advanced event filters with GIN indexes)
 Resume file: None
-Next: Continue Phase 5 planning and execution (teachers, jam sync, filters, etc.)
+Next: Continue Phase 5 planning and execution (filters UI, geocoding, jam sync, etc.)
