@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 5 of 5 (Event Enhancements) - IN PROGRESS
-Plan: 8 of ? in Phase 5 complete (05-01, 05-02, 05-03, 05-04, 05-05, 05-06, 05-07, 05-10)
-Status: Building event enhancements - tag and amenity filter UI complete
-Last activity: 2026-01-21 — Completed 05-10-PLAN.md
+Plan: 9 of ? in Phase 5 complete (05-01, 05-02, 05-03, 05-04, 05-05, 05-06, 05-07, 05-08, 05-10)
+Status: Building event enhancements - recurring events UI complete
+Last activity: 2026-01-21 — Completed 05-08-PLAN.md
 
 Progress: [████████░░] 80% (4/5 phases complete, Phase 5 started)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
+- Total plans completed: 27
 - Average duration: 3 min
-- Total execution time: 1.2 hours
+- Total execution time: 1.3 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [████████░░] 80% (4/5 phases complete, Phase 5 sta
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
-| 5. Event Enhancements | 8/? | 70 min | 8 min |
+| 5. Event Enhancements | 9/? | 79 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-04 (5 min), 05-05 (14 min), 05-06 (11 min), 05-07 (9 min), 05-10 (3 min)
+- Last 5 plans: 05-05 (14 min), 05-06 (11 min), 05-07 (9 min), 05-08 (9 min), 05-10 (3 min)
 - Trend: Phase 5 averaging 8 minutes (complex database schema, recurring events, teachers, filters, sync, UI)
 
 *Updated after each plan completion*
@@ -137,6 +137,11 @@ Recent decisions affecting current work:
 - AmenityFilters separates accommodation and food into distinct sections (independent filtering)
 - URLSearchParams.append pattern for multi-select filters (bookmarkable URLs)
 - Empty arrays omitted from API calls to avoid filtering on empty criteria
+- rrule.js library for RRULE generation and parsing (RFC 5545 compliant, toText() for human-readable descriptions)
+- Auto-update RRULE via useEffect in RecurrenceEditor (cleaner than setTimeout callbacks)
+- Show first 5 occurrences in EventDetail with 90-day range (balances UX and performance)
+- Dialog pattern for OccurrenceEditor with radio selection for edit scope
+- CreateEvent and EditEvent pages with RecurrenceEditor integration (missing critical functionality auto-added)
 
 ### Pending Todos
 
@@ -149,6 +154,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-21T19:59:38Z
-Stopped at: Completed 05-10-PLAN.md (tag and amenity filter UI)
+Stopped at: Completed 05-08-PLAN.md and 05-10-PLAN.md (recurring events UI, tag and amenity filter UI)
 Resume file: None
 Next: Continue Phase 5 planning and execution (geocoding service integration, etc.)
