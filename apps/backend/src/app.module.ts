@@ -11,6 +11,7 @@ import { AuditModule } from './audit/audit.module';
 import { ManagersModule } from './managers/managers.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { EventsModule } from './events/events.module';
+import { EventOrganizersModule } from './event-organizers/event-organizers.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { EventsModule } from './events/events.module';
     ManagersModule,
     TelegramModule,
     EventsModule,
+    EventOrganizersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
