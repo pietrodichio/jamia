@@ -99,6 +99,7 @@ Plans:
 **Goal**: Events support recurring patterns, teacher associations, jam integration, and advanced filters
 **Depends on**: Phase 4
 **Requirements**: RECUR-01, RECUR-02, RECUR-03, RECUR-04, RECUR-05, TEACH-01, TEACH-02, TEACH-03, TEACH-04, JAM-01, JAM-02, JAM-03, JAM-04, JAM-05, FILTER-03, FILTER-04, FILTER-05
+**Deferred from Phase 5**: LOC-01 (city name geocoding via API)
 **Success Criteria** (what must be TRUE):
   1. User can create recurring event with frequency and end date, generating separate occurrences
   2. User can cancel or edit single occurrence without affecting other occurrences
@@ -108,6 +109,11 @@ Plans:
   6. Share-by-link jams do not appear in directory
   7. User can filter events by tags, accommodation options, and food options
 **Plans**: 10 plans
+
+**Note on LOC-01 deferral**: Research findings (05-RESEARCH.md) explicitly recommend starting with manual lat/lng input and deferring geocoding API integration to avoid costs until usage patterns are known. Phase 5 provides the infrastructure (tags, advanced filters) but intentionally excludes geocoding service integration. LOC-01 will be addressed in a future phase once:
+- User search patterns are established
+- Budget for geocoding API is allocated
+- Choice between Nominatim (free, rate-limited) vs Mapbox/Google (paid, scalable) can be made with data
 
 Plans:
 - [ ] 05-01-PLAN.md — Recurring events database (RRULE columns, event_occurrences table)
