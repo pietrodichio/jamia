@@ -472,6 +472,10 @@ export class EventsService {
         date_from: dto.dateFrom || null,
         date_to: dto.dateTo || null,
         keyword: dto.keyword || null,
+        tags: dto.tags || null,
+        accommodation_options: dto.accommodation_options || null,
+        food_options: dto.food_options || null,
+        teacher_id: dto.teacher_id || null,
       },
     );
 
