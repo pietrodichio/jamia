@@ -32,6 +32,12 @@ export const eventsApi = {
     return response.data;
   },
 
+  // Get single event with organizer details
+  async getEvent(eventId: string): Promise<EventWithOrganizer> {
+    const response = await apiClient.get<EventWithOrganizer>(`/events/${eventId}`);
+    return response.data;
+  },
+
   // Update event
   async updateEvent(eventId: string, data: UpdateEventDto): Promise<Event> {
     const response = await apiClient.patch<Event>(`/events/${eventId}`, data);
