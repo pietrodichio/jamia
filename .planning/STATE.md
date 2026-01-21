@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 4 of 5 (Event Discovery) - IN PROGRESS
-Plan: 2 of 7 in Phase 4 complete (04-01, 04-03)
-Status: Database foundation and frontend hooks complete
-Last activity: 2026-01-21 — Completed 04-01-PLAN.md (PostGIS and Search Foundation)
+Plan: 3 of 7 in Phase 4 complete (04-01, 04-02, 04-03)
+Status: Database foundation, API search endpoint, and frontend hooks complete
+Last activity: 2026-01-21 — Completed 04-02-PLAN.md (Search API Endpoint)
 
-Progress: [█████████████░░░░░] 72% (13/18 plans complete)
+Progress: [█████████████░░░░░] 78% (14/18 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 2 min
-- Total execution time: 0.4 hours
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [█████████████░░░░░] 72% (13/18 pl
 | 1. Monorepo Migration | 4/4 | 17 min | 4 min |
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
-| 4. Event Discovery | 2/7 | 4 min | 2 min |
+| 4. Event Discovery | 3/7 | 7 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-03 (2 min), 03-04 (2 min), 04-01 (2 min), 04-03 (2 min)
-- Trend: Consistent 2-minute execution velocity across Phase 3 and Phase 4
+- Last 5 plans: 03-04 (2 min), 04-01 (2 min), 04-02 (3 min), 04-03 (2 min)
+- Trend: Consistent 2-3 minute execution velocity across Phase 3 and Phase 4
 
 *Updated after each plan completion*
 
@@ -85,6 +85,10 @@ Recent decisions affecting current work:
 - Add trigger to automatically maintain location_geo from lat/lng changes
 - Use ST_DWithin for radius filtering before ST_Distance for sorting (leverages spatial index)
 - Default radius of 50km for location searches
+- @Public() decorator pattern for selective route authentication bypass
+- Reflector-based metadata check in guard for public routes
+- Search endpoint positioned before :id route to prevent conflicts
+- @Query() decorator for GET query parameter validation
 
 ### Pending Todos
 
@@ -96,7 +100,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T16:44:24Z
-Stopped at: Completed 04-01-PLAN.md - PostGIS and Search Foundation
+Last session: 2026-01-21T16:50:33Z
+Stopped at: Completed 04-02-PLAN.md - Search API Endpoint
 Resume file: None
-Next: Continue Phase 4 with remaining plans (04-02, 04-04 through 04-07)
+Next: Continue Phase 4 with remaining plans (04-04 through 04-07)
