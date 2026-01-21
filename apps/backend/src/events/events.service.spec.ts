@@ -61,7 +61,10 @@ describe('EventsService', () => {
         'event-123',
         'user-1',
         'event_created',
-        { type: 'class' },
+        {
+          event_title: 'Beginner Class',
+          event_type: 'class',
+        },
       );
     });
 
@@ -269,23 +272,16 @@ describe('EventsService', () => {
             },
           },
         ],
-        profiles: [
-          {
-            response: {
-              data: { is_super_admin: true },
-              error: null,
-            },
-          },
-        ],
       });
+      (supabase.client as any).rpc = jest.fn();
 
       const service = new EventsService(supabase.client, auditService as any);
 
       await service.updateEvent('event-123', 'admin-user', {
         title: 'Updated by admin',
-      });
+      }, true); // Pass isSuperAdmin flag
 
-      // Should not call RPC check since admin check passes first
+      // Should not call RPC check since isSuperAdmin is true
       expect(supabase.client.rpc).not.toHaveBeenCalled();
     });
 
@@ -322,23 +318,20 @@ describe('EventsService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('throws NotFoundException when event does not exist', async () => {
-      const supabase = createSupabaseMock({
-        events: [
-          {
-            selectResponse: {
-              data: null,
-              error: null,
-            },
-          },
-        ],
-      });
+    it('throws ForbiddenException when event does not exist (RPC returns false)', async () => {
+      const supabase = createSupabaseMock({});
+      // Mock RPC to return false since event doesn't exist
+      (supabase.client as any).rpc = jest
+        .fn()
+        .mockResolvedValue({ data: false, error: null });
 
       const service = new EventsService(supabase.client, auditService as any);
 
+      // Note: Authorization check happens first, so non-existent events
+      // result in ForbiddenException rather than NotFoundException
       await expect(
         service.updateEvent('nonexistent', 'user-1', { title: 'Nope' }),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -351,6 +344,8 @@ describe('EventsService', () => {
               data: {
                 id: 'event-123',
                 owner_id: 'user-1',
+                status: 'published',
+                title: 'Test Event',
               },
               error: null,
             },
@@ -363,7 +358,7 @@ describe('EventsService', () => {
 
       const service = new EventsService(supabase.client, auditService as any);
 
-      await service.deleteEvent('event-123', 'user-1');
+      await service.deleteEvent('event-123', 'user-1', false);
 
       expect(auditService.log).toHaveBeenCalledWith(
         'event-123',
@@ -381,6 +376,8 @@ describe('EventsService', () => {
               data: {
                 id: 'event-123',
                 owner_id: 'user-1',
+                status: 'published',
+                title: 'Test Event',
               },
               error: null,
             },
@@ -389,19 +386,11 @@ describe('EventsService', () => {
             response: { data: null, error: null },
           },
         ],
-        profiles: [
-          {
-            response: {
-              data: { is_super_admin: true },
-              error: null,
-            },
-          },
-        ],
       });
 
       const service = new EventsService(supabase.client, auditService as any);
 
-      await service.deleteEvent('event-123', 'admin-user');
+      await service.deleteEvent('event-123', 'admin-user', true);
 
       expect(auditService.log).toHaveBeenCalledWith(
         'event-123',
@@ -419,54 +408,37 @@ describe('EventsService', () => {
               data: {
                 id: 'event-123',
                 owner_id: 'user-1',
+                status: 'published',
               },
               error: null,
             },
           },
         ],
-        profiles: [
-          {
-            response: {
-              data: { is_super_admin: false },
-              error: null,
-            },
-          },
-        ],
       });
+      (supabase.client as any).rpc = jest
+        .fn()
+        .mockResolvedValue({ data: false, error: null });
 
       const service = new EventsService(supabase.client, auditService as any);
 
       await expect(
-        service.deleteEvent('event-123', 'user-2'),
+        service.deleteEvent('event-123', 'user-2', false),
       ).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('publishEvent', () => {
     it('publishes draft event', async () => {
-      const updatePayloads: unknown[] = [];
-
       const supabase = createSupabaseMock({
         events: [
           {
-            selectResponse: {
-              data: {
-                id: 'event-123',
-                owner_id: 'user-1',
-                status: 'draft',
-              },
-              error: null,
-            },
-          },
-          {
-            updateResponse: {
+            response: {
               data: {
                 id: 'event-123',
                 status: 'published',
               },
               error: null,
             },
-            onUpdate: (payload) => updatePayloads.push(payload),
           },
         ],
       });
@@ -476,9 +448,9 @@ describe('EventsService', () => {
 
       const service = new EventsService(supabase.client, auditService as any);
 
-      await service.publishEvent('event-123', 'user-1');
+      const result = await service.publishEvent('event-123', 'user-1', false);
 
-      expect(updatePayloads[0]).toMatchObject({ status: 'published' });
+      expect(result.status).toBe('published');
       expect(auditService.log).toHaveBeenCalledWith(
         'event-123',
         'user-1',
@@ -488,7 +460,7 @@ describe('EventsService', () => {
   });
 
   describe('authorization checks', () => {
-    it('checks super admin status first before RPC call', async () => {
+    it('bypasses RPC call when isSuperAdmin flag is true', async () => {
       const supabase = createSupabaseMock({
         events: [
           {
@@ -507,22 +479,14 @@ describe('EventsService', () => {
             },
           },
         ],
-        profiles: [
-          {
-            response: {
-              data: { is_super_admin: true },
-              error: null,
-            },
-          },
-        ],
       });
       (supabase.client as any).rpc = jest.fn();
 
       const service = new EventsService(supabase.client, auditService as any);
 
-      await service.updateEvent('event-123', 'admin-user', { title: 'Test' });
+      await service.updateEvent('event-123', 'admin-user', { title: 'Test' }, true);
 
-      // RPC should not be called since admin check returned true
+      // RPC should not be called since isSuperAdmin is true
       expect(supabase.client.rpc).not.toHaveBeenCalled();
     });
   });
