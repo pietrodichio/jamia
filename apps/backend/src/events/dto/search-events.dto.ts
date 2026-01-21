@@ -7,8 +7,9 @@ import {
   IsIn,
   Min,
   Max,
+  IsUUID,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class SearchEventsDto {
   // Required: Location parameters
@@ -48,4 +49,44 @@ export class SearchEventsDto {
   @IsOptional()
   @IsString()
   keyword?: string;
+
+  // Optional: Tag-based filters
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    // Handle both array and comma-separated string from query params
+    if (typeof value === 'string') {
+      return value.split(',').map(v => v.trim()).filter(Boolean);
+    }
+    return value;
+  })
+  tags?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map(v => v.trim()).filter(Boolean);
+    }
+    return value;
+  })
+  accommodation_options?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map(v => v.trim()).filter(Boolean);
+    }
+    return value;
+  })
+  food_options?: string[];
+
+  // Optional: Filter by specific teacher
+  @IsOptional()
+  @IsUUID()
+  teacher_id?: string;
 }
