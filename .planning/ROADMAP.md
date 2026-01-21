@@ -51,7 +51,7 @@ Plans:
 
 Plans:
 - [ ] 02-01-PLAN.md — Create core OSS documentation (LICENSE, CODE_OF_CONDUCT, CONTRIBUTING)
-- [ ] 02-02-PLAN.md — Create root README with monorepo setup instructions
+- [x] 02-02-PLAN.md — Create root README with monorepo setup instructions
 - [ ] 02-03-PLAN.md — Create GitHub issue and PR templates
 
 ### Phase 3: Event Foundation
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Monorepo Migration | 4/4 | Complete | 2026-01-20 |
-| 2. Open Source Preparation | 0/3 | Not started | - |
+| 2. Open Source Preparation | 1/3 | In progress | - |
 | 3. Event Foundation | 0/TBD | Not started | - |
 | 4. Event Discovery | 0/TBD | Not started | - |
 | 5. Event Enhancements | 0/TBD | Not started | - |
