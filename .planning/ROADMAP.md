@@ -64,10 +64,13 @@ Plans:
   3. User can edit and delete events they created
   4. User can add co-organizers who can also edit the event
   5. Super admins can edit any event
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] TBD
+- [ ] 03-01-PLAN.md — Database schema for events and event_organizers with RLS
+- [ ] 03-02-PLAN.md — Events backend with CRUD operations and authorization
+- [ ] 03-03-PLAN.md — Event organizers backend for co-organizer management
+- [ ] 03-04-PLAN.md — Frontend API layer with type-safe event clients
 
 ### Phase 4: Event Discovery
 **Goal**: Users can find events by location, date, type, and filters in list or calendar view
@@ -110,6 +113,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Monorepo Migration | 4/4 | Complete | 2026-01-20 |
 | 2. Open Source Preparation | 3/3 | Complete | 2026-01-21 |
-| 3. Event Foundation | 0/TBD | Not started | - |
+| 3. Event Foundation | 0/4 | Not started | - |
 | 4. Event Discovery | 0/TBD | Not started | - |
 | 5. Event Enhancements | 0/TBD | Not started | - |
