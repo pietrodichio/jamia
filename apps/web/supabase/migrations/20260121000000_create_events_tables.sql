@@ -1,0 +1,40 @@
+-- Create event_status enum
+CREATE TYPE public.event_status AS ENUM ('draft', 'published', 'archived');
+
+-- Create events table with type discriminator
+CREATE TABLE public.events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('jam', 'class', 'workshop', 'convention')),
+
+  -- Shared required fields
+  title TEXT NOT NULL,
+  location_text TEXT NOT NULL,
+  starts_at TIMESTAMPTZ NOT NULL,
+  ends_at TIMESTAMPTZ NOT NULL,
+
+  -- Shared optional fields
+  description TEXT,
+  price TEXT,
+  external_link TEXT,
+  organizer_contact TEXT,
+
+  -- Location fields (all optional)
+  location_lat NUMERIC,
+  location_lng NUMERIC,
+  location_place_id TEXT,
+  gmaps_link TEXT,
+
+  -- Status management
+  status public.event_status DEFAULT 'draft',
+
+  -- Timestamps
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for RLS performance
+CREATE INDEX idx_events_owner_id ON public.events(owner_id);
+CREATE INDEX idx_events_type ON public.events(type);
+CREATE INDEX idx_events_status ON public.events(status);
+CREATE INDEX idx_events_starts_at ON public.events(starts_at);
