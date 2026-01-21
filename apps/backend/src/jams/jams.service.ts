@@ -11,6 +11,7 @@ import { CreateJamDto, JamLocationDto } from './dto/create-jam.dto';
 import { UpdateJamDto } from './dto/update-jam.dto';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
+import { EventsService } from '../events/events.service';
 import {
   JamEmailAudience,
   SendJamEmailDto,
@@ -34,6 +35,7 @@ export class JamsService {
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly auditService: AuditService,
     private readonly emailService: EmailService,
+    private readonly eventsService: EventsService,
   ) {}
 
   private buildLocationColumns(location?: JamLocationDto | null) {
@@ -362,6 +364,11 @@ export class JamsService {
       jam_name: createJamDto.name,
     });
 
+    // Sync to events if managed and published
+    if (data.visibility === 'managed' && data.status === 'published') {
+      await this.eventsService.createEventFromJam(data, userId);
+    }
+
     return data;
   }
 
@@ -423,6 +430,9 @@ export class JamsService {
       updateJamDto as Record<string, unknown>,
     );
 
+    // Sync updates to linked event
+    await this.eventsService.syncJamUpdate(jamId, updateJamDto, userId);
+
     return data;
   }
 
@@ -456,6 +466,17 @@ export class JamsService {
     // Log publication
     await this.auditService.log(jamId, userId, 'published');
 
+    // Sync to events if managed (create if not exists, update status if exists)
+    if (data.visibility === 'managed') {
+      await this.eventsService.syncJamUpdate(
+        jamId,
+        { status: 'published' },
+        userId,
+      );
+      // Also create event if it doesn't exist yet
+      await this.eventsService.createEventFromJam(data, userId);
+    }
+
     return data;
   }
 
@@ -476,6 +497,9 @@ export class JamsService {
         'You can only delete jams you own or manage',
       );
     }
+
+    // Delete linked event first
+    await this.eventsService.deleteEventFromJam(jamId, userId);
 
     const { error } = await this.supabase.from('jams').delete().eq('id', jamId);
 
