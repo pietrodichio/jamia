@@ -108,3 +108,22 @@ export interface UpdateOccurrenceDto {
   override_ends_at?: string;
   override_description?: string;
 }
+
+// Event teacher interface
+export interface EventTeacher {
+  id: string;
+  event_id: string;
+  user_id: string;
+  role?: string | null;
+  created_at: string;
+  profiles?: {
+    id: string;
+    name: string;
+    photo_url?: string;
+  };
+}
+
+export interface AddTeacherDto {
+  user_id: string;
+  role?: string;
+}

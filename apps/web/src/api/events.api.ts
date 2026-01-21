@@ -64,6 +64,9 @@ export const eventsApi = {
     dateFrom?: string;
     dateTo?: string;
     keyword?: string;
+    tags?: string[];
+    accommodation_options?: string[];
+    food_options?: string[];
   }): Promise<(Event & { distance_meters: number })[]> {
     const searchParams = new URLSearchParams();
     searchParams.append('lng', params.lng.toString());
@@ -74,6 +77,9 @@ export const eventsApi = {
     if (params.dateFrom) searchParams.append('dateFrom', params.dateFrom);
     if (params.dateTo) searchParams.append('dateTo', params.dateTo);
     if (params.keyword) searchParams.append('keyword', params.keyword);
+    if (params.tags?.length) params.tags.forEach(tag => searchParams.append('tags', tag));
+    if (params.accommodation_options?.length) params.accommodation_options.forEach(opt => searchParams.append('accommodation_options', opt));
+    if (params.food_options?.length) params.food_options.forEach(opt => searchParams.append('food_options', opt));
 
     const response = await apiClient.get(`/events/search?${searchParams.toString()}`);
     return response.data;
