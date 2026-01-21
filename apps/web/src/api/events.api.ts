@@ -1,6 +1,7 @@
 import { apiClient } from './client';
 import type {
   Event,
+  EventType,
   EventWithOrganizer,
   CreateEventDto,
   UpdateEventDto,
@@ -46,5 +47,29 @@ export const eventsApi = {
   // Delete event
   async deleteEvent(eventId: string): Promise<void> {
     await apiClient.delete(`/events/${eventId}`);
+  },
+
+  // Search events by location
+  async searchEvents(params: {
+    lng: number;
+    lat: number;
+    radius?: number;
+    types?: EventType[];
+    dateFrom?: string;
+    dateTo?: string;
+    keyword?: string;
+  }): Promise<(Event & { distance_meters: number })[]> {
+    const searchParams = new URLSearchParams();
+    searchParams.append('lng', params.lng.toString());
+    searchParams.append('lat', params.lat.toString());
+
+    if (params.radius) searchParams.append('radius', (params.radius * 1000).toString()); // Convert km to meters
+    if (params.types?.length) params.types.forEach(t => searchParams.append('types', t));
+    if (params.dateFrom) searchParams.append('dateFrom', params.dateFrom);
+    if (params.dateTo) searchParams.append('dateTo', params.dateTo);
+    if (params.keyword) searchParams.append('keyword', params.keyword);
+
+    const response = await apiClient.get(`/events/search?${searchParams.toString()}`);
+    return response.data;
   },
 };
