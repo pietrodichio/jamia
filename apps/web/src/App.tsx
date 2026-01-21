@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Footer } from "@/components/Footer";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import EmailConfirmation from "./pages/EmailConfirmation";
@@ -60,27 +61,32 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthListener />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/email-confirmation" element={<EmailConfirmation />} />
-          <Route path="/profile-setup" element={<ProfileSetup />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/create-jam" element={<CreateJam />} />
-          <Route path="/jam/:id/*" element={<JamDetailsLayout />}>
-            <Route index element={<JamOverviewPage />} />
-            <Route path="communication" element={<JamCommunicationPage />} />
-          </Route>
-          <Route path="/jam/:id/edit" element={<EditJam />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/accept-invite" element={<AcceptInvite />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/og-image" element={<OGImage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="flex flex-col min-h-screen">
+          <AuthListener />
+          <div className="flex-1">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/email-confirmation" element={<EmailConfirmation />} />
+              <Route path="/profile-setup" element={<ProfileSetup />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/create-jam" element={<CreateJam />} />
+              <Route path="/jam/:id/*" element={<JamDetailsLayout />}>
+                <Route index element={<JamOverviewPage />} />
+                <Route path="communication" element={<JamCommunicationPage />} />
+              </Route>
+              <Route path="/jam/:id/edit" element={<EditJam />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/accept-invite" element={<AcceptInvite />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/og-image" element={<OGImage />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+          <Footer />
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
