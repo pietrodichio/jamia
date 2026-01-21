@@ -50,6 +50,56 @@ cp apps/web/.env.example apps/web/.env
 
 Edit `apps/web/.env` and add your Supabase public keys and backend API URL (http://localhost:8088 for local development).
 
+### Supabase Local Development
+
+For local development, you can use Supabase CLI to run a local instance:
+
+**Prerequisites:**
+- Docker Desktop installed and running
+- Supabase CLI installed: `npm install -g supabase` or `brew install supabase/tap/supabase`
+
+**Start local Supabase:**
+```bash
+cd apps/backend
+pnpm supabase:start
+```
+
+This starts a local Supabase instance with:
+- Local PostgreSQL database
+- Auth service
+- Storage service
+- Studio UI: http://localhost:54323
+
+**Get local credentials:**
+```bash
+pnpm supabase:status
+```
+
+Copy the credentials from the output and update your `apps/backend/.env` and `apps/web/.env` with the local values:
+- `SUPABASE_URL`: API URL from status output
+- `SUPABASE_ANON_KEY`: anon key from status output
+- `SUPABASE_SERVICE_ROLE_KEY`: service_role key from status output (backend only)
+
+**Manage local database:**
+```bash
+# Reset database to initial state
+pnpm supabase:reset
+
+# Stop local Supabase
+pnpm supabase:stop
+
+# Check status
+pnpm supabase:status
+```
+
+**Alternative: Use cloud Supabase**
+
+If you prefer to use a cloud Supabase project instead of local:
+1. Create a project at [supabase.com](https://supabase.com)
+2. Go to Project Settings → API
+3. Copy URL and keys to your `.env` files
+4. Skip the Supabase CLI setup above
+
 ### Development
 
 ```bash
