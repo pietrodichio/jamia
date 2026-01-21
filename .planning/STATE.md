@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 4 of 5 (Event Discovery) - IN PROGRESS
-Plan: 3 of 7 in Phase 4 complete
-Status: Frontend search infrastructure complete
-Last activity: 2026-01-21 — Completed 04-03-PLAN.md (search hooks and API client)
+Plan: 2 of 7 in Phase 4 complete (04-01, 04-03)
+Status: Database foundation and frontend hooks complete
+Last activity: 2026-01-21 — Completed 04-01-PLAN.md (PostGIS and Search Foundation)
 
-Progress: [█████████░] 64%
+Progress: [█████████████░░░░░] 72% (13/18 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: 2 min
 - Total execution time: 0.4 hours
 
@@ -30,10 +30,10 @@ Progress: [█████████░] 64%
 | 1. Monorepo Migration | 4/4 | 17 min | 4 min |
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
-| 4. Event Discovery | 3/7 | 6 min | 2 min |
+| 4. Event Discovery | 2/7 | 4 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-02 (2 min), 03-03 (2 min), 03-04 (2 min), 04-03 (2 min)
+- Last 5 plans: 03-03 (2 min), 03-04 (2 min), 04-01 (2 min), 04-03 (2 min)
 - Trend: Consistent 2-minute execution velocity across Phase 3 and Phase 4
 
 *Updated after each plan completion*
@@ -80,6 +80,11 @@ Recent decisions affecting current work:
 - Use replace: true in setSearchParams to avoid polluting browser history
 - Convert radius from km (UI-friendly) to meters (API expectation) in API client
 - Store all filter state in URL params for bookmarkability and shareability
+- Use geography(POINT, 4326) instead of geometry for accurate spherical distance calculations
+- Use GENERATED ALWAYS AS for search_vector instead of trigger-based approach
+- Add trigger to automatically maintain location_geo from lat/lng changes
+- Use ST_DWithin for radius filtering before ST_Distance for sorting (leverages spatial index)
+- Default radius of 50km for location searches
 
 ### Pending Todos
 
@@ -91,7 +96,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T16:44:36Z
-Stopped at: Completed 04-03-PLAN.md - Frontend search infrastructure (hooks and API client)
+Last session: 2026-01-21T16:44:24Z
+Stopped at: Completed 04-01-PLAN.md - PostGIS and Search Foundation
 Resume file: None
-Next: Continue Phase 4 with plan 04-04 (Filter and search UI components)
+Next: Continue Phase 4 with remaining plans (04-02, 04-04 through 04-07)
