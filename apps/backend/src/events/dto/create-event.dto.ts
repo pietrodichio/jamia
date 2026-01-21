@@ -61,4 +61,17 @@ export class CreateEventDto {
   @IsOptional()
   @IsString()
   gmaps_link?: string;
+
+  // Optional: Recurrence fields
+  @IsOptional()
+  @IsString()
+  recurrence_rule?: string; // RRULE string format
+
+  @IsOptional()
+  @IsDateString()
+  recurrence_dtstart?: string; // Base start time for series (ISO 8601)
+
+  @IsOptional()
+  @IsDateString()
+  recurrence_until?: string; // Series end date (ISO 8601)
 }
