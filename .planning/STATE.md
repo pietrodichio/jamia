@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 5 of 5 (Event Enhancements) - IN PROGRESS
-Plan: 1 of ? in Phase 5 complete (05-02)
-Status: Building event enhancements - teacher associations schema complete
-Last activity: 2026-01-21 — Completed 05-02-PLAN.md
+Plan: 3 of ? in Phase 5 complete (05-01, 05-02, 05-03)
+Status: Building event enhancements - filters schema complete
+Last activity: 2026-01-21 — Completed 05-03-PLAN.md
 
 Progress: [████████░░] 80% (4/5 phases complete, Phase 5 started)
 
@@ -34,8 +34,8 @@ Progress: [████████░░] 80% (4/5 phases complete, Phase 5 sta
 | 5. Event Enhancements | 1/? | 7 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-05 (2 min), 04-06 (2 min), 04-07 (2 min), 05-02 (7 min)
-- Trend: Phase 5 started with single-task database schema plan
+- Last 5 plans: 04-05 (2 min), 04-06 (2 min), 04-07 (2 min), 05-01 (7 min)
+- Trend: Phase 5 started with recurring events database schema
 
 *Updated after each plan completion*
 
@@ -111,6 +111,11 @@ Recent decisions affecting current work:
 - Junction table pattern for teachers over ARRAY column (better bidirectional query performance)
 - Teachers are display-only metadata with no special permissions beyond event authorization
 - RLS policy allows anyone to view teachers but only owners/co-organizers can manage
+- Store RRULE string with separate recurrence_dtstart column (RRULE alone doesn't include base datetime)
+- Use event_occurrences table for exceptions instead of EXDATE format (better queryability)
+- Add parent_event_id for series splitting pattern (enables 'edit future events' functionality)
+- Partial filtered indexes on recurrence columns (only index non-NULL values for efficiency)
+- Check constraint ensures recurrence_rule and recurrence_dtstart are set together
 
 ### Pending Todos
 
@@ -122,7 +127,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T19:24:51Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-01-21T19:18:24Z
+Stopped at: Completed 05-01-PLAN.md (recurring events database schema)
 Resume file: None
-Next: Continue Phase 5 planning and execution
+Next: Continue Phase 5 planning and execution (teachers, jam sync, filters, etc.)
