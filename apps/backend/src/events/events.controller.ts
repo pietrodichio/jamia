@@ -12,6 +12,7 @@ import {
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { UpdateOccurrenceDto } from './dto/update-occurrence.dto';
 import { SearchEventsDto } from './dto/search-events.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { Public } from '../auth/public.decorator';
@@ -68,6 +69,38 @@ export class EventsController {
   @Patch(':id/publish')
   async publishEvent(@Param('id') id: string, @User() user: AuthUser) {
     return this.eventsService.publishEvent(id, user.id, user.isSuperAdmin);
+  }
+
+  @Patch(':id/occurrences/:originalStart')
+  async updateOccurrence(
+    @Param('id') id: string,
+    @Param('originalStart') originalStart: string,
+    @Body() updateDto: UpdateOccurrenceDto,
+    @User() user: AuthUser,
+  ) {
+    return this.eventsService.updateOccurrence(
+      id,
+      originalStart,
+      updateDto,
+      user.id,
+      user.isSuperAdmin,
+    );
+  }
+
+  @Patch(':id/future/:fromDate')
+  async updateFutureOccurrences(
+    @Param('id') id: string,
+    @Param('fromDate') fromDate: string,
+    @Body() updateDto: UpdateEventDto,
+    @User() user: AuthUser,
+  ) {
+    return this.eventsService.updateFutureOccurrences(
+      id,
+      fromDate,
+      updateDto,
+      user.id,
+      user.isSuperAdmin,
+    );
   }
 
   @Delete(':id')

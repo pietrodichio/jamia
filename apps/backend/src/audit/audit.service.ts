@@ -23,7 +23,10 @@ type AuditAction =
   | 'event_published'
   | 'event_deleted'
   | 'organizer_added'
-  | 'organizer_removed';
+  | 'organizer_removed'
+  | 'cancel_occurrence'
+  | 'update_occurrence'
+  | 'split_recurring_series';
 
 @Injectable()
 export class AuditService {
