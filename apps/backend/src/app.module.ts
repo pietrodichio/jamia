@@ -10,6 +10,7 @@ import { ParticipantsModule } from './participants/participants.module';
 import { AuditModule } from './audit/audit.module';
 import { ManagersModule } from './managers/managers.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TelegramModule } from './telegram/telegram.module';
     AuditModule,
     ManagersModule,
     TelegramModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
