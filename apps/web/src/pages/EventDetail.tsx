@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { eventsApi } from '@/api/events.api';
 import { teachersApi } from '@/api/teachers.api';
 import { useEventFilters } from '@/hooks/useEventFilters';
+import { useEventOccurrences } from '@/hooks/useEventOccurrences';
+import { RecurrenceDisplay } from '@/components/events/RecurrenceDisplay';
+import { OccurrenceEditor } from '@/components/events/OccurrenceEditor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +27,7 @@ import {
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
   const { filters } = useEventFilters();
+  const [editingOccurrence, setEditingOccurrence] = useState<string | null>(null);
 
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['events', eventId],
@@ -36,6 +41,14 @@ export default function EventDetail() {
     queryFn: () => teachersApi.listTeachers(eventId!),
     enabled: !!eventId
   });
+
+  // Generate occurrences for recurring events (next 90 days)
+  const occurrences = useEventOccurrences(
+    event?.recurrence_rule,
+    event?.recurrence_dtstart,
+    new Date(),
+    new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+  );
 
   if (isLoading) {
     return (
@@ -147,6 +160,11 @@ export default function EventDetail() {
                 </div>
               </div>
             </div>
+            {/* Recurrence Display */}
+            <RecurrenceDisplay
+              recurrenceRule={event.recurrence_rule}
+              recurrenceDtstart={event.recurrence_dtstart}
+            />
           </div>
 
           <Separator />
@@ -265,6 +283,44 @@ export default function EventDetail() {
         </CardContent>
       </Card>
 
+      {/* Upcoming Occurrences (for recurring events) */}
+      {event.recurrence_rule && occurrences.length > 0 && (
+        <Card className="border-primary/10 rounded-2xl mb-6">
+          <CardHeader>
+            <CardTitle>Upcoming Occurrences</CardTitle>
+            <CardDescription>Next occurrences of this recurring event</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {occurrences.slice(0, 5).map(date => (
+                <div key={date.toISOString()} className="flex items-center justify-between border rounded-lg p-3">
+                  <div>
+                    <div className="font-medium">
+                      {format(date, 'EEEE, MMMM d, yyyy')}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {format(date, 'h:mm a')}
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingOccurrence(date.toISOString())}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              ))}
+              {occurrences.length > 5 && (
+                <p className="text-sm text-muted-foreground text-center pt-2">
+                  And {occurrences.length - 5} more occurrences...
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Organizer Card */}
       <Card className="border-primary/10 rounded-2xl">
         <CardHeader>
@@ -283,6 +339,16 @@ export default function EventDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Occurrence Editor Dialog */}
+      {editingOccurrence && (
+        <OccurrenceEditor
+          event={event}
+          occurrenceDate={editingOccurrence}
+          isOpen={!!editingOccurrence}
+          onClose={() => setEditingOccurrence(null)}
+        />
+      )}
     </div>
   );
 }
