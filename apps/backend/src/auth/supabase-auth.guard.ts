@@ -4,10 +4,12 @@ import {
   Inject,
 } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
+import { IS_PUBLIC_KEY } from './public.decorator';
 
 interface JwtPayload {
   sub: string;
@@ -18,11 +20,19 @@ interface JwtPayload {
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   constructor(
+    private reflector: Reflector,
     private configService: ConfigService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers.authorization;
 

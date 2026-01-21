@@ -6,12 +6,15 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { SearchEventsDto } from './dto/search-events.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { Public } from '../auth/public.decorator';
 import { User, AuthUser } from '../auth/user.decorator';
 
 @Controller('events')
@@ -25,6 +28,12 @@ export class EventsController {
     @User() user: AuthUser,
   ) {
     return this.eventsService.createEvent(user.id, createEventDto);
+  }
+
+  @Public()
+  @Get('search')
+  async searchEvents(@Query() dto: SearchEventsDto) {
+    return this.eventsService.searchEvents(dto);
   }
 
   @Get('my-events')
