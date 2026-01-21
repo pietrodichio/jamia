@@ -22,6 +22,7 @@ import AcceptInvite from "./pages/AcceptInvite";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import OGImage from "./pages/OGImage";
+import EventCalendar from "./pages/EventCalendar";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const App = () => (
               <Route path="/accept-invite" element={<AcceptInvite />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/og-image" element={<OGImage />} />
+              <Route path="/calendar" element={<EventCalendar />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
