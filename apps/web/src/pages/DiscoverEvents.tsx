@@ -1,9 +1,21 @@
 import { LocationSearch } from '@/components/search/LocationSearch';
 import { KeywordSearch } from '@/components/search/KeywordSearch';
 import { EventFilters } from '@/components/events/EventFilters';
+import { TagFilter } from '@/components/events/TagFilter';
+import { AmenityFilters } from '@/components/events/AmenityFilters';
 import { EventList } from '@/components/events/EventList';
+import { useEventFilters } from '@/hooks/useEventFilters';
 
 const DiscoverEvents = () => {
+  const {
+    tags,
+    setTags,
+    accommodationOptions,
+    setAccommodationOptions,
+    foodOptions,
+    setFoodOptions
+  } = useEventFilters();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       <div className="container mx-auto p-6 max-w-7xl">
@@ -15,6 +27,16 @@ const DiscoverEvents = () => {
             <LocationSearch />
             <KeywordSearch />
             <EventFilters />
+            <TagFilter
+              selectedTags={tags}
+              onChange={setTags}
+            />
+            <AmenityFilters
+              selectedAccommodation={accommodationOptions}
+              selectedFood={foodOptions}
+              onAccommodationChange={setAccommodationOptions}
+              onFoodChange={setFoodOptions}
+            />
           </aside>
 
           {/* Main Content - Event List */}
