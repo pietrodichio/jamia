@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 5 of 5 (Event Enhancements) - IN PROGRESS
-Plan: 3 of ? in Phase 5 complete (05-01, 05-02, 05-03)
-Status: Building event enhancements - filters schema complete
-Last activity: 2026-01-21 — Completed 05-03-PLAN.md
+Plan: 5 of ? in Phase 5 complete (05-01, 05-02, 05-03, 05-04, 05-05)
+Status: Building event enhancements - teachers API complete
+Last activity: 2026-01-21 — Completed 05-05-PLAN.md
 
 Progress: [████████░░] 80% (4/5 phases complete, Phase 5 started)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
+- Total plans completed: 23
 - Average duration: 3 min
-- Total execution time: 0.9 hours
+- Total execution time: 1.0 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████░░] 80% (4/5 phases complete, Phase 5 sta
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
-| 5. Event Enhancements | 3/? | 23 min | 8 min |
+| 5. Event Enhancements | 5/? | 27 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-06 (2 min), 04-07 (2 min), 05-01 (7 min), 05-02 (8 min), 05-03 (8 min)
-- Trend: Phase 5 plans averaging 8 minutes (database schema work)
+- Last 5 plans: 05-01 (7 min), 05-02 (8 min), 05-03 (8 min), 05-04 (2 min), 05-05 (2 min)
+- Trend: Phase 5 averaging 5 minutes (mix of database and API work)
 
 *Updated after each plan completion*
 
@@ -120,6 +120,9 @@ Recent decisions affecting current work:
 - GIN indexes enable fast @> (contains) and && (overlaps) operators on ARRAY columns
 - Empty array defaults ('{}') eliminate need for NULL checks in WHERE clauses
 - Document suggested tag values in column comments for consistency
+- Mirror EventOrganizersService pattern for teacher management (consistency and proven architecture)
+- Public GET endpoint for teacher listings with @Public() decorator (RLS handles visibility)
+- Owner or co-organizer authorization for teacher add/remove operations
 
 ### Pending Todos
 
@@ -131,7 +134,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T19:26:10Z
-Stopped at: Completed 05-03-PLAN.md (advanced event filters with GIN indexes)
+Last session: 2026-01-21T20:31:34Z
+Stopped at: Completed 05-05-PLAN.md (teachers API with authorization)
 Resume file: None
 Next: Continue Phase 5 planning and execution (filters UI, geocoding, jam sync, etc.)
