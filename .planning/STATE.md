@@ -31,11 +31,11 @@ Progress: [████████░░] 80% (4/5 phases complete, Phase 5 sta
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
-| 5. Event Enhancements | 7/? | 70 min | 10 min |
+| 5. Event Enhancements | 7/? | 67 min | 9 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-03 (8 min), 05-04 (5 min), 05-05 (14 min), 05-06 (14 min), 05-07 (9 min)
-- Trend: Phase 5 averaging 10 minutes (complex database schema, recurring events, teachers, filters, sync)
+- Last 5 plans: 05-03 (8 min), 05-04 (5 min), 05-05 (14 min), 05-06 (11 min), 05-07 (9 min)
+- Trend: Phase 5 averaging 9 minutes (complex database schema, recurring events, teachers, filters, sync)
 
 *Updated after each plan completion*
 
@@ -127,6 +127,10 @@ Recent decisions affecting current work:
 - Application-level sync for managed jams instead of database triggers (maintainability)
 - Sync only managed+published jams to events (share-by-link jams excluded)
 - Non-throwing sync methods ensure jam CRUD operations always succeed
+- Extended RPC function for tag filtering instead of direct queries (preserves PostGIS optimization)
+- Transform decorator handles both array and comma-separated query param formats
+- NULL-safe filter parameters where NULL means no filtering (not 'match NULL values')
+- DROP old function signature before CREATE OR REPLACE to avoid PostgreSQL overloading
 - Visibility changes (managed→share-by-link) automatically delete event listing
 - source_jam_id foreign key with ON DELETE CASCADE ensures automatic cleanup
 
