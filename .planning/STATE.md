@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 5 of 5 (Event Enhancements) - IN PROGRESS
-Plan: 7 of ? in Phase 5 complete (05-01, 05-02, 05-03, 05-04, 05-05, 05-06, 05-07)
-Status: Building event enhancements - managed jam event sync complete
-Last activity: 2026-01-21 — Completed 05-07-PLAN.md
+Plan: 8 of ? in Phase 5 complete (05-01, 05-02, 05-03, 05-04, 05-05, 05-06, 05-07, 05-10)
+Status: Building event enhancements - tag and amenity filter UI complete
+Last activity: 2026-01-21 — Completed 05-10-PLAN.md
 
 Progress: [████████░░] 80% (4/5 phases complete, Phase 5 started)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
+- Total plans completed: 26
 - Average duration: 3 min
 - Total execution time: 1.2 hours
 
@@ -31,11 +31,11 @@ Progress: [████████░░] 80% (4/5 phases complete, Phase 5 sta
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
-| 5. Event Enhancements | 7/? | 67 min | 9 min |
+| 5. Event Enhancements | 8/? | 70 min | 8 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-03 (8 min), 05-04 (5 min), 05-05 (14 min), 05-06 (11 min), 05-07 (9 min)
-- Trend: Phase 5 averaging 9 minutes (complex database schema, recurring events, teachers, filters, sync)
+- Last 5 plans: 05-04 (5 min), 05-05 (14 min), 05-06 (11 min), 05-07 (9 min), 05-10 (3 min)
+- Trend: Phase 5 averaging 8 minutes (complex database schema, recurring events, teachers, filters, sync, UI)
 
 *Updated after each plan completion*
 
@@ -133,6 +133,10 @@ Recent decisions affecting current work:
 - DROP old function signature before CREATE OR REPLACE to avoid PostgreSQL overloading
 - Visibility changes (managed→share-by-link) automatically delete event listing
 - source_jam_id foreign key with ON DELETE CASCADE ensures automatic cleanup
+- TagFilter provides 10 predefined options matching backend schema (ensures data integrity)
+- AmenityFilters separates accommodation and food into distinct sections (independent filtering)
+- URLSearchParams.append pattern for multi-select filters (bookmarkable URLs)
+- Empty arrays omitted from API calls to avoid filtering on empty criteria
 
 ### Pending Todos
 
@@ -144,7 +148,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T19:38:31Z
-Stopped at: Completed 05-07-PLAN.md (managed jam event sync)
+Last session: 2026-01-21T19:59:38Z
+Stopped at: Completed 05-10-PLAN.md (tag and amenity filter UI)
 Resume file: None
-Next: Continue Phase 5 planning and execution (filters UI, geocoding service integration, etc.)
+Next: Continue Phase 5 planning and execution (geocoding service integration, etc.)
