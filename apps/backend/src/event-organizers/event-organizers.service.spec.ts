@@ -64,7 +64,7 @@ describe('EventOrganizersService', () => {
         auditService as any,
       );
 
-      await service.addCoOrganizer('event-123', 'user-1', { user_id: 'user-2' });
+      await service.addCoOrganizer('event-123', 'user-1', 'user-2', false);
 
       expect(organizerInsertPayloads).toHaveLength(1);
       expect(organizerInsertPayloads[0]).toMatchObject({
@@ -76,7 +76,7 @@ describe('EventOrganizersService', () => {
         'event-123',
         'user-1',
         'organizer_added',
-        { organizer_id: 'user-2' },
+        { co_organizer_user_id: 'user-2' },
       );
     });
 
@@ -132,9 +132,7 @@ describe('EventOrganizersService', () => {
         auditService as any,
       );
 
-      await service.addCoOrganizer('event-123', 'admin-user', {
-        user_id: 'user-2',
-      });
+      await service.addCoOrganizer('event-123', 'admin-user', 'user-2', true);
 
       // Should succeed without checking ownership
       expect(auditService.log).toHaveBeenCalled();
@@ -169,11 +167,11 @@ describe('EventOrganizersService', () => {
       );
 
       await expect(
-        service.addCoOrganizer('event-123', 'user-3', { user_id: 'user-2' }),
+        service.addCoOrganizer('event-123', 'user-3', 'user-2', false),
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('throws BadRequestException when user does not exist', async () => {
+    it('throws NotFoundException when user does not exist', async () => {
       const supabase = createSupabaseMock({
         events: [
           {
@@ -202,10 +200,8 @@ describe('EventOrganizersService', () => {
       );
 
       await expect(
-        service.addCoOrganizer('event-123', 'user-1', {
-          user_id: 'nonexistent',
-        }),
-      ).rejects.toThrow(BadRequestException);
+        service.addCoOrganizer('event-123', 'user-1', 'nonexistent', false),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws BadRequestException when owner tries to add themselves', async () => {
@@ -229,7 +225,7 @@ describe('EventOrganizersService', () => {
       );
 
       await expect(
-        service.addCoOrganizer('event-123', 'user-1', { user_id: 'user-1' }),
+        service.addCoOrganizer('event-123', 'user-1', 'user-1', false),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -274,7 +270,7 @@ describe('EventOrganizersService', () => {
       );
 
       await expect(
-        service.addCoOrganizer('event-123', 'user-1', { user_id: 'user-2' }),
+        service.addCoOrganizer('event-123', 'user-1', 'user-2', false),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -296,7 +292,7 @@ describe('EventOrganizersService', () => {
       );
 
       await expect(
-        service.addCoOrganizer('nonexistent', 'user-1', { user_id: 'user-2' }),
+        service.addCoOrganizer('nonexistent', 'user-1', 'user-2', false),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -317,6 +313,12 @@ describe('EventOrganizersService', () => {
         ],
         event_organizers: [
           {
+            selectResponse: {
+              data: null, // Authorization check - owner doesn't need to be in event_organizers
+              error: null,
+            },
+          },
+          {
             response: {
               data: [
                 {
@@ -336,16 +338,13 @@ describe('EventOrganizersService', () => {
           },
         ],
       });
-      (supabase.client as any).rpc = jest
-        .fn()
-        .mockResolvedValue({ data: true, error: null });
 
       const service = new EventOrganizersService(
         supabase.client,
         auditService as any,
       );
 
-      const result = await service.getCoOrganizers('event-123', 'user-1');
+      const result = await service.getCoOrganizers('event-123', 'user-1', false);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
@@ -369,6 +368,12 @@ describe('EventOrganizersService', () => {
         ],
         event_organizers: [
           {
+            selectResponse: {
+              data: { user_id: 'user-2' }, // Authorization check - user-2 is a co-organizer
+              error: null,
+            },
+          },
+          {
             response: {
               data: [],
               error: null,
@@ -376,21 +381,16 @@ describe('EventOrganizersService', () => {
           },
         ],
       });
-      (supabase.client as any).rpc = jest
-        .fn()
-        .mockResolvedValue({ data: true, error: null });
 
       const service = new EventOrganizersService(
         supabase.client,
         auditService as any,
       );
 
-      await service.getCoOrganizers('event-123', 'user-2');
+      await service.getCoOrganizers('event-123', 'user-2', false);
 
-      expect(supabase.client.rpc).toHaveBeenCalledWith(
-        'is_event_owner_or_organizer',
-        { event_id: 'event-123', user_id: 'user-2' },
-      );
+      // Should succeed because user-2 is a co-organizer
+      expect(auditService.log).not.toHaveBeenCalled();
     });
 
     it('throws ForbiddenException when user has no access', async () => {
@@ -406,18 +406,15 @@ describe('EventOrganizersService', () => {
             },
           },
         ],
-        profiles: [
+        event_organizers: [
           {
-            response: {
-              data: { is_super_admin: false },
+            selectResponse: {
+              data: null, // Authorization check - user-3 is NOT a co-organizer
               error: null,
             },
           },
         ],
       });
-      (supabase.client as any).rpc = jest
-        .fn()
-        .mockResolvedValue({ data: false, error: null });
 
       const service = new EventOrganizersService(
         supabase.client,
@@ -425,7 +422,7 @@ describe('EventOrganizersService', () => {
       );
 
       await expect(
-        service.getCoOrganizers('event-123', 'user-3'),
+        service.getCoOrganizers('event-123', 'user-3', false),
       ).rejects.toThrow(ForbiddenException);
     });
   });
@@ -466,7 +463,7 @@ describe('EventOrganizersService', () => {
         auditService as any,
       );
 
-      await service.removeCoOrganizer('event-123', 'org-123', 'user-1');
+      await service.removeCoOrganizer('event-123', 'org-123', 'user-1', false);
 
       expect(auditService.log).toHaveBeenCalledWith(
         'event-123',
@@ -519,7 +516,7 @@ describe('EventOrganizersService', () => {
         auditService as any,
       );
 
-      await service.removeCoOrganizer('event-123', 'org-123', 'admin-user');
+      await service.removeCoOrganizer('event-123', 'org-123', 'admin-user', true);
 
       expect(auditService.log).toHaveBeenCalled();
     });
@@ -553,11 +550,11 @@ describe('EventOrganizersService', () => {
       );
 
       await expect(
-        service.removeCoOrganizer('event-123', 'org-123', 'user-3'),
+        service.removeCoOrganizer('event-123', 'org-123', 'user-3', false),
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('throws NotFoundException when co-organizer does not exist', async () => {
+    it('succeeds even when co-organizer does not exist (idempotent delete)', async () => {
       const supabase = createSupabaseMock({
         events: [
           {
@@ -572,8 +569,8 @@ describe('EventOrganizersService', () => {
         ],
         event_organizers: [
           {
-            selectResponse: {
-              data: null,
+            response: {
+              data: null, // DELETE returns null (no rows deleted)
               error: null,
             },
           },
@@ -585,9 +582,20 @@ describe('EventOrganizersService', () => {
         auditService as any,
       );
 
-      await expect(
-        service.removeCoOrganizer('event-123', 'nonexistent', 'user-1'),
-      ).rejects.toThrow(NotFoundException);
+      const result = await service.removeCoOrganizer(
+        'event-123',
+        'nonexistent',
+        'user-1',
+        false,
+      );
+
+      expect(result).toEqual({ message: 'Co-organizer removed successfully' });
+      expect(auditService.log).toHaveBeenCalledWith(
+        'event-123',
+        'user-1',
+        'organizer_removed',
+        { organizer_id: 'nonexistent' },
+      );
     });
   });
 });
