@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { eventsApi } from '@/api/events.api';
+import { teachersApi } from '@/api/teachers.api';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,13 @@ export default function EventDetail() {
     queryKey: ['events', eventId],
     queryFn: () => eventsApi.getEvent(eventId!),
     enabled: !!eventId,
+  });
+
+  // Fetch teachers for this event
+  const { data: teachers } = useQuery({
+    queryKey: ['events', eventId, 'teachers'],
+    queryFn: () => teachersApi.listTeachers(eventId!),
+    enabled: !!eventId
   });
 
   if (isLoading) {
@@ -173,6 +181,37 @@ export default function EventDetail() {
                 <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
                   {event.description}
                 </p>
+              </div>
+            </>
+          )}
+
+          {/* Teachers & Instructors */}
+          {teachers && teachers.length > 0 && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg">Teachers & Instructors</h3>
+                <div className="flex flex-wrap gap-3">
+                  {teachers.map(teacher => (
+                    <Link
+                      key={teacher.id}
+                      to={`/teachers/${teacher.user_id}`}
+                      className="flex items-center gap-2 border rounded-lg p-3 hover:bg-accent transition-colors"
+                    >
+                      <img
+                        src={teacher.profiles?.photo_url || '/default-avatar.png'}
+                        alt={teacher.profiles?.name || 'Teacher'}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="font-medium">{teacher.profiles?.name}</p>
+                        {teacher.role && (
+                          <p className="text-sm text-muted-foreground">{teacher.role}</p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </>
           )}
