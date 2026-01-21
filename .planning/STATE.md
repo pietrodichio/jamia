@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 4 of 5 (Event Discovery) - COMPLETE
-Plan: 7 of 7 in Phase 4 complete (04-01, 04-02, 04-03, 04-04, 04-05, 04-06, 04-07)
-Status: Phase 4 verified and complete - event discovery with location search, filters, list/calendar views
-Last activity: 2026-01-21 — Phase 4 verified (6/6 must-haves passed)
+Phase: 5 of 5 (Event Enhancements) - IN PROGRESS
+Plan: 1 of ? in Phase 5 complete (05-02)
+Status: Building event enhancements - teacher associations schema complete
+Last activity: 2026-01-21 — Completed 05-02-PLAN.md
 
-Progress: [████████░░] 80% (4/5 phases complete)
+Progress: [████████░░] 80% (4/5 phases complete, Phase 5 started)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18
+- Total plans completed: 19
 - Average duration: 2 min
-- Total execution time: 0.6 hours
+- Total execution time: 0.7 hours
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [████████░░] 80% (4/5 phases complete)
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
+| 5. Event Enhancements | 1/? | 7 min | 7 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-04 (2 min), 04-05 (2 min), 04-06 (2 min), 04-07 (2 min)
-- Trend: Consistent 2 minute execution velocity across Phase 4
+- Last 5 plans: 04-05 (2 min), 04-06 (2 min), 04-07 (2 min), 05-02 (7 min)
+- Trend: Phase 5 started with single-task database schema plan
 
 *Updated after each plan completion*
 
@@ -107,6 +108,9 @@ Recent decisions affecting current work:
 - Client-side distance calculation is for display only (authoritative distance from backend search results)
 - Back navigation goes to /calendar (not /discover) as primary event view
 - EventWithOrganizer type provides organizer details without additional API call
+- Junction table pattern for teachers over ARRAY column (better bidirectional query performance)
+- Teachers are display-only metadata with no special permissions beyond event authorization
+- RLS policy allows anyone to view teachers but only owners/co-organizers can manage
 
 ### Pending Todos
 
@@ -118,7 +122,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T17:30:00Z
-Stopped at: Phase 4 complete and verified (6/6 must-haves passed)
+Last session: 2026-01-21T19:24:51Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
-Next: Ready for Phase 5 (/gsd:discuss-phase 5 or /gsd:plan-phase 5)
+Next: Continue Phase 5 planning and execution
