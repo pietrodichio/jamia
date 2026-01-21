@@ -1,15 +1,39 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create enum types
-CREATE TYPE public.user_role AS ENUM ('user', 'admin');
-CREATE TYPE public.acro_role AS ENUM ('base', 'flyer', 'both');
-CREATE TYPE public.jam_status AS ENUM ('draft', 'published', 'archived');
-CREATE TYPE public.participant_state AS ENUM ('participant', 'waiting', 'cancelled');
-CREATE TYPE public.audit_action AS ENUM ('created', 'updated', 'published', 'unpublished', 'deleted', 'joined', 'cancelled', 'promoted', 'removed');
+-- Create enum types (with IF NOT EXISTS-like behavior via DO block)
+DO $$ BEGIN
+  CREATE TYPE public.user_role AS ENUM ('user', 'admin');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.acro_role AS ENUM ('base', 'flyer', 'both');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.jam_status AS ENUM ('draft', 'published', 'archived');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.participant_state AS ENUM ('participant', 'waiting', 'cancelled');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE public.audit_action AS ENUM ('created', 'updated', 'published', 'unpublished', 'deleted', 'joined', 'cancelled', 'promoted', 'removed');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
 
 -- Profiles table
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   name TEXT NOT NULL,
@@ -23,7 +47,7 @@ CREATE TABLE public.profiles (
 );
 
 -- User roles table (separate for security)
-CREATE TABLE public.user_roles (
+CREATE TABLE IF NOT EXISTS public.user_roles (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   role public.user_role NOT NULL DEFAULT 'user',
@@ -32,7 +56,7 @@ CREATE TABLE public.user_roles (
 );
 
 -- Jams table
-CREATE TABLE public.jams (
+CREATE TABLE IF NOT EXISTS public.jams (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -53,7 +77,7 @@ CREATE TABLE public.jams (
 );
 
 -- Jam participants table
-CREATE TABLE public.jam_participants (
+CREATE TABLE IF NOT EXISTS public.jam_participants (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   jam_id UUID NOT NULL REFERENCES public.jams(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -67,7 +91,7 @@ CREATE TABLE public.jam_participants (
 );
 
 -- Audit log table
-CREATE TABLE public.audit_log (
+CREATE TABLE IF NOT EXISTS public.audit_log (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   jam_id UUID REFERENCES public.jams(id) ON DELETE CASCADE,
   actor_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -77,11 +101,11 @@ CREATE TABLE public.audit_log (
 );
 
 -- Indexes for performance
-CREATE INDEX idx_jams_owner_status_starts ON public.jams(owner_id, status, starts_at);
-CREATE INDEX idx_jams_status ON public.jams(status);
-CREATE INDEX idx_jam_participants_jam_state_role_joined ON public.jam_participants(jam_id, state, role, joined_at);
-CREATE INDEX idx_jam_participants_user ON public.jam_participants(user_id);
-CREATE INDEX idx_audit_log_jam ON public.audit_log(jam_id);
+CREATE INDEX IF NOT EXISTS idx_jams_owner_status_starts ON public.jams(owner_id, status, starts_at);
+CREATE INDEX IF NOT EXISTS idx_jams_status ON public.jams(status);
+CREATE INDEX IF NOT EXISTS idx_jam_participants_jam_state_role_joined ON public.jam_participants(jam_id, state, role, joined_at);
+CREATE INDEX IF NOT EXISTS idx_jam_participants_user ON public.jam_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_jam ON public.audit_log(jam_id);
 
 -- Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
