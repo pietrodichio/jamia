@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 4 of 5 (Event Discovery) - IN PROGRESS
-Plan: 3 of 7 in Phase 4 complete (04-01, 04-02, 04-03)
-Status: Database foundation, API search endpoint, and frontend hooks complete
-Last activity: 2026-01-21 — Completed 04-02-PLAN.md (Search API Endpoint)
+Plan: 4 of 7 in Phase 4 complete (04-01, 04-02, 04-03, 04-04)
+Status: Database foundation, API search endpoint, frontend hooks, and filter UI components complete
+Last activity: 2026-01-21 — Completed 04-04-PLAN.md (Filter & Search UI Components)
 
-Progress: [█████████████░░░░░] 78% (14/18 plans complete)
+Progress: [██████████████░░░░] 83% (15/18 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 2 min
 - Total execution time: 0.5 hours
 
@@ -30,11 +30,11 @@ Progress: [█████████████░░░░░] 78% (14/18 pl
 | 1. Monorepo Migration | 4/4 | 17 min | 4 min |
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
-| 4. Event Discovery | 3/7 | 7 min | 2 min |
+| 4. Event Discovery | 4/7 | 9 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 03-04 (2 min), 04-01 (2 min), 04-02 (3 min), 04-03 (2 min)
-- Trend: Consistent 2-3 minute execution velocity across Phase 3 and Phase 4
+- Last 5 plans: 04-01 (2 min), 04-02 (3 min), 04-03 (2 min), 04-04 (2 min)
+- Trend: Consistent 2-3 minute execution velocity across Phase 4
 
 *Updated after each plan completion*
 
@@ -89,6 +89,11 @@ Recent decisions affecting current work:
 - Reflector-based metadata check in guard for public routes
 - Search endpoint positioned before :id route to prevent conflicts
 - @Query() decorator for GET query parameter validation
+- Native HTML date inputs instead of Calendar component (simpler, universal browser support)
+- 300ms debounce delay for keyword search (industry standard)
+- Manual coordinate entry alongside geolocation (supports users who deny permission)
+- Radius selector with predefined options (better UX than free-form input)
+- City search deferred to Phase 5 (requires geocoding service)
 
 ### Pending Todos
 
@@ -100,7 +105,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T16:50:33Z
-Stopped at: Completed 04-02-PLAN.md - Search API Endpoint
+Last session: 2026-01-21T16:54:43Z
+Stopped at: Completed 04-04-PLAN.md - Filter & Search UI Components
 Resume file: None
-Next: Continue Phase 4 with remaining plans (04-04 through 04-07)
+Next: Continue Phase 4 with remaining plans (04-05 through 04-07)
