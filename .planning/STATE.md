@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 4 of 5 (Event Discovery) - IN PROGRESS
-Plan: 6 of 7 in Phase 4 complete (04-01, 04-02, 04-03, 04-04, 04-05, 04-07)
-Status: Database foundation, API search endpoint, frontend hooks, filter UI, calendar view, and discovery page complete
-Last activity: 2026-01-21 — Completed 04-07-PLAN.md (Event Discovery Page)
+Phase: 4 of 5 (Event Discovery) - COMPLETE
+Plan: 7 of 7 in Phase 4 complete (04-01, 04-02, 04-03, 04-04, 04-05, 04-06, 04-07)
+Status: Phase 4 complete - event discovery system fully functional with list view, calendar view, and detail pages
+Last activity: 2026-01-21 — Completed 04-06-PLAN.md (Event Detail Page)
 
-Progress: [████████████████░░] 94% (17/18 plans complete)
+Progress: [█████████████████░] 100% (18/18 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: 2 min
-- Total execution time: 0.5 hours
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [████████████████░░] 94% (17/18 pl
 | 1. Monorepo Migration | 4/4 | 17 min | 4 min |
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
-| 4. Event Discovery | 6/7 | 13 min | 2 min |
+| 4. Event Discovery | 7/7 | 15 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-03 (2 min), 04-04 (2 min), 04-05 (2 min), 04-07 (2 min)
+- Last 5 plans: 04-04 (2 min), 04-05 (2 min), 04-06 (2 min), 04-07 (2 min)
 - Trend: Consistent 2 minute execution velocity across Phase 4
 
 *Updated after each plan completion*
@@ -104,6 +104,9 @@ Recent decisions affecting current work:
 - Event type badge variants: differentiate types visually (jam=default, class=secondary, workshop=outline, convention=destructive)
 - Description truncation: 150 characters with ellipsis for list preview
 - Loading skeleton count: 3 placeholder cards to indicate content loading
+- Client-side distance calculation is for display only (authoritative distance from backend search results)
+- Back navigation goes to /calendar (not /discover) as primary event view
+- EventWithOrganizer type provides organizer details without additional API call
 
 ### Pending Todos
 
@@ -115,7 +118,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T17:53:30Z
-Stopped at: Completed 04-07-PLAN.md - Event Discovery Page
+Last session: 2026-01-21T17:00:44Z
+Stopped at: Completed 04-06-PLAN.md - Event Detail Page
 Resume file: None
-Next: Complete Phase 4 with final plan 04-06 (Event Detail Page)
+Next: Phase 4 complete - ready for Phase 5 (future work)
