@@ -25,6 +25,7 @@ import OGImage from "./pages/OGImage";
 import EventCalendar from "./pages/EventCalendar";
 import DiscoverEvents from "./pages/DiscoverEvents";
 import EventDetail from "./pages/EventDetail";
+import TeacherProfile from "./pages/TeacherProfile";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +88,7 @@ const App = () => (
               <Route path="/calendar" element={<EventCalendar />} />
               <Route path="/discover" element={<DiscoverEvents />} />
               <Route path="/events/:eventId" element={<EventDetail />} />
+              <Route path="/teachers/:teacherId" element={<TeacherProfile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
