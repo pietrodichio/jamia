@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Open Source Preparation** - Documentation and contribution infrastructure
 - [x] **Phase 3: Event Foundation** - Core event types, creation, and management
 - [x] **Phase 4: Event Discovery** - Location-based search, filtering, and views
-- [ ] **Phase 5: Event Enhancements** - Recurring events, teachers, jam integration, and advanced filters
+- [x] **Phase 5: Event Enhancements** - Recurring events, teachers, jam integration, and advanced filters
 
 ## Phase Details
 
@@ -116,16 +116,16 @@ Plans:
 - Choice between Nominatim (free, rate-limited) vs Mapbox/Google (paid, scalable) can be made with data
 
 Plans:
-- [ ] 05-01-PLAN.md — Recurring events database (RRULE columns, event_occurrences table)
-- [ ] 05-02-PLAN.md — Teachers database (event_teachers junction table)
-- [ ] 05-03-PLAN.md — Advanced filters database (ARRAY columns with GIN indexes)
-- [ ] 05-04-PLAN.md — Recurring events backend (service methods, RRULE validation)
-- [ ] 05-05-PLAN.md — Teachers backend (CRUD for event_teachers, authorization)
-- [ ] 05-06-PLAN.md — Advanced filters backend (extend search API with tag filters)
-- [ ] 05-07-PLAN.md — Managed jam integration backend (application-level sync)
-- [ ] 05-08-PLAN.md — Recurring events frontend (RecurrenceEditor, occurrence generation)
-- [ ] 05-09-PLAN.md — Teachers frontend (TeacherSelect, display on event detail)
-- [ ] 05-10-PLAN.md — Advanced filters frontend (TagFilter, AmenityFilters components)
+- [x] 05-01-PLAN.md — Recurring events database (RRULE columns, event_occurrences table)
+- [x] 05-02-PLAN.md — Teachers database (event_teachers junction table)
+- [x] 05-03-PLAN.md — Advanced filters database (ARRAY columns with GIN indexes)
+- [x] 05-04-PLAN.md — Recurring events backend (service methods, RRULE validation)
+- [x] 05-05-PLAN.md — Teachers backend (CRUD for event_teachers, authorization)
+- [x] 05-06-PLAN.md — Advanced filters backend (extend search API with tag filters)
+- [x] 05-07-PLAN.md — Managed jam integration backend (application-level sync)
+- [x] 05-08-PLAN.md — Recurring events frontend (RecurrenceEditor, occurrence generation)
+- [x] 05-09-PLAN.md — Teachers frontend (TeacherSelect, display on event detail)
+- [x] 05-10-PLAN.md — Advanced filters frontend (TagFilter, AmenityFilters components)
 
 ## Progress
 
@@ -138,4 +138,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Open Source Preparation | 3/3 | Complete | 2026-01-21 |
 | 3. Event Foundation | 4/4 | Complete | 2026-01-21 |
 | 4. Event Discovery | 7/7 | Complete | 2026-01-21 |
-| 5. Event Enhancements | 0/10 | Not started | - |
+| 5. Event Enhancements | 10/10 | Complete | 2026-01-21 |

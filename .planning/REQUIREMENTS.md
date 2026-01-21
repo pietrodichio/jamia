@@ -172,9 +172,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LOC-05 | Phase 4 | Complete |
 | FILTER-01 | Phase 4 | Complete |
 | FILTER-02 | Phase 4 | Complete |
-| FILTER-03 | Phase 4 | Pending |
-| FILTER-04 | Phase 4 | Pending |
-| FILTER-05 | Phase 4 | Pending |
+| FILTER-03 | Phase 5 | Complete |
+| FILTER-04 | Phase 5 | Complete |
+| FILTER-05 | Phase 5 | Complete |
 | FILTER-06 | Phase 4 | Complete |
 | VIEW-01 | Phase 4 | Complete |
 | VIEW-02 | Phase 4 | Complete |
@@ -182,20 +182,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIEW-04 | Phase 4 | Complete |
 | VIEW-05 | Phase 4 | Complete |
 | VIEW-06 | Phase 4 | Complete |
-| RECUR-01 | Phase 5 | Pending |
-| RECUR-02 | Phase 5 | Pending |
-| RECUR-03 | Phase 5 | Pending |
-| RECUR-04 | Phase 5 | Pending |
-| RECUR-05 | Phase 5 | Pending |
-| TEACH-01 | Phase 5 | Pending |
-| TEACH-02 | Phase 5 | Pending |
-| TEACH-03 | Phase 5 | Pending |
-| TEACH-04 | Phase 5 | Pending |
-| JAM-01 | Phase 5 | Pending |
-| JAM-02 | Phase 5 | Pending |
-| JAM-03 | Phase 5 | Pending |
-| JAM-04 | Phase 5 | Pending |
-| JAM-05 | Phase 5 | Pending |
+| RECUR-01 | Phase 5 | Complete |
+| RECUR-02 | Phase 5 | Complete |
+| RECUR-03 | Phase 5 | Complete |
+| RECUR-04 | Phase 5 | Complete |
+| RECUR-05 | Phase 5 | Complete |
+| TEACH-01 | Phase 5 | Complete |
+| TEACH-02 | Phase 5 | Complete |
+| TEACH-03 | Phase 5 | Complete |
+| TEACH-04 | Phase 5 | Complete |
+| JAM-01 | Phase 5 | Complete |
+| JAM-02 | Phase 5 | Complete |
+| JAM-03 | Phase 5 | Complete |
+| JAM-04 | Phase 5 | Complete |
+| JAM-05 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 57 total
