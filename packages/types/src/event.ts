@@ -33,6 +33,13 @@ export interface Event {
   // Status
   status: EventStatus;
 
+  // Recurrence fields
+  recurrence_rule?: string | null;
+  recurrence_dtstart?: string | null;
+  recurrence_until?: string | null;
+  parent_event_id?: string | null;
+  source_jam_id?: string | null;
+
   // Timestamps
   created_at: string;
   updated_at: string;
@@ -80,6 +87,9 @@ export interface CreateEventDto {
   location_lng?: number;
   location_place_id?: string;
   gmaps_link?: string;
+  recurrence_rule?: string;
+  recurrence_dtstart?: string;
+  recurrence_until?: string;
 }
 
 export interface UpdateEventDto extends Partial<CreateEventDto> {
@@ -88,4 +98,13 @@ export interface UpdateEventDto extends Partial<CreateEventDto> {
 
 export interface AddCoOrganizerDto {
   userId: string;
+}
+
+export interface UpdateOccurrenceDto {
+  is_cancelled?: boolean;
+  override_title?: string;
+  override_location_text?: string;
+  override_starts_at?: string;
+  override_ends_at?: string;
+  override_description?: string;
 }
