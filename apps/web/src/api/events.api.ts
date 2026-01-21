@@ -5,6 +5,7 @@ import type {
   EventWithOrganizer,
   CreateEventDto,
   UpdateEventDto,
+  UpdateOccurrenceDto,
 } from '@jamia/types/event';
 
 export const eventsApi = {
@@ -82,6 +83,32 @@ export const eventsApi = {
     if (params.food_options?.length) params.food_options.forEach(opt => searchParams.append('food_options', opt));
 
     const response = await apiClient.get(`/events/search?${searchParams.toString()}`);
+    return response.data;
+  },
+
+  // Update single occurrence
+  async updateOccurrence(
+    eventId: string,
+    originalStart: string,
+    dto: UpdateOccurrenceDto
+  ): Promise<any> {
+    const response = await apiClient.patch(
+      `/events/${eventId}/occurrences/${originalStart}`,
+      dto
+    );
+    return response.data;
+  },
+
+  // Update all future occurrences (series split)
+  async updateFutureOccurrences(
+    eventId: string,
+    fromDate: string,
+    dto: UpdateEventDto
+  ): Promise<{ truncatedSeriesId: string; newSeriesId: string }> {
+    const response = await apiClient.patch(
+      `/events/${eventId}/future/${fromDate}`,
+      dto
+    );
     return response.data;
   },
 };
