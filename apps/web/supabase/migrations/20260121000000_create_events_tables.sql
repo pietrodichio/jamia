@@ -60,3 +60,105 @@ CREATE TABLE public.event_organizers (
 -- Create indexes for RLS performance
 CREATE INDEX idx_event_organizers_event_user ON public.event_organizers(event_id, user_id);
 CREATE INDEX idx_event_organizers_user ON public.event_organizers(user_id);
+
+-- Enable RLS on both tables
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_organizers ENABLE ROW LEVEL SECURITY;
+
+-- Authorization function to check if user is owner or organizer
+CREATE OR REPLACE FUNCTION public.is_event_owner_or_organizer(event_id UUID, user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE SQL
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.events
+    WHERE events.id = is_event_owner_or_organizer.event_id
+      AND (events.owner_id = is_event_owner_or_organizer.user_id OR EXISTS (
+        SELECT 1 FROM public.event_organizers
+        WHERE event_organizers.event_id = events.id
+          AND event_organizers.user_id = is_event_owner_or_organizer.user_id
+      ))
+  );
+$$;
+
+-- Events RLS policies
+CREATE POLICY "Anyone can view published events"
+  ON public.events FOR SELECT
+  TO authenticated
+  USING (
+    status = 'published'
+    OR owner_id = auth.uid()
+    OR is_event_owner_or_organizer(id, auth.uid())
+    OR public.is_admin(auth.uid())
+  );
+
+CREATE POLICY "Users can create events"
+  ON public.events FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = owner_id);
+
+CREATE POLICY "Owners and co-organizers can update events"
+  ON public.events FOR UPDATE
+  TO authenticated
+  USING (
+    owner_id = auth.uid()
+    OR is_event_owner_or_organizer(id, auth.uid())
+    OR public.is_admin(auth.uid())
+  );
+
+CREATE POLICY "Owners and admins can delete events"
+  ON public.events FOR DELETE
+  TO authenticated
+  USING (
+    owner_id = auth.uid()
+    OR public.is_admin(auth.uid())
+  );
+
+-- Event_organizers RLS policies
+CREATE POLICY "Owners and organizers can view organizers"
+  ON public.event_organizers FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.events
+      WHERE events.id = event_organizers.event_id
+        AND (events.owner_id = auth.uid() OR EXISTS (
+          SELECT 1 FROM public.event_organizers AS eo
+          WHERE eo.event_id = events.id
+            AND eo.user_id = auth.uid()
+        ))
+    ) OR public.is_admin(auth.uid())
+  );
+
+CREATE POLICY "Owners and organizers can add organizers"
+  ON public.event_organizers FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.events
+      WHERE events.id = event_organizers.event_id
+        AND (events.owner_id = auth.uid() OR EXISTS (
+          SELECT 1 FROM public.event_organizers AS eo
+          WHERE eo.event_id = events.id
+            AND eo.user_id = auth.uid()
+        ))
+    ) OR public.is_admin(auth.uid())
+  );
+
+CREATE POLICY "Owners and organizers can remove organizers"
+  ON public.event_organizers FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.events
+      WHERE events.id = event_organizers.event_id
+        AND (events.owner_id = auth.uid() OR EXISTS (
+          SELECT 1 FROM public.event_organizers AS eo
+          WHERE eo.event_id = events.id
+            AND eo.user_id = auth.uid()
+        ))
+    ) OR public.is_admin(auth.uid())
+  );
