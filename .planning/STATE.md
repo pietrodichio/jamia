@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 4 of 5 (Event Discovery) - IN PROGRESS
-Plan: 4 of 7 in Phase 4 complete (04-01, 04-02, 04-03, 04-04)
-Status: Database foundation, API search endpoint, frontend hooks, and filter UI components complete
-Last activity: 2026-01-21 — Completed 04-04-PLAN.md (Filter & Search UI Components)
+Plan: 5 of 7 in Phase 4 complete (04-01, 04-02, 04-03, 04-04, 04-05)
+Status: Database foundation, API search endpoint, frontend hooks, filter UI, and calendar view complete
+Last activity: 2026-01-21 — Completed 04-05-PLAN.md (Calendar View)
 
-Progress: [██████████████░░░░] 83% (15/18 plans complete)
+Progress: [███████████████░░░] 89% (16/18 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 2 min
 - Total execution time: 0.5 hours
 
@@ -30,11 +30,11 @@ Progress: [██████████████░░░░] 83% (15/18 pl
 | 1. Monorepo Migration | 4/4 | 17 min | 4 min |
 | 2. Open Source Preparation | 3/3 | 3 min | 1 min |
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
-| 4. Event Discovery | 4/7 | 9 min | 2 min |
+| 4. Event Discovery | 5/7 | 11 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 (2 min), 04-02 (3 min), 04-03 (2 min), 04-04 (2 min)
-- Trend: Consistent 2-3 minute execution velocity across Phase 4
+- Last 5 plans: 04-02 (3 min), 04-03 (2 min), 04-04 (2 min), 04-05 (2 min)
+- Trend: Consistent 2 minute execution velocity across Phase 4
 
 *Updated after each plan completion*
 
@@ -94,6 +94,10 @@ Recent decisions affecting current work:
 - Manual coordinate entry alongside geolocation (supports users who deny permission)
 - Radius selector with predefined options (better UX than free-form input)
 - City search deferred to Phase 5 (requires geocoding service)
+- Use date-fns localizer for react-big-calendar (date-fns already in project)
+- Store full event data in calendar event resource property (enables easy detail navigation)
+- Set explicit height on calendar container (required for react-big-calendar rendering)
+- Defer DiscoverEvents view toggle integration until plan 04-04 executes
 
 ### Pending Todos
 
@@ -105,7 +109,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-21T16:54:43Z
-Stopped at: Completed 04-04-PLAN.md - Filter & Search UI Components
+Last session: 2026-01-21T16:54:54Z
+Stopped at: Completed 04-05-PLAN.md - Calendar View
 Resume file: None
-Next: Continue Phase 4 with remaining plans (04-05 through 04-07)
+Next: Continue Phase 4 with remaining plans (04-06 and 04-07)
