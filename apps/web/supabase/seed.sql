@@ -1,13 +1,33 @@
 -- Seed data for local development
 -- This file is run automatically when using `supabase db reset`
 
--- Note: Supabase local dev doesn't create default auth users automatically
--- You'll need to sign up through the app to create users
--- This seed file only creates sample data that doesn't require specific user IDs
+-- ============================================
+-- Create Test Users
+-- ============================================
+-- IMPORTANT: Users MUST be created via Admin API for authentication to work.
+-- Direct SQL inserts with crypt() produce hashes incompatible with GoTrue.
+--
+-- Run after database reset:
+--   cd apps/web
+--   npx tsx supabase/seed-users.ts
+--
+-- See SEEDING.md for details.
 
--- For now, this file is intentionally minimal
--- Add sample data here after you've created test users through the app
+-- ============================================
+-- Summary
+-- ============================================
 
 DO $$ BEGIN
-  RAISE NOTICE 'Seed file executed. Create test users through the app signup flow first.';
+  RAISE NOTICE 'Database schema initialized.';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Next step: Create test users';
+  RAISE NOTICE '  Run: npx tsx supabase/seed-users.ts';
+  RAISE NOTICE '';
+  RAISE NOTICE 'This will create 4 test users:';
+  RAISE NOTICE '  - alice@example.com (password: password123) - Base';
+  RAISE NOTICE '  - bob@example.com (password: password123) - Flyer';
+  RAISE NOTICE '  - charlie@example.com (password: password123) - Both (Super Admin)';
+  RAISE NOTICE '  - diana@example.com (password: password123) - Both';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Open Supabase Studio: http://127.0.0.1:54323';
 END $$;

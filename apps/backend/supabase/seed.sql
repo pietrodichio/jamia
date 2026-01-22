@@ -20,7 +20,6 @@
 -- OPTION 2: Insert directly into auth.users (Advanced)
 -- Uncomment the following if you want to create auth users programmatically:
 
-/*
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -187,7 +186,6 @@ INSERT INTO auth.users (
     NULL
   )
 ON CONFLICT (id) DO NOTHING;
-*/
 
 -- ============================================
 -- Seed Profiles

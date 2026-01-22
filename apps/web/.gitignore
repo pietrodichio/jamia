@@ -26,3 +26,12 @@ dist-ssr
 *.sw?
 
 .env
+.env.*
+!.env.example
+
+.turbo
+.next
+.next/cache
+.next/types
+.next/types/
+.next/types/

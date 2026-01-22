@@ -5,23 +5,14 @@ import {
 } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
 import { IS_PUBLIC_KEY } from './public.decorator';
-
-interface JwtPayload {
-  sub: string;
-  email: string;
-  role: string;
-}
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private configService: ConfigService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) { }
 
@@ -43,19 +34,20 @@ export class SupabaseAuthGuard implements CanActivate {
     const token = authHeader.replace('Bearer ', '');
 
     try {
-      const jwtSecret = this.configService.get<string>('SUPABASE_JWT_SECRET');
-      if (!jwtSecret) {
-        console.error('❌ SUPABASE_JWT_SECRET not found in environment variables');
-        throw new Error('JWT secret not configured');
+      const { data, error } = await this.supabase.auth.getUser(token);
+
+      if (error || !data?.user) {
+        console.error('❌ Authentication error:', error?.message || 'User not found');
+        throw new UnauthorizedException('Invalid or expired token');
       }
 
-      const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
-      const isSuperAdmin = await this.isSuperAdmin(decoded.sub);
+      const user = data.user;
+      const isSuperAdmin = await this.isSuperAdmin(user.id);
 
       request.user = {
-        id: decoded.sub,
-        email: decoded.email,
-        role: decoded.role,
+        id: user.id,
+        email: user.email ?? '',
+        role: user.role ?? 'authenticated',
         isSuperAdmin,
       };
 
