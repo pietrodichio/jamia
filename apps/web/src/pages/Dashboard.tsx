@@ -8,7 +8,7 @@ import { managersApi, type JamManager } from "@/api/managers.api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar, Users, LogOut, Loader2, User, History } from "lucide-react";
+import { Plus, Calendar, Users, LogOut, Loader2, User, History, Search, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import JamCard from "@/components/JamCard";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -254,24 +254,46 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">Ciao, {profile.first_name}!</h1>
             <p className="text-muted-foreground">Benvenuto nella tua dashboard</p>
           </div>
-          <div className="flex gap-2 justify-between w-full md:justify-end md:w-auto">
-            <div className="flex gap-2">
-            <Button
-              onClick={() => navigate("/create-jam")}
-              className="rounded-xl"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Crea Jam
-            </Button>
-            <Button
-              onClick={() => navigate("/profile")}
-              variant="secondary"
-              className="rounded-xl"
-            >
-              <User className="mr-2 h-4 w-4" />
-              Profilo
-            </Button>
-  
+          <div className="flex gap-2 justify-between w-full md:justify-end md:w-auto flex-wrap">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                onClick={() => navigate("/discover")}
+                variant="outline"
+                className="rounded-xl"
+              >
+                <Search className="mr-2 h-4 w-4" />
+                Scopri Eventi
+              </Button>
+              <Button
+                onClick={() => navigate("/calendar")}
+                variant="outline"
+                className="rounded-xl"
+              >
+                <CalendarDays className="mr-2 h-4 w-4" />
+                Calendario
+              </Button>
+              <Button
+                onClick={() => navigate("/create-jam")}
+                className="rounded-xl"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Crea Jam
+              </Button>
+              <Button
+                onClick={() => navigate("/events/new")}
+                className="rounded-xl"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Crea Evento
+              </Button>
+              <Button
+                onClick={() => navigate("/profile")}
+                variant="secondary"
+                className="rounded-xl"
+              >
+                <User className="mr-2 h-4 w-4" />
+                Profilo
+              </Button>
             </div>
             <Button
               onClick={handleSignOut}
