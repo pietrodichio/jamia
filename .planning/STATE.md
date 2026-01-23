@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 6 of 6 (UI/UX Refactor for Events Management) - IN PROGRESS
-Plan: 6 of 10 in Phase 6 complete (06-01, 06-02, 06-03, 06-04, 06-05, 06-06)
-Status: Phase 6 in progress - Information-first dashboard redesign complete
-Last activity: 2026-01-23 — Completed 06-06-PLAN.md (Dashboard redesign with information-first layout)
+Plan: 7 of 10 in Phase 6 complete (06-01, 06-02, 06-03, 06-04, 06-05, 06-06, 06-07)
+Status: Phase 6 in progress - Enhanced event detail page with hero layout complete
+Last activity: 2026-01-23 — Completed 06-07-PLAN.md (Event detail page with hero, calendar export, and actions)
 
-Progress: [██████████░] 97% (32/33 plans complete)
+Progress: [██████████░] 97% (33/34 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 32
+- Total plans completed: 33
 - Average duration: 3 min
-- Total execution time: 2.0 hours
+- Total execution time: 2.1 hours
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [██████████░] 97% (32/33 plans complete)
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
 | 5. Event Enhancements | 10/10 | 65 min | 7 min |
-| 6. UI/UX Refactor | 6/10 | 22 min | 4 min |
+| 6. UI/UX Refactor | 7/10 | 28 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-02 (2 min), 06-03 (3 min), 06-04 (3 min), 06-05 (4 min), 06-06 (4 min)
-- Trend: Phase 6 dashboard redesign and unified discovery experience
+- Last 5 plans: 06-03 (3 min), 06-04 (3 min), 06-05 (4 min), 06-06 (4 min), 06-07 (6 min)
+- Trend: Phase 6 enhanced event detail page with calendar export and hero layout
 
 *Updated after each plan completion*
 
@@ -175,6 +175,12 @@ Recent decisions affecting current work:
 - Location-based recommendations in dashboard (personalized event discovery)
 - Legacy jam management section preserved (backward compatibility during event feature adoption)
 - Statistics aggregate owned + co-organized events (accurate user activity representation)
+- Hero gradient overlay (from-black/80 to-transparent) ensures text readability over diverse images
+- Hide organizer details when organizer is super admin (privacy for platform admins)
+- Calendar export dropdown with Google Calendar and iCal options (cleaner UI than separate buttons)
+- Web Share API with clipboard fallback for cross-platform sharing
+- Custom cta_text field for external registration button personalization
+- image_url field with event-images storage bucket for hero images
 
 ### Roadmap Evolution
 
@@ -190,7 +196,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-23T08:01:02Z
-Stopped at: Completed 06-06-PLAN.md
+Last session: 2026-01-23T08:02:38Z
+Stopped at: Completed 06-07-PLAN.md
 Resume file: None
-Next: Continue Phase 6 execution (plan 06-07 or beyond)
+Next: Continue Phase 6 execution (plan 06-08 or beyond)
