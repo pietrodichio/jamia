@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -6,12 +7,13 @@ import type { EventType } from '@jamia/types/event';
 
 const EVENT_TYPES = [
   { value: 'jam', label: 'Jam' },
-  { value: 'class', label: 'Class' },
+  { value: 'class', label: 'Lezione' },
   { value: 'workshop', label: 'Workshop' },
-  { value: 'convention', label: 'Convention' },
+  { value: 'convention', label: 'Convegno' },
 ] as const;
 
 export function EventFilters() {
+  const { t } = useTranslation(['common', 'events']);
   const { filters, updateFilter, clearFilters } = useEventFilters();
 
   const handleTypeToggle = (type: EventType) => {
@@ -41,21 +43,21 @@ export function EventFilters() {
   return (
     <div className="space-y-6 p-4 border rounded-lg">
       <div className="flex items-center justify-between">
-        <Label className="text-lg font-semibold">Filters</Label>
+        <Label className="text-lg font-semibold">Filtri</Label>
         {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
             onClick={clearFilters}
           >
-            Clear All
+            Cancella tutto
           </Button>
         )}
       </div>
 
       {/* Event Type Filters */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Event Type</Label>
+        <Label className="text-sm font-medium">Tipo di evento</Label>
         <div className="space-y-2">
           {EVENT_TYPES.map((eventType) => (
             <div key={eventType.value} className="flex items-center space-x-2">
@@ -77,11 +79,11 @@ export function EventFilters() {
 
       {/* Date Range Filters */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium">Date Range</Label>
+        <Label className="text-sm font-medium">Intervallo date</Label>
         <div className="space-y-2">
           <div className="space-y-1">
             <Label htmlFor="date-from" className="text-xs text-muted-foreground">
-              From
+              Da
             </Label>
             <input
               id="date-from"
@@ -93,7 +95,7 @@ export function EventFilters() {
           </div>
           <div className="space-y-1">
             <Label htmlFor="date-to" className="text-xs text-muted-foreground">
-              To
+              A
             </Label>
             <input
               id="date-to"
@@ -106,7 +108,7 @@ export function EventFilters() {
         </div>
         {filters.dateFrom && filters.dateTo && (
           <p className="text-xs text-muted-foreground">
-            Showing events from {filters.dateFrom} to {filters.dateTo}
+            Mostrando eventi dal {filters.dateFrom} al {filters.dateTo}
           </p>
         )}
       </div>

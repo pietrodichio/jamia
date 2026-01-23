@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { eventsApi } from '@/api/events.api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import { Link } from 'react-router-dom';
 import type { EventType, CreateEventDto } from '@jamia/types/event';
 
 export default function CreateEvent() {
+  const { t } = useTranslation(['common', 'events', 'forms']);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -37,13 +39,13 @@ export default function CreateEvent() {
   const createMutation = useMutation({
     mutationFn: (data: CreateEventDto) => eventsApi.createEvent(data),
     onSuccess: (event) => {
-      toast({ title: 'Event created successfully!' });
+      toast({ title: t('events:messages.eventCreated') });
       navigate(`/events/${event.id}`);
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to create event',
-        description: error.response?.data?.message || 'Please try again',
+        title: 'Errore nella creazione dell\'evento',
+        description: error.response?.data?.message || 'Riprova',
         variant: 'destructive'
       });
     }
@@ -76,61 +78,61 @@ export default function CreateEvent() {
         <Link to="/calendar">
           <Button variant="ghost" className="rounded-xl">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Calendar
+            {t('common:buttons.back')} al Calendario
           </Button>
         </Link>
       </div>
 
       <Card className="border-primary/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-2xl">Create Event</CardTitle>
-          <CardDescription>Share a new acroyoga event with the community</CardDescription>
+          <CardTitle className="text-2xl">{t('events:actions.createEvent')}</CardTitle>
+          <CardDescription>Condividi un nuovo evento di acroyoga con la comunità</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Event Type */}
             <div className="space-y-2">
-              <Label htmlFor="type">Event Type</Label>
+              <Label htmlFor="type">{t('events:fields.type')}</Label>
               <Select value={type} onValueChange={(v) => setType(v as EventType)}>
                 <SelectTrigger id="type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="jam">Jam</SelectItem>
-                  <SelectItem value="class">Class</SelectItem>
-                  <SelectItem value="workshop">Workshop</SelectItem>
-                  <SelectItem value="convention">Convention</SelectItem>
+                  <SelectItem value="jam">{t('events:types.jam')}</SelectItem>
+                  <SelectItem value="class">{t('events:types.class')}</SelectItem>
+                  <SelectItem value="workshop">{t('events:types.workshop')}</SelectItem>
+                  <SelectItem value="convention">{t('events:types.convention')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t('events:fields.title')} *</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                placeholder="Event title"
+                placeholder={t('forms:placeholders.enterTitle')}
               />
             </div>
 
             {/* Location */}
             <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
+              <Label htmlFor="location">{t('events:fields.location')} *</Label>
               <Input
                 id="location"
                 value={locationText}
                 onChange={(e) => setLocationText(e.target.value)}
                 required
-                placeholder="Event location"
+                placeholder={t('forms:placeholders.selectLocation')}
               />
             </div>
 
             {/* Start Date/Time */}
             <div className="space-y-2">
-              <Label htmlFor="starts-at">Starts At *</Label>
+              <Label htmlFor="starts-at">{t('events:fields.startDate')} *</Label>
               <Input
                 id="starts-at"
                 type="datetime-local"
@@ -142,7 +144,7 @@ export default function CreateEvent() {
 
             {/* End Date/Time */}
             <div className="space-y-2">
-              <Label htmlFor="ends-at">Ends At *</Label>
+              <Label htmlFor="ends-at">{t('events:fields.endDate')} *</Label>
               <Input
                 id="ends-at"
                 type="datetime-local"
@@ -163,30 +165,30 @@ export default function CreateEvent() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('events:fields.description')}</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                placeholder="Event description"
+                placeholder={t('forms:placeholders.enterDescription')}
               />
             </div>
 
             {/* Price */}
             <div className="space-y-2">
-              <Label htmlFor="price">Price</Label>
+              <Label htmlFor="price">Prezzo</Label>
               <Input
                 id="price"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="e.g., Free, $10, €5-15"
+                placeholder="es. Gratuito, €10, €5-15"
               />
             </div>
 
             {/* External Link */}
             <div className="space-y-2">
-              <Label htmlFor="external-link">External Link</Label>
+              <Label htmlFor="external-link">{t('events:fields.externalLink')}</Label>
               <Input
                 id="external-link"
                 type="url"
@@ -198,12 +200,12 @@ export default function CreateEvent() {
 
             {/* Organizer Contact */}
             <div className="space-y-2">
-              <Label htmlFor="organizer-contact">Contact Info</Label>
+              <Label htmlFor="organizer-contact">Contatto organizzatore</Label>
               <Input
                 id="organizer-contact"
                 value={organizerContact}
                 onChange={(e) => setOrganizerContact(e.target.value)}
-                placeholder="Email or phone"
+                placeholder="Email o telefono"
               />
             </div>
 
@@ -214,14 +216,14 @@ export default function CreateEvent() {
                 onClick={() => navigate('/calendar')}
                 className="flex-1"
               >
-                Cancel
+                {t('common:buttons.cancel')}
               </Button>
               <Button
                 type="submit"
                 disabled={createMutation.isPending}
                 className="flex-1"
               >
-                {createMutation.isPending ? 'Creating...' : 'Create Event'}
+                {createMutation.isPending ? 'Creazione...' : t('events:actions.createEvent')}
               </Button>
             </div>
           </form>

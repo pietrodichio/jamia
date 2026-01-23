@@ -1,9 +1,11 @@
 import { useDebouncedCallback } from 'use-debounce';
+import { useTranslation } from 'react-i18next';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function KeywordSearch() {
+  const { t } = useTranslation('events');
   const { filters, updateFilter } = useEventFilters();
 
   const handleSearch = useDebouncedCallback((term: string) => {
@@ -13,19 +15,19 @@ export function KeywordSearch() {
   return (
     <div className="space-y-2">
       <Label htmlFor="keyword-search" className="text-sm font-medium">
-        Search Events
+        Cerca Eventi
       </Label>
       <Input
         id="keyword-search"
         type="search"
-        placeholder="Search events by title or description..."
+        placeholder={t('filters.searchPlaceholder')}
         defaultValue={filters.query}
         onChange={(e) => handleSearch(e.target.value)}
         className="w-full"
       />
       {filters.query && (
         <p className="text-xs text-muted-foreground">
-          Searching for: "{filters.query}"
+          Ricerca per: "{filters.query}"
         </p>
       )}
     </div>

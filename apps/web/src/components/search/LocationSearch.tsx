@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ const RADIUS_OPTIONS = [
 ];
 
 export function LocationSearch() {
+  const { t } = useTranslation(['common', 'events']);
   const { location, error, loading, requestLocation } = useGeolocation();
   const { filters, updateFilter } = useEventFilters();
   const { toast } = useToast();
@@ -49,7 +51,7 @@ export function LocationSearch() {
   useEffect(() => {
     if (error) {
       toast({
-        title: 'Location Error',
+        title: 'Errore di localizzazione',
         description: error,
         variant: 'destructive',
       });
@@ -90,54 +92,54 @@ export function LocationSearch() {
   return (
     <div className="space-y-4 p-4 border rounded-lg">
       <div className="space-y-2">
-        <Label className="text-lg font-semibold">Location</Label>
+        <Label className="text-lg font-semibold">Posizione</Label>
 
         <Button
           onClick={requestLocation}
           disabled={loading}
           className="w-full"
         >
-          {loading ? 'Getting location...' : 'Use My Location'}
+          {loading ? 'Rilevamento in corso...' : 'Usa la mia posizione'}
         </Button>
 
         <div className="text-center text-sm text-muted-foreground">
-          or
+          oppure
         </div>
 
         {/* City search placeholder */}
         <div className="space-y-1">
           <Input
-            placeholder="City search coming soon..."
+            placeholder="Ricerca per città in arrivo..."
             disabled
             className="opacity-50"
           />
           <p className="text-xs text-muted-foreground">
-            City search will be available in Phase 5
+            La ricerca per città sarà disponibile in futuro
           </p>
         </div>
 
         <div className="text-center text-sm text-muted-foreground">
-          or enter coordinates manually:
+          oppure inserisci le coordinate manualmente:
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <Label htmlFor="latitude">Latitude</Label>
+            <Label htmlFor="latitude">Latitudine</Label>
             <Input
               id="latitude"
               type="number"
-              placeholder="e.g., 45.464"
+              placeholder="es. 45.464"
               value={manualLat}
               onChange={(e) => handleManualLatChange(e.target.value)}
               step="any"
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="longitude">Longitude</Label>
+            <Label htmlFor="longitude">Longitudine</Label>
             <Input
               id="longitude"
               type="number"
-              placeholder="e.g., 9.189"
+              placeholder="es. 9.189"
               value={manualLng}
               onChange={(e) => handleManualLngChange(e.target.value)}
               step="any"
@@ -149,13 +151,13 @@ export function LocationSearch() {
       {hasLocation && (
         <div className="space-y-2 pt-2 border-t">
           <div className="flex items-center justify-between">
-            <Label htmlFor="radius">Search Radius</Label>
+            <Label htmlFor="radius">Raggio di ricerca</Label>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClearLocation}
             >
-              Clear
+              Cancella
             </Button>
           </div>
           <Select
@@ -174,7 +176,7 @@ export function LocationSearch() {
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Current location: {parseFloat(filters.lat).toFixed(3)}, {parseFloat(filters.lng).toFixed(3)}
+            Posizione attuale: {parseFloat(filters.lat).toFixed(3)}, {parseFloat(filters.lng).toFixed(3)}
           </p>
         </div>
       )}
