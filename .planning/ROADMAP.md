@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Event Foundation** - Core event types, creation, and management
 - [x] **Phase 4: Event Discovery** - Location-based search, filtering, and views
 - [x] **Phase 5: Event Enhancements** - Recurring events, teachers, jam integration, and advanced filters
+- [ ] **Phase 6: UI/UX Refactor for Events Management** - Improve user experience and interface for event management features
 
 ## Phase Details
 
@@ -127,10 +128,37 @@ Plans:
 - [x] 05-09-PLAN.md — Teachers frontend (TeacherSelect, display on event detail)
 - [x] 05-10-PLAN.md — Advanced filters frontend (TagFilter, AmenityFilters components)
 
+### Phase 6: UI/UX Refactor for Events Management
+
+**Goal**: Italian localization, unified discovery experience, smart creation wizard, and information-rich dashboard
+**Depends on**: Phase 5
+**Plans**: 7 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Italian localization setup + shadcn date pickers with Italian locale
+- [ ] 06-02-PLAN.md — Event card grid components (Airbnb-style) with view toggle
+- [ ] 06-03-PLAN.md — Home page redesign + unified discovery view (grid/calendar merge)
+- [ ] 06-04-PLAN.md — Event creation wizard (three-step: type/basic, schedule/details, preview)
+- [ ] 06-05-PLAN.md — Unified jam/event creation flow with conditional fields and auto-save
+- [ ] 06-06-PLAN.md — Dashboard redesign (information-oriented with upcoming events, recommendations, statistics)
+- [ ] 06-07-PLAN.md — Event detail page enhancements (hero layout, teachers, calendar export, share)
+
+**Details:**
+- All UI text in Italian (user-generated content can be any language)
+- Italian date/time formats: dd/MM/yyyy and 24-hour time (14:30)
+- Home page (/) shows events + marketing content (Airbnb-style)
+- Merge /calendar and /discover into single unified view with toggle
+- Three-step wizard: Type+Basic → Schedule+Details → Preview
+- Unified creation flow: single interface for managed jams and simple event listings
+- After selecting "Jam" type, ask: "Do you want to manage participants?" (Yes/No)
+- External registration links with customizable CTA buttons
+- Dashboard displays: upcoming events, recommended nearby events, statistics
+- Event detail with hero image, organizer visibility logic, teachers display, calendar export
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -139,3 +167,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. Event Foundation | 4/4 | Complete | 2026-01-21 |
 | 4. Event Discovery | 7/7 | Complete | 2026-01-21 |
 | 5. Event Enhancements | 10/10 | Complete | 2026-01-21 |
+| 6. UI/UX Refactor for Events Management | 0/7 | Planning Complete | 2026-01-22 |
