@@ -165,6 +165,11 @@ Recent decisions affecting current work:
 - Unified /discover view with grid/calendar toggle via URL parameter (seamless view switching, bookmarkable)
 - /calendar route redirects to /discover?view=calendar (backward compatibility)
 - Marketing namespace for translations (logical separation, lazy loading)
+- useAutoSave with 1000ms debounce and upsert pattern to avoid duplicate draft records
+- Conditional field components using watch() for self-contained rendering logic
+- /create-jam redirects to /create-event for backward compatibility
+- Draft auto-save creates status='draft' records; submission publishes to status='published'
+- Jam capacity/visibility fields NOT sent to events table (jam management features separate from event listings)
 - Information-first dashboard layout: show data (events, stats) before actions
 - Compact action buttons in page header instead of content area (better visual hierarchy)
 - Location-based recommendations in dashboard (personalized event discovery)
