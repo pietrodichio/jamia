@@ -7,6 +7,7 @@ import common from './it/common.json';
 import events from './it/events.json';
 import forms from './it/forms.json';
 import dashboard from './it/dashboard.json';
+import marketing from './it/marketing.json';
 
 i18n
   .use(initReactI18next)
@@ -20,6 +21,7 @@ i18n
         events,
         forms,
         dashboard,
+        marketing,
       },
     },
     interpolation: {
@@ -32,7 +34,7 @@ i18n
       },
     },
     defaultNS: 'common',
-    ns: ['common', 'events', 'forms', 'dashboard'],
+    ns: ['common', 'events', 'forms', 'dashboard', 'marketing'],
   });
 
 export default i18n;
