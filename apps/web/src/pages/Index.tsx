@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { HeroSection } from '@/components/marketing/HeroSection';
+import { FeaturesSection } from '@/components/marketing/FeaturesSection';
 import { EventCardGrid } from '@/components/events/EventCardGrid';
 import { eventsApi } from '@/api/events.api';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +65,9 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* Marketing Features Section */}
+      <FeaturesSection />
     </div>
   );
 };
