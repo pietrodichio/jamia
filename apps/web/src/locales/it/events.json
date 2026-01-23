@@ -63,5 +63,9 @@
     "eventDeleted": "Evento eliminato con successo",
     "registrationSuccess": "Registrazione completata",
     "linkCopied": "Link copiato negli appunti"
+  },
+  "home": {
+    "upcomingEvents": "Eventi in programma",
+    "viewAll": "Vedi tutti"
   }
 }
