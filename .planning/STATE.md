@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 6 of 6 (UI/UX Refactor for Events Management) - IN PROGRESS
-Plan: 4 of 10 in Phase 6 complete (06-01, 06-02, 06-03, 06-04)
-Status: Phase 6 in progress - Unified discovery view and home page redesign complete
-Last activity: 2026-01-23 — Completed 06-03-PLAN.md (Unified discovery view and home page redesign)
+Plan: 6 of 10 in Phase 6 complete (06-01, 06-02, 06-03, 06-04, 06-05, 06-06)
+Status: Phase 6 in progress - Information-first dashboard redesign complete
+Last activity: 2026-01-23 — Completed 06-06-PLAN.md (Dashboard redesign with information-first layout)
 
-Progress: [██████████░] 97% (30/31 plans complete)
+Progress: [██████████░] 97% (32/33 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30
+- Total plans completed: 32
 - Average duration: 3 min
-- Total execution time: 1.9 hours
+- Total execution time: 2.0 hours
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [██████████░] 97% (30/31 plans complete)
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
 | 5. Event Enhancements | 10/10 | 65 min | 7 min |
-| 6. UI/UX Refactor | 4/10 | 14 min | 4 min |
+| 6. UI/UX Refactor | 6/10 | 22 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-01 (6 min), 06-02 (2 min), 06-03 (3 min), 06-04 (3 min)
-- Trend: Phase 6 UI components and unified discovery experience
+- Last 5 plans: 06-02 (2 min), 06-03 (3 min), 06-04 (3 min), 06-05 (4 min), 06-06 (4 min)
+- Trend: Phase 6 dashboard redesign and unified discovery experience
 
 *Updated after each plan completion*
 
@@ -165,6 +165,11 @@ Recent decisions affecting current work:
 - Unified /discover view with grid/calendar toggle via URL parameter (seamless view switching, bookmarkable)
 - /calendar route redirects to /discover?view=calendar (backward compatibility)
 - Marketing namespace for translations (logical separation, lazy loading)
+- Information-first dashboard layout: show data (events, stats) before actions
+- Compact action buttons in page header instead of content area (better visual hierarchy)
+- Location-based recommendations in dashboard (personalized event discovery)
+- Legacy jam management section preserved (backward compatibility during event feature adoption)
+- Statistics aggregate owned + co-organized events (accurate user activity representation)
 
 ### Roadmap Evolution
 
@@ -180,7 +185,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-23T07:55:03Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-01-23T08:01:02Z
+Stopped at: Completed 06-06-PLAN.md
 Resume file: None
-Next: Continue Phase 6 execution (plan 06-05 or beyond)
+Next: Continue Phase 6 execution (plan 06-07 or beyond)
