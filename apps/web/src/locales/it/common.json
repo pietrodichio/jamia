@@ -1,0 +1,47 @@
+{
+  "buttons": {
+    "save": "Salva",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "edit": "Modifica",
+    "create": "Crea",
+    "back": "Indietro",
+    "next": "Avanti",
+    "finish": "Completa",
+    "submit": "Invia",
+    "close": "Chiudi",
+    "confirm": "Conferma",
+    "search": "Cerca",
+    "filter": "Filtra",
+    "reset": "Ripristina",
+    "viewAll": "Vedi tutti",
+    "addNew": "Aggiungi nuovo"
+  },
+  "validation": {
+    "required": "Campo obbligatorio",
+    "invalidEmail": "Indirizzo email non valido",
+    "minLength": "Minimo {{count}} caratteri",
+    "maxLength": "Massimo {{count}} caratteri",
+    "minValue": "Valore minimo: {{value}}",
+    "maxValue": "Valore massimo: {{value}}",
+    "invalidUrl": "URL non valido",
+    "invalidDate": "Data non valida",
+    "passwordMismatch": "Le password non corrispondono",
+    "phoneInvalid": "Numero di telefono non valido"
+  },
+  "time": {
+    "format24h": "HH:mm",
+    "formatDate": "dd/MM/yyyy",
+    "formatDatetime": "dd/MM/yyyy, HH:mm"
+  },
+  "common": {
+    "loading": "Caricamento...",
+    "error": "Errore",
+    "success": "Successo",
+    "warning": "Attenzione",
+    "info": "Informazione",
+    "noResults": "Nessun risultato trovato",
+    "tryAgain": "Riprova",
+    "unknown": "Sconosciuto"
+  }
+}

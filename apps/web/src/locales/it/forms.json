@@ -1,0 +1,43 @@
+{
+  "labels": {
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Conferma password",
+    "firstName": "Nome",
+    "lastName": "Cognome",
+    "phone": "Telefono",
+    "address": "Indirizzo",
+    "city": "Città",
+    "country": "Paese",
+    "zipCode": "CAP",
+    "bio": "Biografia",
+    "website": "Sito web",
+    "socialMedia": "Social media"
+  },
+  "placeholders": {
+    "enterEmail": "Inserisci la tua email",
+    "enterPassword": "Inserisci la password",
+    "enterTitle": "Inserisci il titolo",
+    "enterDescription": "Inserisci la descrizione",
+    "selectDate": "Seleziona data",
+    "selectTime": "Seleziona ora",
+    "selectLocation": "Seleziona posizione",
+    "searchLocation": "Cerca posizione...",
+    "optional": "(opzionale)"
+  },
+  "help": {
+    "passwordRequirements": "Minimo 8 caratteri, una maiuscola, un numero",
+    "emailFormat": "Formato: nome@esempio.com",
+    "phoneFormat": "Formato: +39 123 456 7890",
+    "imageSize": "Consigliato: 1920x1080px, max 2MB",
+    "descriptionLength": "Massimo 500 caratteri"
+  },
+  "status": {
+    "draft": "Bozza",
+    "published": "Pubblicato",
+    "archived": "Archiviato",
+    "saving": "Salvataggio...",
+    "saved": "Salvato",
+    "saveFailed": "Salvataggio fallito"
+  }
+}

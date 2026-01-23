@@ -1,0 +1,41 @@
+{
+  "sections": {
+    "upcomingEvents": "Eventi imminenti",
+    "recommendations": "Consigliati per te",
+    "statistics": "Statistiche",
+    "myEvents": "I miei eventi",
+    "myJams": "I miei jam",
+    "eventListings": "Eventi pubblicati",
+    "managedJams": "Jam gestiti",
+    "recentActivity": "Attività recente"
+  },
+  "stats": {
+    "totalEvents": "Eventi totali",
+    "eventsCreated": "Eventi creati",
+    "participantsManaged": "Partecipanti gestiti",
+    "eventsAttended": "Eventi partecipati",
+    "upcomingCount": "Prossimi eventi",
+    "pastCount": "Eventi passati"
+  },
+  "actions": {
+    "createEvent": "Crea Evento",
+    "discoverEvents": "Scopri Eventi",
+    "manageJams": "Gestisci Jam",
+    "viewProfile": "Visualizza Profilo"
+  },
+  "messages": {
+    "welcome": "Benvenuto, {{name}}!",
+    "noUpcomingEvents": "Nessun evento imminente",
+    "noRecommendations": "Nessuna raccomandazione al momento",
+    "loadingEvents": "Caricamento eventi...",
+    "errorLoadingEvents": "Errore nel caricamento degli eventi"
+  },
+  "calendar": {
+    "today": "Oggi",
+    "month": "Mese",
+    "week": "Settimana",
+    "day": "Giorno",
+    "agenda": "Agenda",
+    "noEventsInRange": "Nessun evento in questo periodo"
+  }
+}
