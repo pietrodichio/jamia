@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { EventFormData } from '@/hooks/useEventWizard';
+import { ExternalRegistrationFields } from './ExternalRegistrationFields';
 
 interface EventScheduleStepProps {
   form: UseFormReturn<EventFormData>;
@@ -174,6 +175,9 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
           )}
         />
       </div>
+
+      {/* External Registration Fields (conditional) */}
+      <ExternalRegistrationFields form={form} />
     </div>
   );
 }

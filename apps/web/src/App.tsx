@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Footer } from "@/components/Footer";
 import Index from "./pages/Index";
@@ -77,7 +77,8 @@ const App = () => (
               <Route path="/profile-setup" element={<ProfileSetup />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/create-jam" element={<CreateJam />} />
+              <Route path="/create-jam" element={<Navigate to="/create-event" replace />} />
+              <Route path="/create-event" element={<CreateEvent />} />
               <Route path="/jam/:id/*" element={<JamDetailsLayout />}>
                 <Route index element={<JamOverviewPage />} />
                 <Route path="communication" element={<JamCommunicationPage />} />
@@ -89,7 +90,6 @@ const App = () => (
               <Route path="/og-image" element={<OGImage />} />
               <Route path="/calendar" element={<EventCalendar />} />
               <Route path="/discover" element={<DiscoverEvents />} />
-              <Route path="/events/new" element={<CreateEvent />} />
               <Route path="/events/:eventId" element={<EventDetail />} />
               <Route path="/events/:eventId/edit" element={<EditEvent />} />
               <Route path="/teachers/:teacherId" element={<TeacherProfile />} />

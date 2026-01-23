@@ -15,14 +15,26 @@ const eventFormSchema = z.object({
   end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Formato HH:mm').optional().or(z.literal('')),
   price: z.number().min(0, 'Il prezzo non può essere negativo').optional(),
   link: z.string().url('URL non valido').optional().or(z.literal('')),
+  // Jam participant management fields
+  manageParticipants: z.boolean().optional(),
+  capacity: z.number().min(1, 'Minimo 1 partecipante').optional(),
+  visibility: z.enum(['public', 'private']).optional(),
+  roles: z.object({
+    base: z.boolean().optional(),
+    flyer: z.boolean().optional(),
+    spotter: z.boolean().optional(),
+  }).optional(),
+  // External registration fields
+  externalLink: z.string().url('URL non valido').optional().or(z.literal('')),
+  ctaText: z.string().max(30, 'Massimo 30 caratteri').optional(),
 });
 
 export type EventFormData = z.infer<typeof eventFormSchema>;
 
 // Define which fields belong to each step
 const stepFields: Record<number, (keyof EventFormData)[]> = {
-  1: ['type', 'title', 'description', 'location'],
-  2: ['date', 'time', 'end_date', 'end_time', 'price', 'link'],
+  1: ['type', 'title', 'description', 'location', 'manageParticipants', 'capacity', 'visibility'],
+  2: ['date', 'time', 'end_date', 'end_time', 'price', 'link', 'externalLink', 'ctaText'],
   3: [], // Preview step - no validation needed
 };
 
@@ -53,6 +65,15 @@ export function useEventWizard(): UseEventWizardReturn {
       end_time: '',
       price: undefined,
       link: '',
+      manageParticipants: false,
+      visibility: 'public',
+      roles: {
+        base: false,
+        flyer: false,
+        spotter: false,
+      },
+      externalLink: '',
+      ctaText: 'Registrati',
     },
   });
 

@@ -17,7 +17,9 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { EventFormData } from '@/hooks/useEventWizard';
+import { JamParticipantFields } from './JamParticipantFields';
 
 interface EventTypeStepProps {
   form: UseFormReturn<EventFormData>;
@@ -121,6 +123,35 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
           </FormItem>
         )}
       />
+
+      {/* Manage Participants Checkbox (only for jams) */}
+      {eventType === 'jam' && (
+        <FormField
+          control={form.control}
+          name="manageParticipants"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel className="cursor-pointer">
+                  {t('events:wizard.askManageParticipants')}
+                </FormLabel>
+                <FormDescription>
+                  {t('events:wizard.askManageParticipantsHelp')}
+                </FormDescription>
+              </div>
+            </FormItem>
+          )}
+        />
+      )}
+
+      {/* Jam Participant Fields (conditional) */}
+      <JamParticipantFields form={form} />
     </div>
   );
 }
