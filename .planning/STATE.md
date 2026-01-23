@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 6 of 6 (UI/UX Refactor for Events Management) - IN PROGRESS
-Plan: 2 of 10 in Phase 6 complete (06-01, 06-02)
-Status: Phase 6 in progress - Italian localization and event cards complete
-Last activity: 2026-01-23 — Completed 06-01-PLAN.md (Italian localization infrastructure)
+Plan: 4 of 10 in Phase 6 complete (06-01, 06-02, 06-03, 06-04)
+Status: Phase 6 in progress - Wizard infrastructure complete
+Last activity: 2026-01-23 — Completed 06-04-PLAN.md (Event creation wizard)
 
-Progress: [██████████░] 94% (29/31 plans complete)
+Progress: [██████████░] 97% (30/31 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29
+- Total plans completed: 30
 - Average duration: 3 min
 - Total execution time: 1.9 hours
 
@@ -32,11 +32,11 @@ Progress: [██████████░] 94% (29/31 plans complete)
 | 3. Event Foundation | 4/4 | 8 min | 2 min |
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
 | 5. Event Enhancements | 10/10 | 65 min | 7 min |
-| 6. UI/UX Refactor | 2/10 | 8 min | 4 min |
+| 6. UI/UX Refactor | 4/10 | 11 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 05-09 (11 min), 05-10 (3 min), 06-01 (6 min), 06-02 (2 min)
-- Trend: Phase 6 focuses on Italian localization and UI component refinement
+- Last 5 plans: 05-10 (3 min), 06-01 (6 min), 06-02 (2 min), 06-04 (3 min)
+- Trend: Phase 6 wizard and event creation patterns
 
 *Updated after each plan completion*
 
@@ -157,6 +157,10 @@ Recent decisions affecting current work:
 - date-fns Italian locale (it) for all date/time formatting throughout app
 - Shadcn DatePicker with Italian locale replaces native HTML date inputs
 - Namespace-organized translations: common, events, forms, dashboard (lazy loading support)
+- shouldUnregister: true in useEventWizard for conditional field cleanup (prevents hidden fields in submission)
+- trigger() validation before step navigation (validates only current step fields)
+- Backward navigation allowed without validation (better UX for multi-step forms)
+- Step field mapping in stepFields object for maintainable wizard validation
 
 ### Roadmap Evolution
 
@@ -172,7 +176,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-23T07:47:21Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-01-23T07:52:56Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None
-Next: Continue Phase 6 execution (plan 06-03 or beyond)
+Next: Continue Phase 6 execution (plan 06-05 or beyond)
