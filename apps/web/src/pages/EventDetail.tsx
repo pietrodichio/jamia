@@ -1,33 +1,40 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
+import { it } from 'date-fns/locale/it';
 import { eventsApi } from '@/api/events.api';
 import { teachersApi } from '@/api/teachers.api';
-import { useEventFilters } from '@/hooks/useEventFilters';
+import { supabase } from '@/integrations/supabase/client';
 import { useEventOccurrences } from '@/hooks/useEventOccurrences';
+import { EventHero } from '@/components/events/EventHero';
+import { EventActions } from '@/components/events/EventActions';
+import { EventOrganizerInfo } from '@/components/events/EventOrganizerInfo';
+import { TeachersList } from '@/components/events/TeachersList';
 import { RecurrenceDisplay } from '@/components/events/RecurrenceDisplay';
 import { OccurrenceEditor } from '@/components/events/OccurrenceEditor';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import {
-  Calendar,
-  MapPin,
-  DollarSign,
-  ExternalLink,
-  Mail,
-  User,
-  Navigation,
-  ArrowLeft,
-  Clock
-} from 'lucide-react';
+import { MapPin, DollarSign, ArrowLeft, Clock, Tag } from 'lucide-react';
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
-  const { filters } = useEventFilters();
+  const navigate = useNavigate();
+  const { t } = useTranslation(['events', 'common']);
   const [editingOccurrence, setEditingOccurrence] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+    };
+    getCurrentUser();
+  }, []);
 
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['events', eventId],
@@ -39,7 +46,7 @@ export default function EventDetail() {
   const { data: teachers } = useQuery({
     queryKey: ['events', eventId, 'teachers'],
     queryFn: () => teachersApi.listTeachers(eventId!),
-    enabled: !!eventId
+    enabled: !!eventId && event?.type !== 'jam',
   });
 
   // Generate occurrences for recurring events (next 90 days)
@@ -52,24 +59,26 @@ export default function EventDetail() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto p-6 max-w-5xl">
         <div className="flex items-center justify-center h-96">
-          <div className="text-lg text-muted-foreground">Loading event...</div>
+          <div className="text-lg text-muted-foreground">{t('common:common.loading')}</div>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !event) {
     return (
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto p-6 max-w-5xl">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <p className="text-lg text-destructive mb-4">Error loading event</p>
-            <Link to="/calendar">
+            <p className="text-lg text-destructive mb-4">
+              {error ? t('common:common.error') : 'Evento non trovato'}
+            </p>
+            <Link to="/discover">
               <Button variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Calendar
+                Torna agli eventi
               </Button>
             </Link>
           </div>
@@ -78,267 +87,245 @@ export default function EventDetail() {
     );
   }
 
-  if (!event) {
-    return (
-      <div className="container mx-auto p-6 max-w-4xl">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <p className="text-lg text-muted-foreground mb-4">Event not found</p>
-            <Link to="/calendar">
-              <Button variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Calendar
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Check if current user is owner
+  const isOwner = currentUserId === event.owner_id;
 
-  // Calculate distance if search location set
-  const distance = (filters.lat && filters.lng && event.location_lat && event.location_lng)
-    ? calculateDistance(
-        parseFloat(filters.lat), parseFloat(filters.lng),
-        event.location_lat, event.location_lng
-      )
-    : null;
+  // Check if organizer is super admin
+  const isSuperAdmin = Boolean(event.organizer.is_super_admin);
 
-  const eventTypeBadgeVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
-    jam: "default",
-    class: "secondary",
-    workshop: "outline",
-    convention: "destructive",
-  };
+  // Transform teachers data for TeachersList component
+  const teachersForDisplay = teachers?.map(t => ({
+    id: t.id,
+    user_id: t.user_id,
+    name: t.profiles?.name || 'Unknown',
+    photo_url: t.profiles?.photo_url,
+    role: t.role,
+  })) || [];
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      {/* Back Navigation */}
-      <div className="mb-6">
-        <Link to="/calendar">
-          <Button variant="ghost" className="rounded-xl">
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <EventHero event={event} />
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Back Navigation */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/discover')}
+            className="rounded-xl"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Calendar
+            Torna agli eventi
           </Button>
-        </Link>
-      </div>
+        </div>
 
-      {/* Main Event Card */}
-      <Card className="border-primary/10 rounded-2xl mb-6">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant={eventTypeBadgeVariant[event.type] || "default"} className="capitalize">
-                  {event.type}
-                </Badge>
-                {distance !== null && (
-                  <Badge variant="outline" className="gap-1">
-                    <Navigation className="h-3 w-3" />
-                    {distance.toFixed(1)} km away
-                  </Badge>
-                )}
-              </div>
-              <CardTitle className="text-3xl font-bold mb-2">{event.title}</CardTitle>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Date and Time */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 text-lg">
-              <Calendar className="h-5 w-5 text-primary" />
-              <div>
-                <div className="font-medium">
-                  {format(new Date(event.starts_at), 'EEEE, MMMM d, yyyy')}
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    {format(new Date(event.starts_at), 'h:mm a')} - {format(new Date(event.ends_at), 'h:mm a')}
-                  </span>
-                </div>
-              </div>
-            </div>
-            {/* Recurrence Display */}
-            <RecurrenceDisplay
-              recurrenceRule={event.recurrence_rule}
-              recurrenceDtstart={event.recurrence_dtstart}
-            />
-          </div>
+        {/* Two-column layout: Main content + Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content - Left Column (2/3) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Action Buttons */}
+            <EventActions event={event} isOwner={isOwner} />
 
-          <Separator />
+            {/* Description Section */}
+            {event.description && (
+              <Card className="border-primary/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle>Descrizione</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {event.description}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Location */}
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-primary mt-0.5" />
-              <div className="flex-1">
-                <div className="font-medium mb-2">{event.location_text}</div>
-                {event.gmaps_link && (
-                  <a
-                    href={event.gmaps_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                  >
-                    View on Google Maps
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          {event.description && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg">About this event</h3>
-                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {event.description}
-                </p>
-              </div>
-            </>
-          )}
-
-          {/* Teachers & Instructors */}
-          {teachers && teachers.length > 0 && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <h3 className="font-semibold text-lg">Teachers & Instructors</h3>
-                <div className="flex flex-wrap gap-3">
-                  {teachers.map(teacher => (
-                    <Link
-                      key={teacher.id}
-                      to={`/teachers/${teacher.user_id}`}
-                      className="flex items-center gap-2 border rounded-lg p-3 hover:bg-accent transition-colors"
-                    >
-                      <img
-                        src={teacher.profiles?.photo_url || '/default-avatar.png'}
-                        alt={teacher.profiles?.name || 'Teacher'}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="font-medium">{teacher.profiles?.name}</p>
-                        {teacher.role && (
-                          <p className="text-sm text-muted-foreground">{teacher.role}</p>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Price */}
-          {event.price && (
-            <>
-              <Separator />
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-5 w-5 text-primary" />
-                <div>
-                  <div className="font-medium">Price</div>
-                  <div className="text-muted-foreground">{event.price}</div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Organizer Contact */}
-          {event.organizer_contact && (
-            <>
-              <Separator />
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-primary" />
-                <div>
-                  <div className="font-medium">Contact</div>
-                  <div className="text-muted-foreground">{event.organizer_contact}</div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* External Link */}
-          {event.external_link && (
-            <>
-              <Separator />
-              <div>
-                <a
-                  href={event.external_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button className="w-full rounded-xl">
-                    Visit Event Website
-                    <ExternalLink className="ml-2 h-4 w-4" />
-                  </Button>
-                </a>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Upcoming Occurrences (for recurring events) */}
-      {event.recurrence_rule && occurrences.length > 0 && (
-        <Card className="border-primary/10 rounded-2xl mb-6">
-          <CardHeader>
-            <CardTitle>Upcoming Occurrences</CardTitle>
-            <CardDescription>Next occurrences of this recurring event</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {occurrences.slice(0, 5).map(date => (
-                <div key={date.toISOString()} className="flex items-center justify-between border rounded-lg p-3">
+            {/* Schedule Section */}
+            <Card className="border-primary/10 rounded-2xl">
+              <CardHeader>
+                <CardTitle>Programmazione</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Start/End Date */}
+                <div className="flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-primary mt-0.5" />
                   <div>
                     <div className="font-medium">
-                      {format(date, 'EEEE, MMMM d, yyyy')}
+                      {format(new Date(event.starts_at), 'EEEE, dd MMMM yyyy', { locale: it })}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {format(date, 'h:mm a')}
+                      {format(new Date(event.starts_at), 'HH:mm', { locale: it })} -{' '}
+                      {format(new Date(event.ends_at), 'HH:mm', { locale: it })}
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingOccurrence(date.toISOString())}
-                  >
-                    Edit
-                  </Button>
                 </div>
-              ))}
-              {occurrences.length > 5 && (
-                <p className="text-sm text-muted-foreground text-center pt-2">
-                  And {occurrences.length - 5} more occurrences...
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Organizer Card */}
-      <Card className="border-primary/10 rounded-2xl">
-        <CardHeader>
-          <CardTitle>Organizer</CardTitle>
-          <CardDescription>Event organized by</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-lg">{event.organizer.name}</div>
-              <div className="text-sm text-muted-foreground">{event.organizer.email}</div>
-            </div>
+                {/* Recurrence Display */}
+                {event.recurrence_rule && (
+                  <RecurrenceDisplay
+                    recurrenceRule={event.recurrence_rule}
+                    recurrenceDtstart={event.recurrence_dtstart}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Location Section */}
+            <Card className="border-primary/10 rounded-2xl">
+              <CardHeader>
+                <CardTitle>Luogo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="flex-1">
+                    <div className="font-medium mb-2">{event.location_text}</div>
+                    {event.gmaps_link && (
+                      <a
+                        href={event.gmaps_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Visualizza su Google Maps
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Teachers Section */}
+            {teachersForDisplay.length > 0 && (
+              <TeachersList teachers={teachersForDisplay} eventType={event.type} />
+            )}
+
+            {/* Additional Details */}
+            <Card className="border-primary/10 rounded-2xl">
+              <CardHeader>
+                <CardTitle>Dettagli</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Price */}
+                {event.price && (
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    <div>
+                      <div className="text-sm text-muted-foreground">Prezzo</div>
+                      <div className="font-medium">{event.price}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {event.tags && event.tags.length > 0 && (
+                  <div className="flex items-start gap-3">
+                    <Tag className="h-5 w-5 text-primary mt-0.5" />
+                    <div className="flex-1">
+                      <div className="text-sm text-muted-foreground mb-2">Tag</div>
+                      <div className="flex flex-wrap gap-2">
+                        {event.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="rounded-lg">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Amenities */}
+                {((event.accommodation_options && event.accommodation_options.length > 0) ||
+                  (event.food_options && event.food_options.length > 0)) && (
+                  <Separator />
+                )}
+
+                {event.accommodation_options && event.accommodation_options.length > 0 && (
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-2">Sistemazione</div>
+                    <div className="flex flex-wrap gap-2">
+                      {event.accommodation_options.map((item) => (
+                        <Badge key={item} variant="outline" className="rounded-lg">
+                          {item}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {event.food_options && event.food_options.length > 0 && (
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-2">Cibo</div>
+                    <div className="flex flex-wrap gap-2">
+                      {event.food_options.map((item) => (
+                        <Badge key={item} variant="outline" className="rounded-lg">
+                          {item}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Occurrences (for recurring events) */}
+            {event.recurrence_rule && occurrences.length > 0 && (
+              <Card className="border-primary/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle>Prossime occorrenze</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {occurrences.slice(0, 5).map((date) => (
+                      <div
+                        key={date.toISOString()}
+                        className="flex items-center justify-between border rounded-lg p-3"
+                      >
+                        <div>
+                          <div className="font-medium">
+                            {format(date, 'EEEE, dd MMMM yyyy', { locale: it })}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {format(date, 'HH:mm', { locale: it })}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingOccurrence(date.toISOString())}
+                        >
+                          Modifica
+                        </Button>
+                      </div>
+                    ))}
+                    {occurrences.length > 5 && (
+                      <p className="text-sm text-muted-foreground text-center pt-2">
+                        E altre {occurrences.length - 5} occorrenze...
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Sidebar - Right Column (1/3) */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Organizer Info */}
+            <EventOrganizerInfo
+              organizer={{
+                id: event.organizer.id,
+                name: event.organizer.name,
+                email: event.organizer.email,
+                photo_url: event.organizer.photo_url,
+              }}
+              isSuperAdmin={isSuperAdmin}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Occurrence Editor Dialog */}
       {editingOccurrence && (
@@ -351,16 +338,4 @@ export default function EventDetail() {
       )}
     </div>
   );
-}
-
-// Simple haversine for client-side distance (for display only, not authoritative)
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371; // Earth radius in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLng/2) * Math.sin(dLng/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
 }

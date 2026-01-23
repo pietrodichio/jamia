@@ -19,9 +19,10 @@ export function EventHero({ event }: EventHeroProps) {
     convention: 'destructive',
   };
 
-  // TODO: Add image_url field to events table and Event type
-  // For now, use gradient placeholder
-  const heroImageUrl = null;
+  // Generate optimized hero image URL if image exists
+  const heroImageUrl = event.image_url
+    ? getOptimizedImageUrl('event-images', event.image_url, { width: 1200, quality: 90 })
+    : null;
 
   return (
     <div className="relative h-96 w-full overflow-hidden rounded-2xl">

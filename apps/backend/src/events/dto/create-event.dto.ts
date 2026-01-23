@@ -33,11 +33,19 @@ export class CreateEventDto {
 
   @IsOptional()
   @IsString()
+  image_url?: string;
+
+  @IsOptional()
+  @IsString()
   price?: string;
 
   @IsOptional()
   @IsString()
   external_link?: string;
+
+  @IsOptional()
+  @IsString()
+  cta_text?: string;
 
   @IsOptional()
   @IsString()

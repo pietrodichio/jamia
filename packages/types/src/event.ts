@@ -20,8 +20,10 @@ export interface Event {
 
   // Optional shared fields
   description?: string;
+  image_url?: string;
   price?: string;
   external_link?: string;
+  cta_text?: string;
   organizer_contact?: string;
 
   // Optional location fields
@@ -32,6 +34,11 @@ export interface Event {
 
   // Status
   status: EventStatus;
+
+  // Filter fields (ARRAY columns)
+  tags?: string[];
+  accommodation_options?: string[];
+  food_options?: string[];
 
   // Recurrence fields
   recurrence_rule?: string | null;
@@ -52,6 +59,7 @@ export interface EventWithOrganizer extends Event {
     name: string;
     email: string;
     photo_url?: string;
+    is_super_admin?: boolean;
   };
 }
 
@@ -80,8 +88,10 @@ export interface CreateEventDto {
   starts_at: string;
   ends_at: string;
   description?: string;
+  image_url?: string;
   price?: string;
   external_link?: string;
+  cta_text?: string;
   organizer_contact?: string;
   location_lat?: number;
   location_lng?: number;
