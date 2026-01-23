@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesApi, type Profile } from "@/api/profiles.api";
 import { jamsApi, type Jam } from "@/api/jams.api";
@@ -11,12 +12,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Calendar, Users, LogOut, Loader2, User, History, Search, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import JamCard from "@/components/JamCard";
+import { UpcomingEventsSection } from "@/components/dashboard/UpcomingEventsSection";
+import { RecommendationsSection } from "@/components/dashboard/RecommendationsSection";
+import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
+import { DashboardActions } from "@/components/dashboard/DashboardActions";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation('dashboard');
 
   // Auth state listener for sign out
   useEffect(() => {
@@ -247,57 +253,28 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
-      <div className="container mx-auto p-4 space-y-6 max-w-6xl">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6">
+      <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
+        {/* Header with compact actions */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Ciao, {profile.first_name}!</h1>
-            <p className="text-muted-foreground">Benvenuto nella tua dashboard</p>
+            <h1 className="text-3xl font-bold text-foreground">Bacheca</h1>
+            <p className="text-muted-foreground">Ciao, {profile.first_name}!</p>
           </div>
           <div className="flex gap-2 justify-between w-full md:justify-end md:w-auto flex-wrap">
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                onClick={() => navigate("/discover")}
-                variant="outline"
-                className="rounded-xl"
-              >
-                <Search className="mr-2 h-4 w-4" />
-                Scopri Eventi
-              </Button>
-              <Button
-                onClick={() => navigate("/calendar")}
-                variant="outline"
-                className="rounded-xl"
-              >
-                <CalendarDays className="mr-2 h-4 w-4" />
-                Calendario
-              </Button>
-              <Button
-                onClick={() => navigate("/create-jam")}
-                className="rounded-xl"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Crea Jam
-              </Button>
-              <Button
-                onClick={() => navigate("/events/new")}
-                className="rounded-xl"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Crea Evento
-              </Button>
-              <Button
-                onClick={() => navigate("/profile")}
-                variant="secondary"
-                className="rounded-xl"
-              >
-                <User className="mr-2 h-4 w-4" />
-                Profilo
-              </Button>
-            </div>
+            <DashboardActions />
+            <Button
+              onClick={() => navigate("/profile")}
+              variant="secondary"
+              size="sm"
+              className="rounded-xl"
+            >
+              <User className="mr-2 h-4 w-4" />
+              Profilo
+            </Button>
             <Button
               onClick={handleSignOut}
               variant="destructive"
+              size="sm"
               className="rounded-xl"
             >
               <LogOut className="mr-2 h-4 w-4" />
@@ -306,48 +283,62 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-primary/10 rounded-2xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Le mie Jam</CardTitle>
-              <Calendar className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{myJams.length}</div>
-              <p className="text-xs text-muted-foreground">Jam create</p>
-            </CardContent>
-          </Card>
+        {/* Information-first sections */}
+        <div className="space-y-6">
+          {/* Statistics section - top, full width */}
+          <StatisticsSection userId={currentUser?.id} />
 
-          <Card className="border-primary/10 rounded-2xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Partecipazioni</CardTitle>
-              <Users className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalParticipations}</div>
-              <p className="text-xs text-muted-foreground">Jam a cui partecipo</p>
-            </CardContent>
-          </Card>
+          {/* Upcoming Events section */}
+          <UpcomingEventsSection userId={currentUser?.id} />
 
-          <Card className="border-primary/10 rounded-2xl">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Ruolo Preferito</CardTitle>
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-xs font-semibold text-primary">
-                  {profile.main_role === "base" ? "B" : profile.main_role === "flyer" ? "F" : "B/F"}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold capitalize">{profile.main_role}</div>
-              <p className="text-xs text-muted-foreground">Il tuo ruolo principale</p>
-            </CardContent>
-          </Card>
+          {/* Recommendations section */}
+          <RecommendationsSection userId={currentUser?.id} />
         </div>
 
-        {/* Jams Tabs */}
-        <Tabs defaultValue="upcoming" className="w-full">
+        {/* Legacy Jams Management - kept for backward compatibility */}
+        <div className="pt-6 border-t border-border">
+          <h2 className="text-2xl font-bold mb-4">Gestione Jam</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card className="border-primary/10 rounded-2xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Le mie Jam</CardTitle>
+                <Calendar className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{myJams.length}</div>
+                <p className="text-xs text-muted-foreground">Jam create</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/10 rounded-2xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Partecipazioni</CardTitle>
+                <Users className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalParticipations}</div>
+                <p className="text-xs text-muted-foreground">Jam a cui partecipo</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/10 rounded-2xl">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Ruolo Preferito</CardTitle>
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-xs font-semibold text-primary">
+                    {profile.main_role === "base" ? "B" : profile.main_role === "flyer" ? "F" : "B/F"}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold capitalize">{profile.main_role}</div>
+                <p className="text-xs text-muted-foreground">Il tuo ruolo principale</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Jams Tabs */}
+          <Tabs defaultValue="upcoming" className="w-full">
           <TabsList className="grid w-full grid-cols-3 rounded-xl">
             <TabsTrigger value="upcoming" className="rounded-xl">Prossime Jam</TabsTrigger>
             <TabsTrigger value="my-jams" className="rounded-xl">Le mie Jam</TabsTrigger>
@@ -499,7 +490,8 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
