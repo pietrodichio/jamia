@@ -9,6 +9,7 @@ const eventFormSchema = z.object({
   title: z.string().min(3, 'Minimo 3 caratteri').max(100, 'Massimo 100 caratteri'),
   description: z.string().max(1000, 'Massimo 1000 caratteri').optional(),
   location: z.string().min(3, 'Minimo 3 caratteri'),
+  tags: z.array(z.string()).optional(),
   date: z.date({ required_error: 'Data richiesta' }),
   time: z.string().regex(/^\d{2}:\d{2}$/, 'Formato HH:mm richiesto'),
   end_date: z.date().optional(),
@@ -27,15 +28,18 @@ const eventFormSchema = z.object({
   // External registration fields
   externalLink: z.string().url('URL non valido').optional().or(z.literal('')),
   ctaText: z.string().max(30, 'Massimo 30 caratteri').optional(),
+  // Image upload field
+  image_url: z.string().url('URL non valido').optional().or(z.literal('')),
 });
 
 export type EventFormData = z.infer<typeof eventFormSchema>;
 
 // Define which fields belong to each step
 const stepFields: Record<number, (keyof EventFormData)[]> = {
-  1: ['type', 'title', 'description', 'location', 'manageParticipants', 'capacity', 'visibility'],
+  1: ['type', 'title', 'description', 'location', 'tags', 'manageParticipants', 'capacity', 'visibility'],
   2: ['date', 'time', 'end_date', 'end_time', 'price', 'link', 'externalLink', 'ctaText'],
-  3: [], // Preview step - no validation needed
+  3: ['image_url'], // Image upload step
+  4: [], // Preview step - no validation needed
 };
 
 interface UseEventWizardReturn {
@@ -61,6 +65,7 @@ export function useEventWizard(): UseEventWizardReturn {
       title: '',
       description: '',
       location: '',
+      tags: [],
       time: '',
       end_time: '',
       price: undefined,
@@ -74,6 +79,7 @@ export function useEventWizard(): UseEventWizardReturn {
       },
       externalLink: '',
       ctaText: 'Registrati',
+      image_url: '',
     },
   });
 
@@ -90,7 +96,7 @@ export function useEventWizard(): UseEventWizardReturn {
     const isValid = await trigger(fields);
 
     if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, 3));
+      setCurrentStep((prev) => Math.min(prev + 1, 4));
       setIsStepValid(false); // Reset for next step
     } else {
       setIsStepValid(false);

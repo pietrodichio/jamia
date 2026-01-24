@@ -15,7 +15,7 @@ export function WizardStepIndicator({
 }: WizardStepIndicatorProps) {
   return (
     <div className="w-full py-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-center gap-2 md:gap-4">
         {Array.from({ length: totalSteps }, (_, index) => {
           const stepNumber = index + 1;
           const isCompleted = stepNumber < currentStep;
@@ -23,9 +23,9 @@ export function WizardStepIndicator({
           const isUpcoming = stepNumber > currentStep;
 
           return (
-            <div key={stepNumber} className="flex items-center flex-1">
+            <>
               {/* Step circle and label */}
-              <div className="flex flex-col items-center">
+              <div key={stepNumber} className="flex flex-col items-center">
                 {/* Step circle */}
                 <div
                   className={cn(
@@ -44,17 +44,17 @@ export function WizardStepIndicator({
                   )}
                 </div>
 
-                {/* Step label - hidden on mobile, shown on desktop */}
+                {/* Step label - show abbreviated on mobile, full on desktop */}
                 <span
                   className={cn(
-                    'mt-2 text-xs md:text-sm font-medium text-center max-w-[80px] md:max-w-none',
+                    'mt-2 text-xs md:text-sm font-medium text-center max-w-[60px] md:max-w-none truncate',
                     isActive && 'text-primary',
                     (isCompleted || isUpcoming) && 'text-muted-foreground'
                   )}
                 >
-                  {/* Show only step number on mobile */}
-                  <span className="md:hidden">
-                    {stepNumber}
+                  {/* Show abbreviated label on mobile */}
+                  <span className="md:hidden truncate">
+                    {stepLabels[index]?.substring(0, 5) || stepNumber}
                   </span>
                   {/* Show full label on desktop */}
                   <span className="hidden md:inline">
@@ -66,14 +66,15 @@ export function WizardStepIndicator({
               {/* Separator between steps (not after last step) */}
               {stepNumber < totalSteps && (
                 <Separator
+                  key={`separator-${stepNumber}`}
                   className={cn(
-                    'flex-1 mx-2 transition-colors',
+                    'flex-1 min-w-[20px] md:min-w-[40px] transition-colors',
                     isCompleted && 'bg-primary',
                     (isActive || isUpcoming) && 'bg-muted-foreground/30'
                   )}
                 />
               )}
-            </div>
+            </>
           );
         })}
       </div>
