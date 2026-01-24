@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 6.1 (Event Creation Flow Fixes) - INSERTED, NOT PLANNED
-Plan: 1 of 6
-Status: In progress - reusable components verified, wizard fixes underway
-Last activity: 2026-01-24 — Completed 06.1-01-PLAN.md (verify reusable components)
+Plan: 2 of 6
+Status: In progress - wizard layout and preview null-safety complete
+Last activity: 2026-01-24 — Completed 06.1-02-PLAN.md (wizard layout & preview fixes)
 
-Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (1/6 plans)
+Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (2/6 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 36
+- Total plans completed: 37
 - Average duration: 4 min
 - Total execution time: 2.4 hours
 
@@ -33,10 +33,10 @@ Progress: [██████████░░] 100% (6/6 planned phases comple
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
 | 5. Event Enhancements | 10/10 | 65 min | 7 min |
 | 6. UI/UX Refactor | 7/7 | 29 min | 4 min |
-| 6.1. Event Creation Flow Fixes | 1/6 | 2 min | 2 min |
+| 6.1. Event Creation Flow Fixes | 2/6 | 5 min | 2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-04 (3 min), 06-05 (5 min), 06-06 (4 min), 06-07 (6 min), 06.1-01 (2 min)
+- Last 5 plans: 06-05 (5 min), 06-06 (4 min), 06-07 (6 min), 06.1-01 (2 min), 06.1-02 (3 min)
 - Trend: Phase 6.1 fixing event creation wizard gaps
 
 *Updated after each plan completion*
@@ -183,6 +183,9 @@ Recent decisions affecting current work:
 - Custom cta_text field for external registration button personalization
 - image_url field with event-images storage bucket for hero images
 - LocationInput uses presentational pattern (receives predictions from parent for superior separation of concerns)
+- DOMPurify with explicit ALLOWED_TAGS whitelist for rich text sanitization (security control over default sanitization)
+- Italian placeholder messages for missing form data instead of empty/null values (better UX in preview)
+- formatDateTime helper returns string fallbacks instead of null for consistent null-safe rendering
 
 ### Roadmap Evolution
 
@@ -199,7 +202,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-24T17:00:36Z
-Stopped at: Completed 06.1-01-PLAN.md (verify reusable components)
+Last session: 2026-01-24T17:02:59Z
+Stopped at: Completed 06.1-02-PLAN.md (wizard layout & preview fixes)
 Resume file: None
-Next: Continue with 06.1-02-PLAN.md (wizard infrastructure fixes)
+Next: Continue Phase 6.1 - Plan 03 (rich text editor integration)
