@@ -9,19 +9,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Plan: 3 of 6
-Status: In progress - wizard layout, preview fixes, and image upload complete
-Last activity: 2026-01-24 — Completed 06.1-05-PLAN.md (event image upload)
-Last activity: 2026-01-24 — Completed 06.1-06-PLAN.md (teacher selection in event creation)
+Plan: 4 of 6
+Status: In progress - wizard layout, preview, images, teachers, and schedule step complete
+Last activity: 2026-01-24 — Completed 06.1-04-PLAN.md (enhance event schedule step)
 
-Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (4/6 plans)
+Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (5/6 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 39
+- Total plans completed: 40
 - Average duration: 4 min
-- Total execution time: 2.5 hours
+- Total execution time: 2.6 hours
 
 **By Phase:**
 
@@ -33,10 +32,10 @@ Progress: [██████████░░] 100% (6/6 planned phases comple
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
 | 5. Event Enhancements | 10/10 | 65 min | 7 min |
 | 6. UI/UX Refactor | 7/7 | 29 min | 4 min |
-| 6.1. Event Creation Flow Fixes | 4/6 | 12 min | 3 min |
+| 6.1. Event Creation Flow Fixes | 5/6 | 15 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-07 (6 min), 06.1-01 (2 min), 06.1-02 (3 min), 06.1-05 (2 min), 06.1-06 (5 min)
+- Last 5 plans: 06.1-01 (2 min), 06.1-02 (3 min), 06.1-05 (2 min), 06.1-06 (5 min), 06.1-04 (3 min)
 - Trend: Phase 6.1 fixing event creation wizard gaps
 
 *Updated after each plan completion*
@@ -193,6 +192,11 @@ Recent decisions affecting current work:
 - Batch teacher insertion using Promise.all on individual API calls (client-side batch wrapper when backend lacks batch endpoint)
 - Load selected teachers on mount to preserve wizard state when navigating back
 - Profile search dropdown with debounced query, avatars, and selection state
+- Auto-fill end time defaults to +4 hours from start time (typical event duration)
+- End time auto-fill capped at 23:59 to prevent crossing day boundary
+- 500ms debounce on auto-fill prevents excessive form updates during typing
+- RecurrenceEditor conditional rendering for class type only (primary use case for recurring events)
+- shouldDirty: false on auto-fill prevents marking form dirty for suggested values
 
 
 ### Roadmap Evolution
@@ -210,7 +214,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-24T17:03:01Z
-Stopped at: Completed 06.1-06-PLAN.md (teacher selection in event creation)
+Last session: 2026-01-24T17:08:34Z
+Stopped at: Completed 06.1-04-PLAN.md (enhance event schedule step)
 Resume file: None
-Next: Continue Phase 6.1 - remaining plans (rich text editor, location picker, tags, recurring events)
+Next: Continue Phase 6.1 - remaining plan (06.1-03 - enhance event type step with rich text, location, tags)
