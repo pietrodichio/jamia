@@ -69,23 +69,31 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
         <FormField
           control={form.control}
           name="date"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <DateTimePicker
-                  label="Data e ora di inizio"
-                  date={field.value}
-                  time={form.watch('time')}
-                  onDateChange={field.onChange}
-                  onTimeChange={(time) => form.setValue('time', time)}
-                  minDate={new Date()}
-                  disabled={form.formState.isSubmitting}
-                  timeId="start-time"
-                  dateButtonId="start-date-button"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field: dateField }) => (
+            <FormField
+              control={form.control}
+              name="time"
+              render={({ field: timeField }) => (
+                <FormItem>
+                  <FormControl>
+                    <DateTimePicker
+                      label="Data e ora di inizio"
+                      date={dateField.value}
+                      time={timeField.value || ''}
+                      onDateChange={dateField.onChange}
+                      onTimeChange={timeField.onChange}
+                      minDate={new Date()}
+                      disabled={form.formState.isSubmitting}
+                      timeId="start-time"
+                      dateButtonId="start-date-button"
+                      error={form.formState.errors.date?.message || form.formState.errors.time?.message}
+                    />
+                  </FormControl>
+                  <FormMessage>{form.formState.errors.date?.message}</FormMessage>
+                  <FormMessage>{form.formState.errors.time?.message}</FormMessage>
+                </FormItem>
+              )}
+            />
           )}
         />
 
@@ -93,23 +101,31 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
         <FormField
           control={form.control}
           name="end_date"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <DateTimePicker
-                  label="Data e ora di fine (opzionale)"
-                  date={field.value}
-                  time={form.watch('end_time') || ''}
-                  onDateChange={field.onChange}
-                  onTimeChange={(time) => form.setValue('end_time', time)}
-                  minDate={dateFrom || new Date()}
-                  disabled={form.formState.isSubmitting}
-                  timeId="end-time"
-                  dateButtonId="end-date-button"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field: dateField }) => (
+            <FormField
+              control={form.control}
+              name="end_time"
+              render={({ field: timeField }) => (
+                <FormItem>
+                  <FormControl>
+                    <DateTimePicker
+                      label="Data e ora di fine (opzionale)"
+                      date={dateField.value}
+                      time={timeField.value || ''}
+                      onDateChange={dateField.onChange}
+                      onTimeChange={timeField.onChange}
+                      minDate={dateFrom || new Date()}
+                      disabled={form.formState.isSubmitting}
+                      timeId="end-time"
+                      dateButtonId="end-date-button"
+                      error={form.formState.errors.end_date?.message || form.formState.errors.end_time?.message}
+                    />
+                  </FormControl>
+                  <FormMessage>{form.formState.errors.end_date?.message}</FormMessage>
+                  <FormMessage>{form.formState.errors.end_time?.message}</FormMessage>
+                </FormItem>
+              )}
+            />
           )}
         />
 
@@ -173,32 +189,9 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
           )}
         />
 
-        {/* External Link */}
-        <FormField
-          control={form.control}
-          name="link"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t('events:fields.externalLink')} {t('forms:placeholders.optional')}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="url"
-                  placeholder="https://esempio.com"
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Link per registrazione esterna o maggiori informazioni
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       </div>
 
-      {/* External Registration Fields (conditional) */}
+      {/* External Registration Fields */}
       <ExternalRegistrationFields form={form} />
     </div>
   );

@@ -91,7 +91,7 @@ export default function CreateEvent() {
       description: data.description || undefined,
       tags: data.tags && data.tags.length > 0 ? data.tags : undefined,
       price: data.price?.toString() || undefined,
-      external_link: data.link || data.externalLink || undefined,
+      external_link: data.externalLink || undefined,
       // External registration fields (only if NOT managing participants)
       cta_text: (!data.manageParticipants || data.type !== 'jam') ? data.ctaText : undefined,
       // Image URL

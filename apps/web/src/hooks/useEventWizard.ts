@@ -20,7 +20,6 @@ const eventFormSchema = z.object({
   end_date: z.date().optional(),
   end_time: z.string().regex(/^\d{2}:\d{2}$/, 'Formato HH:mm').optional().or(z.literal('')),
   price: z.number().min(0, 'Il prezzo non può essere negativo').optional(),
-  link: z.string().url('URL non valido').optional().or(z.literal('')),
   // Jam participant management fields
   manageParticipants: z.boolean().optional(),
   capacity: z.number().min(1, 'Minimo 1 partecipante').optional(),
@@ -50,7 +49,7 @@ export type EventFormData = z.infer<typeof eventFormSchema>;
 // Define which fields belong to each step
 const stepFields: Record<number, (keyof EventFormData)[]> = {
   1: ['type', 'title', 'description', 'location', 'tags', 'manageParticipants', 'capacity', 'visibility'],
-  2: ['date', 'time', 'end_date', 'end_time', 'price', 'link', 'externalLink', 'ctaText', 'recurrence'],
+  2: ['date', 'time', 'end_date', 'end_time', 'price', 'externalLink', 'ctaText', 'recurrence'],
   3: ['image_url'], // Image upload step
   4: ['teacherIds'], // Teacher selection step
   5: [], // Preview step - no validation needed
@@ -72,7 +71,7 @@ export function useEventWizard(): UseEventWizardReturn {
   // Initialize form with React Hook Form
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
-    shouldUnregister: true, // Critical: unregister hidden fields when they unmount
+    shouldUnregister: false, // Keep field values when navigating between steps
     mode: 'onChange', // Validate on change for better UX
     defaultValues: {
       type: 'jam',
@@ -88,7 +87,6 @@ export function useEventWizard(): UseEventWizardReturn {
       time: '',
       end_time: '',
       price: undefined,
-      link: '',
       manageParticipants: false,
       visibility: 'public',
       roles: {

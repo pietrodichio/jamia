@@ -153,14 +153,14 @@ export function EventPreviewStep({ form }: EventPreviewStepProps) {
               <p className="text-sm font-medium text-muted-foreground">
                 {t('events:fields.externalLink')}:
               </p>
-              {formValues.link ? (
+              {formValues.externalLink ? (
                 <a
-                  href={formValues.link}
+                  href={formValues.externalLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline break-all"
                 >
-                  {formValues.link}
+                  {formValues.externalLink}
                 </a>
               ) : (
                 <p className="text-muted-foreground italic">Non specificato</p>
