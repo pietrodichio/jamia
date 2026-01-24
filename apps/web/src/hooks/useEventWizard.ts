@@ -30,6 +30,8 @@ const eventFormSchema = z.object({
   ctaText: z.string().max(30, 'Massimo 30 caratteri').optional(),
   // Image upload field
   image_url: z.string().url('URL non valido').optional().or(z.literal('')),
+  // Teacher selection (for class/workshop/convention)
+  teacherIds: z.array(z.string().uuid()).optional(),
 });
 
 export type EventFormData = z.infer<typeof eventFormSchema>;
@@ -39,7 +41,8 @@ const stepFields: Record<number, (keyof EventFormData)[]> = {
   1: ['type', 'title', 'description', 'location', 'tags', 'manageParticipants', 'capacity', 'visibility'],
   2: ['date', 'time', 'end_date', 'end_time', 'price', 'link', 'externalLink', 'ctaText'],
   3: ['image_url'], // Image upload step
-  4: [], // Preview step - no validation needed
+  4: ['teacherIds'], // Teacher selection step
+  5: [], // Preview step - no validation needed
 };
 
 interface UseEventWizardReturn {
@@ -80,6 +83,7 @@ export function useEventWizard(): UseEventWizardReturn {
       externalLink: '',
       ctaText: 'Registrati',
       image_url: '',
+      teacherIds: [],
     },
   });
 
@@ -96,7 +100,7 @@ export function useEventWizard(): UseEventWizardReturn {
     const isValid = await trigger(fields);
 
     if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, 4));
+      setCurrentStep((prev) => Math.min(prev + 1, 5));
       setIsStepValid(false); // Reset for next step
     } else {
       setIsStepValid(false);
