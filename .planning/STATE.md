@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 6 of 6 (UI/UX Refactor for Events Management) - COMPLETE
-Plan: 7 of 7 in Phase 6 complete (06-01, 06-02, 06-03, 06-04, 06-05, 06-06, 06-07)
-Status: Phase 6 verified and complete - Italian localization, unified discovery, smart wizard, information-rich dashboard
-Last activity: 2026-01-23 — Phase 6 verified (29/29 must-haves passed)
+Phase: 6.1 (Event Creation Flow Fixes) - INSERTED, NOT PLANNED
+Plan: 1 of 6
+Status: In progress - reusable components verified, wizard fixes underway
+Last activity: 2026-01-24 — Completed 06.1-01-PLAN.md (verify reusable components)
 
-Progress: [██████████] 100% (6/6 phases complete)
+Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (1/6 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 35
+- Total plans completed: 36
 - Average duration: 4 min
-- Total execution time: 2.3 hours
+- Total execution time: 2.4 hours
 
 **By Phase:**
 
@@ -33,10 +33,11 @@ Progress: [██████████] 100% (6/6 phases complete)
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
 | 5. Event Enhancements | 10/10 | 65 min | 7 min |
 | 6. UI/UX Refactor | 7/7 | 29 min | 4 min |
+| 6.1. Event Creation Flow Fixes | 1/6 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-03 (3 min), 06-04 (3 min), 06-05 (5 min), 06-06 (4 min), 06-07 (6 min)
-- Trend: Phase 6 enhanced event detail page with calendar export and hero layout
+- Last 5 plans: 06-04 (3 min), 06-05 (5 min), 06-06 (4 min), 06-07 (6 min), 06.1-01 (2 min)
+- Trend: Phase 6.1 fixing event creation wizard gaps
 
 *Updated after each plan completion*
 
@@ -181,10 +182,12 @@ Recent decisions affecting current work:
 - Web Share API with clipboard fallback for cross-platform sharing
 - Custom cta_text field for external registration button personalization
 - image_url field with event-images storage bucket for hero images
+- LocationInput uses presentational pattern (receives predictions from parent for superior separation of concerns)
 
 ### Roadmap Evolution
 
 - Phase 6 added: UI/UX refactor for events management
+- Phase 6.1 inserted after Phase 6: Event Creation Flow Fixes (URGENT) - Critical gaps discovered in wizard (layout, rich text, location picker, tags, recurring events, preview, validation, images, teachers)
 
 ### Pending Todos
 
@@ -196,7 +199,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-23T10:45:00Z
-Stopped at: Milestone v1 complete - all 6 phases verified
+Last session: 2026-01-24T17:00:36Z
+Stopped at: Completed 06.1-01-PLAN.md (verify reusable components)
 Resume file: None
-Next: Audit milestone before archiving (/gsd:audit-milestone)
+Next: Continue with 06.1-02-PLAN.md (wizard infrastructure fixes)
