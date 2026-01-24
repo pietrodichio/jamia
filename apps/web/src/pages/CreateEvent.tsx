@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { eventsApi } from '@/api/events.api';
+import { teachersApi } from '@/api/teachers.api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -13,6 +14,7 @@ import { WizardNavigation } from '@/components/forms/wizard/WizardNavigation';
 import { EventTypeStep } from '@/components/forms/event/EventTypeStep';
 import { EventScheduleStep } from '@/components/forms/event/EventScheduleStep';
 import { EventImageStep } from '@/components/forms/event/EventImageStep';
+import { EventTeachersStep } from '@/components/forms/event/EventTeachersStep';
 import { EventPreviewStep } from '@/components/forms/event/EventPreviewStep';
 import { ArrowLeft, Save, Check, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -25,6 +27,10 @@ export default function CreateEvent() {
 
   // Initialize wizard
   const { currentStep, nextStep, prevStep, form } = useEventWizard();
+
+  // Watch event type to conditionally show teachers step
+  const eventType = form.watch('type');
+  const showTeachersStep = ['class', 'workshop', 'convention'].includes(eventType);
 
   // Watch all form fields for auto-save
   const formData = form.watch();
@@ -66,7 +72,7 @@ export default function CreateEvent() {
   });
 
   // Handle form submission
-  const handleSubmit = form.handleSubmit((data) => {
+  const handleSubmit = form.handleSubmit(async (data) => {
     // Combine date and time into ISO string
     const startsAt = data.date && data.time
       ? new Date(`${data.date.toISOString().split('T')[0]}T${data.time}:00`).toISOString()
@@ -96,19 +102,38 @@ export default function CreateEvent() {
     // system should be used separately. This unified flow creates event listings only.
     // Capacity and visibility are jam management features, not event listing fields.
 
-    // If we have a draft, update it to published; otherwise create new
-    if (draftId) {
-      updateMutation.mutate({ id: draftId, data: { ...eventData, status: 'published' } });
-    } else {
-      createMutation.mutate(eventData);
+    try {
+      let createdEvent;
+
+      // If we have a draft, update it to published; otherwise create new
+      if (draftId) {
+        createdEvent = await eventsApi.updateEvent(draftId, { ...eventData, status: 'published' });
+      } else {
+        createdEvent = await eventsApi.createEvent(eventData);
+      }
+
+      // Insert teachers if any selected
+      if (data.teacherIds && data.teacherIds.length > 0) {
+        await teachersApi.addTeachers(createdEvent.id, data.teacherIds);
+      }
+
+      toast({ title: t('events:messages.eventCreated') });
+      navigate(`/events/${createdEvent.id}`);
+    } catch (error: any) {
+      toast({
+        title: 'Errore nella creazione dell\'evento',
+        description: error.response?.data?.message || 'Riprova',
+        variant: 'destructive'
+      });
     }
   });
 
-  // Step labels
+  // Step labels - conditional based on event type
   const stepLabels = [
     t('events:wizard.step1Title'),
     t('events:wizard.step2Title'),
     'Immagine',
+    ...(showTeachersStep ? ['Insegnanti'] : []),
     t('events:wizard.step3Title'),
   ];
 
@@ -163,7 +188,7 @@ export default function CreateEvent() {
           {/* Wizard Step Indicator */}
           <WizardStepIndicator
             currentStep={currentStep}
-            totalSteps={4}
+            totalSteps={showTeachersStep ? 5 : 4}
             stepLabels={stepLabels}
           />
 
@@ -175,13 +200,15 @@ export default function CreateEvent() {
                 {currentStep === 1 && <EventTypeStep form={form} />}
                 {currentStep === 2 && <EventScheduleStep form={form} />}
                 {currentStep === 3 && <EventImageStep form={form} />}
-                {currentStep === 4 && <EventPreviewStep form={form} />}
+                {currentStep === 4 && !showTeachersStep && <EventPreviewStep form={form} />}
+                {currentStep === 4 && showTeachersStep && <EventTeachersStep form={form} />}
+                {currentStep === 5 && showTeachersStep && <EventPreviewStep form={form} />}
               </div>
 
               {/* Wizard Navigation */}
               <WizardNavigation
                 currentStep={currentStep}
-                totalSteps={4}
+                totalSteps={showTeachersStep ? 5 : 4}
                 onBack={prevStep}
                 onNext={nextStep}
                 onSubmit={handleSubmit}

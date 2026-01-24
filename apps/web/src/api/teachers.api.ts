@@ -14,6 +14,17 @@ export const teachersApi = {
     return response.data;
   },
 
+  // Add multiple teachers to event (batch operation)
+  async addTeachers(
+    eventId: string,
+    teacherIds: string[]
+  ): Promise<EventTeacher[]> {
+    const promises = teacherIds.map(teacherId =>
+      this.addTeacher(eventId, { teacherId })
+    );
+    return Promise.all(promises);
+  },
+
   // Get event's teachers
   async listTeachers(eventId: string): Promise<EventTeacher[]> {
     const response = await apiClient.get<EventTeacher[]>(
