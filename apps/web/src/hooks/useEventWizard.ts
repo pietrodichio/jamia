@@ -7,8 +7,13 @@ import { z } from 'zod';
 const eventFormSchema = z.object({
   type: z.enum(['jam', 'class', 'workshop', 'convention']),
   title: z.string().min(3, 'Minimo 3 caratteri').max(100, 'Massimo 100 caratteri'),
-  description: z.string().max(1000, 'Massimo 1000 caratteri').optional(),
-  location: z.string().min(3, 'Minimo 3 caratteri'),
+  description: z.string().optional(),
+  location: z.object({
+    description: z.string().min(3, 'Minimo 3 caratteri'),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    googleMapsUrl: z.string().url().optional().or(z.literal('')),
+  }),
   tags: z.array(z.string()).optional(),
   date: z.date({ required_error: 'Data richiesta' }),
   time: z.string().regex(/^\d{2}:\d{2}$/, 'Formato HH:mm richiesto'),
@@ -32,6 +37,12 @@ const eventFormSchema = z.object({
   image_url: z.string().url('URL non valido').optional().or(z.literal('')),
   // Teacher selection (for class/workshop/convention)
   teacherIds: z.array(z.string().uuid()).optional(),
+  // Recurrence (for class events)
+  recurrence: z.object({
+    rule: z.string().nullable(),
+    dtstart: z.string().nullable(),
+    until: z.string().nullable(),
+  }).optional(),
 });
 
 export type EventFormData = z.infer<typeof eventFormSchema>;
@@ -67,7 +78,12 @@ export function useEventWizard(): UseEventWizardReturn {
       type: 'jam',
       title: '',
       description: '',
-      location: '',
+      location: {
+        description: '',
+        latitude: undefined,
+        longitude: undefined,
+        googleMapsUrl: '',
+      },
       tags: [],
       time: '',
       end_time: '',
@@ -84,6 +100,11 @@ export function useEventWizard(): UseEventWizardReturn {
       ctaText: 'Registrati',
       image_url: '',
       teacherIds: [],
+      recurrence: {
+        rule: null,
+        dtstart: null,
+        until: null,
+      },
     },
   });
 
