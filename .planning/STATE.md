@@ -189,6 +189,10 @@ Recent decisions affecting current work:
 - Client-side image compression (max 1MB, 1920px) before upload reduces storage costs and bandwidth usage
 - File upload with validation, compression, preview pattern for better UX and security
 - Image upload optional in event creation wizard (can be skipped or added later)
+- Conditional wizard steps based on event type (teachers step only for class/workshop/convention)
+- Batch teacher insertion using Promise.all on individual API calls (client-side batch wrapper when backend lacks batch endpoint)
+- Load selected teachers on mount to preserve wizard state when navigating back
+- Profile search dropdown with debounced query, avatars, and selection state
 
 
 ### Roadmap Evolution
@@ -203,10 +207,10 @@ None yet.
 ### Blockers/Concerns
 
 None yet.
-Last session: 2026-01-24T17:03:45Z
-Stopped at: Completed 06.1-05-PLAN.md (event image upload)
 
-Next: Continue with remaining plans in Phase 6.1 (tags, recurring events)
-Stopped at: Completed 06.1-02-PLAN.md (wizard layout & preview fixes)
+## Session Continuity
+
+Last session: 2026-01-24T17:03:01Z
+Stopped at: Completed 06.1-06-PLAN.md (teacher selection in event creation)
 Resume file: None
-Next: Continue Phase 6.1 - Plan 03 (rich text editor integration)
+Next: Continue Phase 6.1 - remaining plans (rich text editor, location picker, tags, recurring events)
