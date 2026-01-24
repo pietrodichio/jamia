@@ -9,14 +9,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 
 export function EventList() {
-  const { filters, tags, accommodationOptions, foodOptions } = useEventFilters();
+  const { filters, tags } = useEventFilters();
   const { toast } = useToast();
 
   // Only run query if location is set
   const enabled = Boolean(filters.lat && filters.lng);
 
   const { data: events, isLoading, error } = useQuery({
-    queryKey: ['events', 'search', filters, tags, accommodationOptions, foodOptions],
+    queryKey: ['events', 'search', filters, tags],
     queryFn: () => eventsApi.searchEvents({
       lng: parseFloat(filters.lng),
       lat: parseFloat(filters.lat),
@@ -26,8 +26,6 @@ export function EventList() {
       dateTo: filters.dateTo || undefined,
       keyword: filters.query || undefined,
       tags: tags.length > 0 ? tags : undefined,
-      accommodation_options: accommodationOptions.length > 0 ? accommodationOptions : undefined,
-      food_options: foodOptions.length > 0 ? foodOptions : undefined,
     }),
     enabled,
     staleTime: 30000, // Cache for 30 seconds

@@ -4,10 +4,10 @@ import { it } from 'date-fns/locale/it';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getOptimizedImageUrl, getResponsiveSrcSet } from '@/lib/image-utils';
-import type { EventWithOrganizer } from '@jamia/types/event';
+import type { Event } from '@jamia/types/event';
 
 interface EventCardProps {
-  event: EventWithOrganizer;
+  event: Event;
 }
 
 /**
@@ -74,14 +74,16 @@ export function EventCard({ event }: EventCardProps) {
   const thumbnailUrl = isFullUrl
     ? imagePath
     : getOptimizedImageUrl('event-images', imagePath, {
-        width: 400,
-        quality: 80,
-        resize: 'cover',
-      });
+      width: 400,
+      quality: 80,
+      resize: 'cover',
+    });
 
   const srcSet = isFullUrl
     ? undefined
     : getResponsiveSrcSet('event-images', imagePath, [400, 800], 80);
+
+  console.log('event', event);
 
   return (
     <Card

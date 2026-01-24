@@ -93,6 +93,7 @@ export interface CreateEventDto {
   external_link?: string;
   cta_text?: string;
   organizer_contact?: string;
+  tags?: string[];
   location_lat?: number;
   location_lng?: number;
   location_place_id?: string;

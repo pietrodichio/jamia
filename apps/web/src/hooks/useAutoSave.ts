@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDebounce } from 'use-debounce';
-import { supabase } from '@/integrations/supabase/client';
+import { eventsApi } from '@/api/events.api';
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -50,6 +50,9 @@ export function useAutoSave(
         if (debouncedFormData.location) {
           draftData.location_text = debouncedFormData.location;
         }
+        if (debouncedFormData.tags && debouncedFormData.tags.length > 0) {
+          draftData.tags = debouncedFormData.tags;
+        }
         if (debouncedFormData.date) {
           // Convert date to ISO string if it's a Date object
           draftData.starts_at = debouncedFormData.date instanceof Date
@@ -82,16 +85,7 @@ export function useAutoSave(
           draftData.id = draftId;
         }
 
-        const { data, error } = await supabase
-          .from('events')
-          .upsert(draftData, {
-            onConflict: 'id', // Update existing draft by ID
-            ignoreDuplicates: false, // Merge with existing
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
+        const data = await eventsApi.saveDraft(draftData);
 
         setSaveStatus('saved');
 

@@ -11,6 +11,7 @@ import {
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
+import { Public } from '../auth/public.decorator';
 import { User, AuthUser } from '../auth/user.decorator';
 
 @Controller('profiles')
@@ -25,6 +26,12 @@ export class ProfilesController {
     @Query('jamId') jamId?: string,
   ) {
     return this.profilesService.searchUsers(query, limit, jamId);
+  }
+
+  @Public()
+  @Get('public/:id')
+  async getPublicProfile(@Param('id') id: string) {
+    return this.profilesService.getPublicProfile(id);
   }
 
   @Get(':id')

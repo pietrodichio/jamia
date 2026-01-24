@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { EVENT_TAG_LABELS } from '@/lib/event-tags';
 import { MapPin, DollarSign, ArrowLeft, Clock, Tag } from 'lucide-react';
 
 export default function EventDetail() {
@@ -50,11 +51,16 @@ export default function EventDetail() {
   });
 
   // Generate occurrences for recurring events (next 90 days)
+  const occurrenceRangeStart = useMemo(() => new Date(), []);
+  const occurrenceRangeEnd = useMemo(
+    () => new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+    []
+  );
   const occurrences = useEventOccurrences(
     event?.recurrence_rule,
     event?.recurrence_dtstart,
-    new Date(),
-    new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+    occurrenceRangeStart,
+    occurrenceRangeEnd
   );
 
   if (isLoading) {
@@ -91,7 +97,7 @@ export default function EventDetail() {
   const isOwner = currentUserId === event.owner_id;
 
   // Check if organizer is super admin
-  const isSuperAdmin = Boolean(event.organizer.is_super_admin);
+  const isSuperAdmin = Boolean(event.organizer?.is_super_admin);
 
   // Transform teachers data for TeachersList component
   const teachersForDisplay = teachers?.map(t => ({
@@ -226,44 +232,15 @@ export default function EventDetail() {
                     <div className="flex-1">
                       <div className="text-sm text-muted-foreground mb-2">Tag</div>
                       <div className="flex flex-wrap gap-2">
-                        {event.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="rounded-lg">
-                            {tag}
-                          </Badge>
-                        ))}
+                        {event.tags.map((tag) => {
+                          const label = EVENT_TAG_LABELS.get(tag) ?? tag;
+                          return (
+                            <Badge key={tag} variant="secondary" className="rounded-lg">
+                              {label}
+                            </Badge>
+                          );
+                        })}
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Amenities */}
-                {((event.accommodation_options && event.accommodation_options.length > 0) ||
-                  (event.food_options && event.food_options.length > 0)) && (
-                  <Separator />
-                )}
-
-                {event.accommodation_options && event.accommodation_options.length > 0 && (
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-2">Sistemazione</div>
-                    <div className="flex flex-wrap gap-2">
-                      {event.accommodation_options.map((item) => (
-                        <Badge key={item} variant="outline" className="rounded-lg">
-                          {item}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {event.food_options && event.food_options.length > 0 && (
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-2">Cibo</div>
-                    <div className="flex flex-wrap gap-2">
-                      {event.food_options.map((item) => (
-                        <Badge key={item} variant="outline" className="rounded-lg">
-                          {item}
-                        </Badge>
-                      ))}
                     </div>
                   </div>
                 )}
@@ -314,15 +291,17 @@ export default function EventDetail() {
           {/* Sidebar - Right Column (1/3) */}
           <div className="lg:col-span-1 space-y-6">
             {/* Organizer Info */}
-            <EventOrganizerInfo
-              organizer={{
-                id: event.organizer.id,
-                name: event.organizer.name,
-                email: event.organizer.email,
-                photo_url: event.organizer.photo_url,
-              }}
-              isSuperAdmin={isSuperAdmin}
-            />
+            {event.organizer && (
+              <EventOrganizerInfo
+                organizer={{
+                  id: event.organizer.id,
+                  name: event.organizer.name,
+                  email: event.organizer.email,
+                  photo_url: event.organizer.photo_url,
+                }}
+                isSuperAdmin={isSuperAdmin}
+              />
+            )}
           </div>
         </div>
       </div>

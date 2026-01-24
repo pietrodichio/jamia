@@ -11,6 +11,8 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { UpdateOccurrenceDto } from './dto/update-occurrence.dto';
 import { SearchEventsDto } from './dto/search-events.dto';
+import { PublicEventsDto } from './dto/public-events.dto';
+import { SaveDraftEventDto } from './dto/save-draft-event.dto';
 import { AuditService } from '../audit/audit.service';
 import { rrulestr, RRule } from 'rrule';
 
@@ -146,7 +148,112 @@ export class EventsService {
       }
     }
 
-    return data;
+    const { data: organizer, error: organizerError } = await this.supabase
+      .from('profiles')
+      .select('id,first_name,last_name,email,photo_url,is_super_admin,bio')
+      .eq('id', data.owner_id)
+      .maybeSingle();
+
+    if (organizerError) {
+      throw new Error(
+        `Failed to load organizer profile: ${organizerError.message}`,
+      );
+    }
+
+    const organizerName = organizer
+      ? `${organizer.first_name ?? ''} ${organizer.last_name ?? ''}`.trim()
+      : null;
+
+    return organizer
+      ? {
+          ...data,
+          organizer: {
+            id: organizer.id,
+            name: organizerName,
+            email: organizer.email,
+            photo_url: organizer.photo_url ?? undefined,
+            is_super_admin: organizer.is_super_admin ?? false,
+            bio: organizer.bio ?? undefined,
+          },
+        }
+      : { ...data, organizer: null };
+  }
+
+  async saveDraftEvent(
+    userId: string,
+    dto: SaveDraftEventDto,
+    isSuperAdmin = false,
+  ) {
+    if (!userId) {
+      throw new ForbiddenException('User is required to save drafts');
+    }
+
+    if (dto.id) {
+      const { data: existing, error } = await this.supabase
+        .from('events')
+        .select('id, owner_id')
+        .eq('id', dto.id)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(`Failed to load draft: ${error.message}`);
+      }
+
+      if (existing && !isSuperAdmin && existing.owner_id !== userId) {
+        throw new ForbiddenException('You can only edit your own drafts');
+      }
+    }
+
+    const { data, error } = await this.supabase
+      .from('events')
+      .upsert(
+        {
+          ...dto,
+          owner_id: userId,
+          status: 'draft',
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        },
+      )
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to save draft: ${error.message}`);
+    }
+
+    const { data: organizer, error: organizerError } = await this.supabase
+      .from('profiles')
+      .select('id,first_name,last_name,email,photo_url,is_super_admin,bio')
+      .eq('id', data.owner_id)
+      .maybeSingle();
+
+    if (organizerError) {
+      throw new Error(
+        `Failed to load organizer profile: ${organizerError.message}`,
+      );
+    }
+
+    const organizerName = organizer
+      ? `${organizer.first_name ?? ''} ${organizer.last_name ?? ''}`.trim()
+      : null;
+
+    return organizer
+      ? {
+          ...data,
+          organizer: {
+            id: organizer.id,
+            name: organizerName,
+            email: organizer.email,
+            photo_url: organizer.photo_url ?? undefined,
+            is_super_admin: organizer.is_super_admin ?? false,
+            bio: organizer.bio ?? undefined,
+          },
+        }
+      : { ...data, organizer: null };
   }
 
   async getEventsByOwner(userId: string) {
@@ -484,6 +591,65 @@ export class EventsService {
     }
 
     return data;
+  }
+
+  async getPublicEvents(dto: PublicEventsDto) {
+    const startsAt = dto.startsAt ?? new Date().toISOString();
+    const limit = dto.limit ?? 100;
+
+    let query = this.supabase
+      .from('events')
+      .select('*')
+      .eq('status', 'published')
+      .gte('starts_at', startsAt)
+      .order('starts_at', { ascending: true })
+      .limit(limit);
+
+    // Filter by event types
+    if (dto.types && dto.types.length > 0) {
+      query = query.in('type', dto.types);
+    }
+
+    // Filter by date range
+    if (dto.dateFrom) {
+      query = query.gte('starts_at', dto.dateFrom);
+    }
+    if (dto.dateTo) {
+      query = query.lte('starts_at', dto.dateTo);
+    }
+
+    // Keyword search in title and description
+    if (dto.keyword) {
+      const keyword = `%${dto.keyword}%`;
+      // Search in both title and description using OR
+      // Supabase PostgREST or() syntax: field.operator.value,field2.operator.value
+      query = query.or(`title.ilike.${keyword},description.ilike.${keyword}`);
+    }
+
+    // Filter by tags (array contains)
+    if (dto.tags && dto.tags.length > 0) {
+      // Use PostgreSQL array contains operator (@>)
+      // For Supabase, we use cs (contains) filter
+      query = query.contains('tags', dto.tags);
+    }
+
+    // Filter by accommodation options (array contains)
+    if (dto.accommodation_options && dto.accommodation_options.length > 0) {
+      query = query.contains('accommodation_options', dto.accommodation_options);
+    }
+
+    // Filter by food options (array contains)
+    if (dto.food_options && dto.food_options.length > 0) {
+      query = query.contains('food_options', dto.food_options);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to fetch public events: ${error.message}`);
+    }
+
+    return data || [];
   }
 
   /**

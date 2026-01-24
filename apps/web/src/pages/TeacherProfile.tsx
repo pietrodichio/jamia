@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { apiClient } from '@/api/client';
+import { profilesApi } from '@/api/profiles.api';
 import { EventCard } from '@/components/events/EventCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Event } from '@jamia/types/event';
@@ -13,14 +13,8 @@ export default function TeacherProfile() {
   const { data: teacher, isLoading: teacherLoading } = useQuery({
     queryKey: ['teachers', teacherId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, photo_url, bio')
-        .eq('id', teacherId)
-        .single();
-
-      if (error) throw error;
-      return data;
+      if (!teacherId) return null;
+      return profilesApi.getPublicProfile(teacherId);
     },
     enabled: !!teacherId
   });

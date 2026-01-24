@@ -17,7 +17,7 @@ export function HeroSection() {
         <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
           <Sparkles className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium text-primary">
-            Scopri e organizza eventi di AcroYoga
+            La prima piattaforma italiana dedicata all'AcroYoga
           </span>
         </div>
 
@@ -31,8 +31,7 @@ export function HeroSection() {
 
         {/* Subtitle */}
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Jamia ti aiuta a scoprire jam, lezioni, workshop e convegni di AcroYoga nella tua zona.
-          Organizza i tuoi eventi con prenotazioni intelligenti, liste d'attesa bilanciate e notifiche automatiche.
+          Jamia ti aiuta a scoprire jam, lezioni, workshop e conventions di AcroYoga nella tua zona.
         </p>
 
         {/* CTA buttons */}

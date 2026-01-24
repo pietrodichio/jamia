@@ -90,6 +90,7 @@ const App = () => (
               <Route path="/og-image" element={<OGImage />} />
               <Route path="/calendar" element={<EventCalendar />} />
               <Route path="/discover" element={<DiscoverEvents />} />
+              <Route path="/events/new" element={<Navigate to="/create-event" replace />} />
               <Route path="/events/:eventId" element={<EventDetail />} />
               <Route path="/events/:eventId/edit" element={<EditEvent />} />
               <Route path="/teachers/:teacherId" element={<TeacherProfile />} />

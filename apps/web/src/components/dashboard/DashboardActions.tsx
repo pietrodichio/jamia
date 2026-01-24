@@ -10,7 +10,7 @@ export function DashboardActions() {
   return (
     <div className="flex gap-2 flex-wrap">
       <Button
-        onClick={() => navigate('/events/new')}
+        onClick={() => navigate('/create-event')}
         variant="default"
         size="sm"
         className="rounded-xl"

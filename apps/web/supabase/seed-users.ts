@@ -6,9 +6,31 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { config as loadEnv } from 'dotenv';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const envCandidates = [
+  process.env.SUPABASE_ENV_FILE,
+  resolve(process.cwd(), '.env.development.local'),
+  resolve(process.cwd(), '.env.production'),
+  resolve(process.cwd(), '.env'),
+].filter(Boolean) as string[];
+
+for (const envPath of envCandidates) {
+  if (existsSync(envPath)) {
+    loadEnv({ path: envPath, override: false });
+  }
+}
 
 const supabaseUrl = process.env.SUPABASE_URL || 'http://127.0.0.1:54421';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseServiceKey) {
+  throw new Error(
+    'Missing SUPABASE_SERVICE_KEY. Set it in .env.development.local, .env.production, or pass SUPABASE_ENV_FILE.',
+  );
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {

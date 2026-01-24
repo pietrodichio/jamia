@@ -33,6 +33,32 @@ export class ProfilesService {
     return data;
   }
 
+  async getPublicProfile(profileId: string) {
+    const { data, error } = await this.supabase
+      .from('profiles')
+      .select('id, first_name, last_name, photo_url, bio')
+      .eq('id', profileId)
+      .single();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw new NotFoundException(`Profile not found: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new NotFoundException('Profile not found: No data returned');
+    }
+
+    const name = `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim();
+
+    return {
+      id: data.id,
+      name,
+      photo_url: data.photo_url ?? undefined,
+      bio: data.bio ?? undefined,
+    };
+  }
+
   async updateProfile(
     profileId: string,
     userId: string,

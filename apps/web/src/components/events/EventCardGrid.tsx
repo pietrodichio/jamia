@@ -1,8 +1,8 @@
 import { EventCard } from './EventCard';
-import type { EventWithOrganizer } from '@jamia/types/event';
+import type { Event } from '@jamia/types/event';
 
 interface EventCardGridProps {
-  events: EventWithOrganizer[];
+  events: Event[];
 }
 
 /**

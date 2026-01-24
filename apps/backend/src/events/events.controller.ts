@@ -14,6 +14,8 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { UpdateOccurrenceDto } from './dto/update-occurrence.dto';
 import { SearchEventsDto } from './dto/search-events.dto';
+import { PublicEventsDto } from './dto/public-events.dto';
+import { SaveDraftEventDto } from './dto/save-draft-event.dto';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { Public } from '../auth/public.decorator';
 import { User, AuthUser } from '../auth/user.decorator';
@@ -37,6 +39,17 @@ export class EventsController {
     return this.eventsService.searchEvents(dto);
   }
 
+  @Public()
+  @Get('public')
+  async getPublicEvents(@Query() dto: PublicEventsDto) {
+    return this.eventsService.getPublicEvents(dto);
+  }
+
+  @Post('draft')
+  async saveDraft(@Body() dto: SaveDraftEventDto, @User() user: AuthUser) {
+    return this.eventsService.saveDraftEvent(user.id, dto, user.isSuperAdmin);
+  }
+
   @Get('my-events')
   async getMyEvents(@User() user: AuthUser) {
     return this.eventsService.getEventsByOwner(user.id);
@@ -47,9 +60,14 @@ export class EventsController {
     return this.eventsService.getEventsCoOrganized(user.id);
   }
 
+  @Public()
   @Get(':id')
-  async getEvent(@Param('id') id: string, @User() user: AuthUser) {
-    return this.eventsService.getEventById(id, user.id, user.isSuperAdmin);
+  async getEvent(@Param('id') id: string, @User() user?: AuthUser) {
+    return this.eventsService.getEventById(
+      id,
+      user?.id,
+      user?.isSuperAdmin,
+    );
   }
 
   @Patch(':id')

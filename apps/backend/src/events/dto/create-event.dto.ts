@@ -4,6 +4,7 @@ import {
   IsDateString,
   IsNumber,
   IsIn,
+  IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -50,6 +51,11 @@ export class CreateEventDto {
   @IsOptional()
   @IsString()
   organizer_contact?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 
   // Optional: Location fields
   @IsOptional()

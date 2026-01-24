@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { profilesApi } from '@/api/profiles.api';
 import { eventsApi } from '@/api/events.api';
 import { EventCard } from '@/components/events/EventCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2 } from 'lucide-react';
-import type { EventWithOrganizer } from '@jamia/types/event';
+import type { Event } from '@jamia/types/event';
 
 interface RecommendationsSectionProps {
   userId?: string;
@@ -33,7 +32,7 @@ export function RecommendationsSection({ userId }: RecommendationsSectionProps) 
   const hasLocation = profile?.lat && profile?.lng;
 
   // Fetch nearby events if user has location
-  const recommendationsQuery = useQuery<EventWithOrganizer[]>({
+  const recommendationsQuery = useQuery<(Event & { distance_meters: number })[]>({
     queryKey: ['events', 'recommendations', userId, profile?.lat, profile?.lng],
     enabled: Boolean(hasLocation && userId),
     queryFn: async () => {
@@ -49,7 +48,7 @@ export function RecommendationsSection({ userId }: RecommendationsSectionProps) 
       const filtered = events.filter(event => event.owner_id !== userId);
 
       // Limit to 5 recommendations
-      return filtered.slice(0, 5) as EventWithOrganizer[];
+      return filtered.slice(0, 5);
     },
     staleTime: 5 * 60 * 1000,
   });

@@ -12,6 +12,9 @@ export const createSupabaseClient = (
     throw new Error('Missing Supabase configuration');
   }
 
+  console.log('supabaseUrl', supabaseUrl);
+  console.log('supabaseKey', supabaseKey);
+
   const client = createClient(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: false,

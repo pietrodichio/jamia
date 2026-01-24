@@ -5,7 +5,6 @@ import { HeroSection } from '@/components/marketing/HeroSection';
 import { FeaturesSection } from '@/components/marketing/FeaturesSection';
 import { EventCardGrid } from '@/components/events/EventCardGrid';
 import { eventsApi } from '@/api/events.api';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Home page (/) - Airbnb-style approach
@@ -15,22 +14,12 @@ import { supabase } from '@/integrations/supabase/client';
 const Index = () => {
   const { t } = useTranslation('events');
 
-  // Fetch recent/upcoming events (limited to 9 for preview)
-  // For now, we'll show recent events without location requirement
-  // In the future, we can fetch user's saved location from profile
+  // Fetch upcoming published events (limited to 9 for preview)
   const { data: events, isLoading } = useQuery({
     queryKey: ['home-events'],
     queryFn: async () => {
-      // Get user session to check if logged in
-      const { data: { session } } = await supabase.auth.getSession();
-
-      // For now, fetch without location filter
-      // TODO: In future, fetch user's saved location from profile if logged in
-      // and use that to show nearby events
-
-      // Return empty array for now - will be populated when we have events
-      // or when we implement location-based fetching
-      return [];
+      const now = new Date().toISOString();
+      return eventsApi.getPublicEvents({ startsAt: now, limit: 9 });
     },
   });
 

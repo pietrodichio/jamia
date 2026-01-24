@@ -1,71 +1,71 @@
 {
-  "types": {
-    "jam": "Jam",
-    "class": "Lezione",
-    "workshop": "Workshop",
-    "convention": "Convegno"
-  },
-  "fields": {
-    "title": "Titolo",
-    "description": "Descrizione",
-    "date": "Data",
-    "time": "Ora",
-    "location": "Luogo",
-    "capacity": "Capacità massima",
-    "manageParticipants": "Gestisci partecipanti",
-    "visibility": "Visibilità",
-    "type": "Tipo di evento",
-    "startDate": "Data inizio",
-    "endDate": "Data fine",
-    "organizer": "Organizzatore",
-    "teachers": "Insegnanti",
-    "image": "Immagine",
-    "externalLink": "Link esterno",
-    "ctaText": "Testo pulsante"
-  },
-  "visibilityOptions": {
-    "public": "Pubblico - visibile a tutti",
-    "private": "Privato - solo con link"
-  },
-  "wizard": {
-    "step1Title": "Tipo e Informazioni Base",
-    "step2Title": "Programmazione e Dettagli",
-    "step3Title": "Anteprima",
-    "askManageParticipants": "Vuoi gestire i partecipanti?",
-    "askManageParticipantsHelp": "Abilita capacità, ruoli e inviti",
-    "eventTypeQuestion": "Che tipo di evento vuoi creare?",
-    "basicInfoSection": "Informazioni di base",
-    "scheduleSection": "Programmazione",
-    "detailsSection": "Dettagli"
-  },
-  "actions": {
-    "createEvent": "Crea Evento",
-    "editEvent": "Modifica Evento",
-    "deleteEvent": "Elimina Evento",
-    "viewEvent": "Visualizza Evento",
-    "register": "Registrati",
-    "addToCalendar": "Aggiungi al calendario",
-    "share": "Condividi",
-    "copyLink": "Copia link"
-  },
-  "filters": {
-    "allTypes": "Tutti i tipi",
-    "dateRange": "Intervallo date",
-    "distance": "Distanza",
-    "searchPlaceholder": "Cerca eventi...",
-    "locationPlaceholder": "Posizione...",
-    "tags": "Tag",
-    "amenities": "Servizi"
-  },
-  "messages": {
-    "eventCreated": "Evento creato con successo",
-    "eventUpdated": "Evento aggiornato con successo",
-    "eventDeleted": "Evento eliminato con successo",
-    "registrationSuccess": "Registrazione completata",
-    "linkCopied": "Link copiato negli appunti"
-  },
-  "home": {
-    "upcomingEvents": "Eventi in programma",
-    "viewAll": "Vedi tutti"
-  }
+	"types": {
+		"jam": "Jam",
+		"class": "Lezione",
+		"workshop": "Workshop",
+		"convention": "Convegno"
+	},
+	"fields": {
+		"title": "Titolo",
+		"description": "Descrizione",
+		"date": "Data",
+		"time": "Ora",
+		"location": "Luogo",
+		"capacity": "Capacità massima",
+		"manageParticipants": "Gestisci partecipanti",
+		"visibility": "Visibilità",
+		"type": "Tipo di evento",
+		"startDate": "Data inizio",
+		"endDate": "Data fine",
+		"organizer": "Organizzatore",
+		"teachers": "Insegnanti",
+		"image": "Immagine",
+		"externalLink": "Link esterno",
+		"ctaText": "Testo pulsante"
+	},
+	"visibilityOptions": {
+		"public": "Pubblico - visibile a tutti",
+		"private": "Privato - solo con link"
+	},
+	"wizard": {
+		"step1Title": "Tipo e Informazioni Base",
+		"step2Title": "Programmazione e Dettagli",
+		"step3Title": "Anteprima",
+		"askManageParticipants": "Vuoi gestire i partecipanti?",
+		"askManageParticipantsHelp": "Abilita capacità, ruoli e inviti",
+		"eventTypeQuestion": "Che tipo di evento vuoi creare?",
+		"basicInfoSection": "Informazioni di base",
+		"scheduleSection": "Programmazione",
+		"detailsSection": "Dettagli"
+	},
+	"actions": {
+		"createEvent": "Crea Evento",
+		"editEvent": "Modifica Evento",
+		"deleteEvent": "Elimina Evento",
+		"viewEvent": "Visualizza Evento",
+		"register": "Registrati",
+		"addToCalendar": "Aggiungi al calendario",
+		"share": "Condividi",
+		"copyLink": "Copia link"
+	},
+	"filters": {
+		"allTypes": "Tutti i tipi",
+		"dateRange": "Intervallo date",
+		"distance": "Distanza",
+		"searchPlaceholder": "Cerca per nome",
+		"locationPlaceholder": "Posizione...",
+		"tags": "Tag",
+		"amenities": "Servizi"
+	},
+	"messages": {
+		"eventCreated": "Evento creato con successo",
+		"eventUpdated": "Evento aggiornato con successo",
+		"eventDeleted": "Evento eliminato con successo",
+		"registrationSuccess": "Registrazione completata",
+		"linkCopied": "Link copiato negli appunti"
+	},
+	"home": {
+		"upcomingEvents": "Prossimi eventi",
+		"viewAll": "Vedi tutti"
+	}
 }

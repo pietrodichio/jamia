@@ -21,6 +21,10 @@
       "types": "./dist/participant.d.ts",
       "default": "./dist/participant.js"
     },
+    "./event": {
+      "types": "./dist/event.d.ts",
+      "default": "./dist/event.js"
+    },
     "./profile": {
       "types": "./dist/profile.d.ts",
       "default": "./dist/profile.js"

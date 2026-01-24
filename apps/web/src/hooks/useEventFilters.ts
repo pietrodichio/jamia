@@ -15,8 +15,6 @@ export function useEventFilters() {
   };
 
   const tags = searchParams.getAll('tag');
-  const accommodationOptions = searchParams.getAll('accommodation');
-  const foodOptions = searchParams.getAll('food');
 
   const updateFilter = (key: string, value: string | string[]) => {
     const newParams = new URLSearchParams(searchParams);
@@ -40,20 +38,6 @@ export function useEventFilters() {
     setSearchParams(newParams, { replace: true });
   };
 
-  const setAccommodationOptions = (options: string[]) => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete('accommodation');
-    options.forEach(opt => newParams.append('accommodation', opt));
-    setSearchParams(newParams, { replace: true });
-  };
-
-  const setFoodOptions = (options: string[]) => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete('food');
-    options.forEach(opt => newParams.append('food', opt));
-    setSearchParams(newParams, { replace: true });
-  };
-
   const clearFilters = () => {
     setSearchParams({}, { replace: true });
   };
@@ -64,9 +48,5 @@ export function useEventFilters() {
     clearFilters,
     tags,
     setTags,
-    accommodationOptions,
-    setAccommodationOptions,
-    foodOptions,
-    setFoodOptions,
   };
 }

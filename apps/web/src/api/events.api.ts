@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, publicApiClient } from './client';
 import type {
   Event,
   EventType,
@@ -45,6 +45,12 @@ export const eventsApi = {
     return response.data;
   },
 
+  // Save event draft (create or update)
+  async saveDraft(data: Partial<CreateEventDto> & { id?: string }): Promise<Event> {
+    const response = await apiClient.post<Event>('/events/draft', data);
+    return response.data;
+  },
+
   // Publish event (shortcut for status update)
   async publishEvent(eventId: string): Promise<Event> {
     const response = await apiClient.patch<Event>(`/events/${eventId}/publish`);
@@ -66,8 +72,6 @@ export const eventsApi = {
     dateTo?: string;
     keyword?: string;
     tags?: string[];
-    accommodation_options?: string[];
-    food_options?: string[];
     teacher_id?: string;
   }): Promise<(Event & { distance_meters: number })[]> {
     const searchParams = new URLSearchParams();
@@ -80,11 +84,39 @@ export const eventsApi = {
     if (params.dateTo) searchParams.append('dateTo', params.dateTo);
     if (params.keyword) searchParams.append('keyword', params.keyword);
     if (params.tags?.length) params.tags.forEach(tag => searchParams.append('tags', tag));
-    if (params.accommodation_options?.length) params.accommodation_options.forEach(opt => searchParams.append('accommodation_options', opt));
-    if (params.food_options?.length) params.food_options.forEach(opt => searchParams.append('food_options', opt));
     if (params.teacher_id) searchParams.append('teacher_id', params.teacher_id);
 
     const response = await apiClient.get(`/events/search?${searchParams.toString()}`);
+    return response.data;
+  },
+
+  // Get upcoming published events (public)
+  async getPublicEvents(params?: {
+    startsAt?: string;
+    limit?: number;
+    types?: EventType[];
+    dateFrom?: string;
+    dateTo?: string;
+    keyword?: string;
+    tags?: string[];
+  }): Promise<Event[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.startsAt) searchParams.append('startsAt', params.startsAt);
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.types?.length) {
+      params.types.forEach(t => searchParams.append('types', t));
+    }
+    if (params?.dateFrom) searchParams.append('dateFrom', params.dateFrom);
+    if (params?.dateTo) searchParams.append('dateTo', params.dateTo);
+    if (params?.keyword) searchParams.append('keyword', params.keyword);
+    if (params?.tags?.length) {
+      params.tags.forEach(tag => searchParams.append('tags', tag));
+    }
+
+    const query = searchParams.toString();
+    const response = await publicApiClient.get<Event[]>(
+      query ? `/events/public?${query}` : '/events/public',
+    );
     return response.data;
   },
 

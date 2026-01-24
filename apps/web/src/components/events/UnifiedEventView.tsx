@@ -1,14 +1,14 @@
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { ViewToggle } from '@/components/events/ViewToggle';
 import { EventCardGrid } from '@/components/events/EventCardGrid';
 import { CalendarView } from '@/components/events/CalendarView';
 import { LocationSearch } from '@/components/search/LocationSearch';
-import { EventFilters } from '@/components/events/EventFilters';
 import { KeywordSearch } from '@/components/search/KeywordSearch';
-import { TagFilter } from '@/components/events/TagFilter';
-import { AmenityFilters } from '@/components/events/AmenityFilters';
+import { UnifiedFilters } from '@/components/events/UnifiedFilters';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { eventsApi } from '@/api/events.api';
 import type { EventType } from '@jamia/types/event';
@@ -21,15 +21,11 @@ import type { EventType } from '@jamia/types/event';
  */
 export function UnifiedEventView() {
   const { t } = useTranslation(['common', 'events']);
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
     filters,
     tags,
-    setTags,
-    accommodationOptions,
-    setAccommodationOptions,
-    foodOptions,
-    setFoodOptions,
   } = useEventFilters();
 
   // Read view from URL, default to grid
@@ -47,78 +43,101 @@ export function UnifiedEventView() {
     );
   };
 
+  // Determine if location is set
+  const hasLocation = !!filters.lat && !!filters.lng;
+
   // Fetch events with current filters
   const { data: events, isLoading, error } = useQuery({
-    queryKey: ['events', 'search', filters, tags, accommodationOptions, foodOptions],
+    queryKey: ['events', hasLocation ? 'search' : 'public', filters, tags],
     queryFn: () => {
-      // Build search params
-      const searchParams: any = {
-        lng: parseFloat(filters.lng),
-        lat: parseFloat(filters.lat),
-        radius: parseInt(filters.radius),
-      };
+      if (hasLocation) {
+        // Use location-based search
+        const searchParams: {
+          lng: number;
+          lat: number;
+          radius: number;
+          types?: EventType[];
+          dateFrom?: string;
+          dateTo?: string;
+          keyword?: string;
+          tags?: string[];
+        } = {
+          lng: parseFloat(filters.lng),
+          lat: parseFloat(filters.lat),
+          radius: parseInt(filters.radius),
+        };
 
-      // Add optional filters
-      if (filters.types && filters.types.length > 0) {
-        searchParams.types = filters.types as EventType[];
-      }
-      if (filters.dateFrom) searchParams.dateFrom = filters.dateFrom;
-      if (filters.dateTo) searchParams.dateTo = filters.dateTo;
-      if (filters.query) searchParams.keyword = filters.query;
-      if (tags.length > 0) searchParams.tags = tags;
-      if (accommodationOptions.length > 0) {
-        searchParams.accommodation_options = accommodationOptions;
-      }
-      if (foodOptions.length > 0) searchParams.food_options = foodOptions;
+        // Add optional filters
+        if (filters.types && filters.types.length > 0) {
+          searchParams.types = filters.types as EventType[];
+        }
+        if (filters.dateFrom) searchParams.dateFrom = filters.dateFrom;
+        if (filters.dateTo) searchParams.dateTo = filters.dateTo;
+        if (filters.query) searchParams.keyword = filters.query;
+        if (tags.length > 0) searchParams.tags = tags;
 
-      return eventsApi.searchEvents(searchParams);
+        return eventsApi.searchEvents(searchParams);
+      } else {
+        // Use public events API with filters
+        const publicParams: {
+          startsAt?: string;
+          limit?: number;
+          types?: EventType[];
+          dateFrom?: string;
+          dateTo?: string;
+          keyword?: string;
+          tags?: string[];
+        } = {};
+
+        // Set startsAt to dateFrom if provided, otherwise use current date
+        publicParams.startsAt = filters.dateFrom || new Date().toISOString();
+        publicParams.limit = 100; // Higher limit for public events
+
+        // Add optional filters
+        if (filters.types && filters.types.length > 0) {
+          publicParams.types = filters.types as EventType[];
+        }
+        if (filters.dateTo) publicParams.dateTo = filters.dateTo;
+        if (filters.query) publicParams.keyword = filters.query;
+        if (tags.length > 0) publicParams.tags = tags;
+
+        return eventsApi.getPublicEvents(publicParams);
+      }
     },
-    enabled: !!filters.lat && !!filters.lng, // Only fetch if location is set
   });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
-      <div className="container mx-auto p-6 max-w-7xl">
-        <h1 className="text-3xl font-bold mb-6">{t('events:filters.searchPlaceholder')}</h1>
+      <div className="container mx-auto p-4 max-w-7xl">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="mb-4 w-fit pl-0 hover:pl-2 transition-all"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t('common:buttons.back')}
+        </Button>
+
+        <h1 className="text-2xl font-bold mb-4">{t('events:filters.searchPlaceholder')}</h1>
 
         {/* Filter Bar - Sticky at top */}
-        <div className="sticky top-0 z-10 bg-background border-b pb-4 mb-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="sticky top-0 z-10 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
             <LocationSearch />
             <KeywordSearch />
-            <EventFilters />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <TagFilter selectedTags={tags} onChange={setTags} />
-            <AmenityFilters
-              selectedAccommodation={accommodationOptions}
-              selectedFood={foodOptions}
-              onAccommodationChange={setAccommodationOptions}
-              onFoodChange={setFoodOptions}
-            />
+            <UnifiedFilters />
+            <ViewToggle currentView={view} onViewChange={setView} />
           </div>
         </div>
 
         {/* View Toggle */}
         <div className="flex justify-end mb-4">
-          <ViewToggle currentView={view} onViewChange={setView} />
+
         </div>
 
         {/* Results Area */}
         <main>
-          {/* Show location prompt if no location set */}
-          {!filters.lat || !filters.lng ? (
-            <div className="flex items-center justify-center h-96 border rounded-lg bg-muted/10">
-              <div className="text-center space-y-2">
-                <p className="text-lg font-medium">
-                  Imposta la tua posizione per visualizzare gli eventi
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Usa la ricerca posizione sopra per trovare eventi vicino a te
-                </p>
-              </div>
-            </div>
-          ) : isLoading ? (
+          {isLoading ? (
             <div className="flex items-center justify-center h-96 border rounded-lg">
               <p className="text-lg text-muted-foreground">
                 {t('common:common.loading')}

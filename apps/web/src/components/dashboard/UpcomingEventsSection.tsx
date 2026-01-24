@@ -1,13 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { eventsApi } from '@/api/events.api';
 import { EventCard } from '@/components/events/EventCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Plus, Loader2 } from 'lucide-react';
-import type { EventWithOrganizer } from '@jamia/types/event';
+import type { Event } from '@jamia/types/event';
 
 interface UpcomingEventsSectionProps {
   userId?: string;
@@ -18,23 +17,21 @@ export function UpcomingEventsSection({ userId }: UpcomingEventsSectionProps) {
   const navigate = useNavigate();
 
   // Fetch user's owned events
-  const myEventsQuery = useQuery<EventWithOrganizer[]>({
+  const myEventsQuery = useQuery<Event[]>({
     queryKey: ['events', 'my-events', userId],
     enabled: Boolean(userId),
     queryFn: async () => {
-      const events = await eventsApi.getMyEvents();
-      return events as EventWithOrganizer[];
+      return eventsApi.getMyEvents();
     },
     staleTime: 2 * 60 * 1000,
   });
 
   // Fetch co-organized events
-  const coOrganizedQuery = useQuery<EventWithOrganizer[]>({
+  const coOrganizedQuery = useQuery<Event[]>({
     queryKey: ['events', 'co-organized', userId],
     enabled: Boolean(userId),
     queryFn: async () => {
-      const events = await eventsApi.getCoOrganizedEvents();
-      return events as EventWithOrganizer[];
+      return eventsApi.getCoOrganizedEvents();
     },
     staleTime: 2 * 60 * 1000,
   });
@@ -87,7 +84,7 @@ export function UpcomingEventsSection({ userId }: UpcomingEventsSectionProps) {
               Non hai eventi in programma
             </p>
             <Button
-              onClick={() => navigate('/events/new')}
+              onClick={() => navigate('/create-event')}
               className="rounded-xl"
             >
               <Plus className="mr-2 h-4 w-4" />

@@ -9,7 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RecurrenceEditor } from '@/components/events/RecurrenceEditor';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { useToast } from '@/hooks/use-toast';
+import { EVENT_TAG_OPTIONS } from '@/lib/event-tags';
 import { ArrowLeft } from 'lucide-react';
 import type { EventType, UpdateEventDto } from '@jamia/types/event';
 
@@ -31,6 +33,7 @@ export default function EditEvent() {
   const [startsAt, setStartsAt] = useState('');
   const [endsAt, setEndsAt] = useState('');
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [price, setPrice] = useState('');
   const [externalLink, setExternalLink] = useState('');
   const [organizerContact, setOrganizerContact] = useState('');
@@ -49,6 +52,7 @@ export default function EditEvent() {
       setStartsAt(event.starts_at.slice(0, 16)); // Format for datetime-local input
       setEndsAt(event.ends_at.slice(0, 16));
       setDescription(event.description || '');
+      setTags(event.tags || []);
       setPrice(event.price || '');
       setExternalLink(event.external_link || '');
       setOrganizerContact(event.organizer_contact || '');
@@ -85,6 +89,7 @@ export default function EditEvent() {
       starts_at: startsAt,
       ends_at: endsAt,
       description: description || undefined,
+      tags,
       price: price || undefined,
       external_link: externalLink || undefined,
       organizer_contact: organizerContact || undefined,
@@ -218,6 +223,18 @@ export default function EditEvent() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
+              />
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label>Tag</Label>
+              <MultiSelect
+                options={EVENT_TAG_OPTIONS}
+                selected={tags}
+                onChange={setTags}
+                placeholder="Tag"
+                className="min-w-[200px] w-fit"
               />
             </div>
 

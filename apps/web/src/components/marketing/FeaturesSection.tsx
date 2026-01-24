@@ -11,49 +11,6 @@ export function FeaturesSection() {
 
   return (
     <div className="space-y-24 py-16">
-      {/* Jam Management Features */}
-      <section className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Gestisci le tue jam con facilità
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Strumenti pensati per semplificare l'organizzazione delle tue jam di AcroYoga
-          </p>
-        </div>
-
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-card border border-primary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold">Crea Jam in Secondi</h3>
-            <p className="text-muted-foreground">
-              Imposta data, luogo, capacità e ruoli desiderati. Jamia gestisce tutto il resto.
-            </p>
-          </div>
-
-          <div className="bg-card border border-primary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold">Gestione Ruoli Intelligente</h3>
-            <p className="text-muted-foreground">
-              Liste d'attesa bilanciate automaticamente tra Base e Flyer per jam equilibrate.
-            </p>
-          </div>
-
-          <div className="bg-card border border-primary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Bell className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold">Notifiche Automatiche</h3>
-            <p className="text-muted-foreground">
-              Email di conferma, promossi dalla lista d'attesa e aggiornamenti in tempo reale.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* Event Creation Features */}
       <section className="container mx-auto px-4">
@@ -118,6 +75,52 @@ export function FeaturesSection() {
         </div>
       </section>
 
+
+      {/* Jam Management Features */}
+      <section className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Gestisci le tue jam con facilità
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Strumenti pensati per semplificare l'organizzazione delle tue jam di AcroYoga
+          </p>
+        </div>
+
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-card border border-primary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Calendar className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold">Crea Jam in Secondi</h3>
+            <p className="text-muted-foreground">
+              Imposta data, luogo, capacità e ruoli desiderati. Jamia gestisce tutto il resto.
+            </p>
+          </div>
+
+          <div className="bg-card border border-primary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold">Gestione Ruoli Intelligente</h3>
+            <p className="text-muted-foreground">
+              Liste d'attesa bilanciate automaticamente tra Base e Flyer per jam equilibrate.
+            </p>
+          </div>
+
+          <div className="bg-card border border-primary/10 rounded-2xl p-8 space-y-4 hover:shadow-lg transition-shadow">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Bell className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold">Notifiche Automatiche</h3>
+            <p className="text-muted-foreground">
+              Email di conferma, promossi dalla lista d'attesa e aggiornamenti in tempo reale.
+            </p>
+          </div>
+        </div>
+      </section>
+
+
       {/* Open Source Mission */}
       <section className="container mx-auto px-4 pb-8">
         <div className="max-w-3xl mx-auto text-center space-y-6">
@@ -145,13 +148,6 @@ export function FeaturesSection() {
               onClick={() => window.open('https://github.com/Tambour1/jamia', '_blank')}
             >
               Vedi su GitHub
-            </Button>
-            <Button
-              variant="ghost"
-              className="rounded-xl"
-              onClick={() => navigate('/auth')}
-            >
-              Unisciti a noi
             </Button>
           </div>
         </div>

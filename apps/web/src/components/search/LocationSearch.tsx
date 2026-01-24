@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { X } from 'lucide-react';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -22,58 +20,85 @@ const RADIUS_OPTIONS = [
   { value: '200', label: '200 km' },
 ];
 
+const IP_LOCATION_ENDPOINT = 'https://ipapi.co/json/';
+
 export function LocationSearch() {
   const { t } = useTranslation(['common', 'events']);
-  const { location, error, loading, requestLocation } = useGeolocation();
   const { filters, updateFilter } = useEventFilters();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const [manualLat, setManualLat] = useState('');
-  const [manualLng, setManualLng] = useState('');
+  const applyLocation = (latitude: number, longitude: number) => {
+    updateFilter('lat', latitude.toString());
+    updateFilter('lng', longitude.toString());
+  };
 
-  // Update manual inputs when filters change from URL
-  useEffect(() => {
-    if (filters.lat) setManualLat(filters.lat);
-    if (filters.lng) setManualLng(filters.lng);
-  }, [filters.lat, filters.lng]);
-
-  // Update filters when geolocation succeeds
-  useEffect(() => {
-    if (location) {
-      updateFilter('lat', location.lat.toString());
-      updateFilter('lng', location.lng.toString());
-      setManualLat(location.lat.toString());
-      setManualLng(location.lng.toString());
-    }
-  }, [location]);
-
-  // Show error toast when geolocation fails
-  useEffect(() => {
-    if (error) {
+  const requestIpLocation = async (reason: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(IP_LOCATION_ENDPOINT, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) {
+        throw new Error('IP location request failed');
+      }
+      const data = (await response.json()) as {
+        latitude?: number;
+        longitude?: number;
+        lat?: number;
+        lon?: number;
+      };
+      const latitude = Number(data.latitude ?? data.lat);
+      const longitude = Number(data.longitude ?? data.lon);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        throw new Error('IP location response invalid');
+      }
+      applyLocation(latitude, longitude);
+      toast({
+        title: 'Posizione approssimativa',
+        description: reason,
+      });
+    } catch (err) {
       toast({
         title: 'Errore di localizzazione',
-        description: error,
+        description: 'Impossibile stimare la posizione via IP',
         variant: 'destructive',
       });
-    }
-  }, [error, toast]);
-
-  const handleManualLatChange = (value: string) => {
-    setManualLat(value);
-    if (value && manualLng) {
-      updateFilter('lat', value);
-    } else if (!value) {
-      updateFilter('lat', '');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleManualLngChange = (value: string) => {
-    setManualLng(value);
-    if (value && manualLat) {
-      updateFilter('lng', value);
-    } else if (!value) {
-      updateFilter('lng', '');
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      void requestIpLocation('Geolocalizzazione non supportata, uso la posizione via IP.');
+      return;
     }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        applyLocation(position.coords.latitude, position.coords.longitude);
+        setLoading(false);
+      },
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          void requestIpLocation('Permesso negato, uso la posizione via IP.');
+          return;
+        }
+        toast({
+          title: 'Errore di localizzazione',
+          description: err.message,
+          variant: 'destructive',
+        });
+        setLoading(false);
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
   };
 
   const handleRadiusChange = (value: string) => {
@@ -81,8 +106,6 @@ export function LocationSearch() {
   };
 
   const handleClearLocation = () => {
-    setManualLat('');
-    setManualLng('');
     updateFilter('lat', '');
     updateFilter('lng', '');
   };
@@ -90,81 +113,23 @@ export function LocationSearch() {
   const hasLocation = filters.lat && filters.lng;
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg">
-      <div className="space-y-2">
-        <Label className="text-lg font-semibold">Posizione</Label>
-
-        <Button
-          onClick={requestLocation}
-          disabled={loading}
-          className="w-full"
-        >
-          {loading ? 'Rilevamento in corso...' : 'Usa la mia posizione'}
-        </Button>
-
-        <div className="text-center text-sm text-muted-foreground">
-          oppure
-        </div>
-
-        {/* City search placeholder */}
-        <div className="space-y-1">
-          <Input
-            placeholder="Ricerca per città in arrivo..."
-            disabled
-            className="opacity-50"
-          />
-          <p className="text-xs text-muted-foreground">
-            La ricerca per città sarà disponibile in futuro
-          </p>
-        </div>
-
-        <div className="text-center text-sm text-muted-foreground">
-          oppure inserisci le coordinate manualmente:
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label htmlFor="latitude">Latitudine</Label>
-            <Input
-              id="latitude"
-              type="number"
-              placeholder="es. 45.464"
-              value={manualLat}
-              onChange={(e) => handleManualLatChange(e.target.value)}
-              step="any"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label htmlFor="longitude">Longitudine</Label>
-            <Input
-              id="longitude"
-              type="number"
-              placeholder="es. 9.189"
-              value={manualLng}
-              onChange={(e) => handleManualLngChange(e.target.value)}
-              step="any"
-            />
-          </div>
-        </div>
-      </div>
-
+    <div className="flex items-center gap-2">
+      <Button
+        onClick={requestLocation}
+        disabled={loading}
+        size="sm"
+        variant={hasLocation ? 'default' : 'outline'}
+        className="h-9"
+      >
+        {loading ? 'Rilevamento...' : hasLocation ? '✓ Posizione' : 'Posizione'}
+      </Button>
       {hasLocation && (
-        <div className="space-y-2 pt-2 border-t">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="radius">Raggio di ricerca</Label>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearLocation}
-            >
-              Cancella
-            </Button>
-          </div>
+        <>
           <Select
             value={filters.radius}
             onValueChange={handleRadiusChange}
           >
-            <SelectTrigger id="radius">
+            <SelectTrigger id="radius" className="h-9 w-[100px] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -175,10 +140,15 @@ export function LocationSearch() {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">
-            Posizione attuale: {parseFloat(filters.lat).toFixed(3)}, {parseFloat(filters.lng).toFixed(3)}
-          </p>
-        </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearLocation}
+            className="h-9 px-2"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </>
       )}
     </div>
   );

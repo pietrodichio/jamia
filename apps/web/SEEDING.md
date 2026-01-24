@@ -9,6 +9,9 @@ npx supabase db reset --yes
 
 # 2. Create test users
 npx tsx supabase/seed-users.ts
+
+# 3. Create test events
+npx tsx supabase/seed-events.ts
 ```
 
 ## Test Credentials
