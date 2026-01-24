@@ -17,8 +17,8 @@ import { OccurrenceEditor } from '@/components/events/OccurrenceEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { EVENT_TAG_LABELS } from '@/lib/event-tags';
+import { EVENT_TAG_LABELS, EVENT_TAG_OPTIONS } from '@/lib/event-tags';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { MapPin, DollarSign, ArrowLeft, Clock, Tag } from 'lucide-react';
 
 export default function EventDetail() {
@@ -99,14 +99,20 @@ export default function EventDetail() {
   // Check if organizer is super admin
   const isSuperAdmin = Boolean(event.organizer?.is_super_admin);
 
+
   // Transform teachers data for TeachersList component
-  const teachersForDisplay = teachers?.map(t => ({
-    id: t.id,
-    user_id: t.user_id,
-    name: t.profiles?.name || 'Unknown',
-    photo_url: t.profiles?.photo_url,
-    role: t.role,
-  })) || [];
+  const teachersForDisplay = teachers?.map(t => {
+    const firstName = t.profiles?.first_name || '';
+    const lastName = t.profiles?.last_name || '';
+    const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Nome non disponibile';
+    return {
+      id: t.id,
+      user_id: t.user_id,
+      name: fullName,
+      photo_url: t.profiles?.photo_url,
+      role: t.role,
+    };
+  }) || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -141,9 +147,14 @@ export default function EventDetail() {
                   <CardTitle>Descrizione</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                    {event.description}
-                  </p>
+                  {/* eslint-disable-next-line */}
+                  <div
+                    className="text-muted-foreground prose prose-sm max-w-none leading-relaxed"
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeHtml(event.description),
+                    }}
+                  />
                 </CardContent>
               </Card>
             )}
@@ -233,7 +244,7 @@ export default function EventDetail() {
                       <div className="text-sm text-muted-foreground mb-2">Tag</div>
                       <div className="flex flex-wrap gap-2">
                         {event.tags.map((tag) => {
-                          const label = EVENT_TAG_LABELS.get(tag) ?? tag;
+                          const label = EVENT_TAG_LABELS.get(tag as (typeof EVENT_TAG_OPTIONS)[number]['value']) ?? tag;
                           return (
                             <Badge key={tag} variant="secondary" className="rounded-lg">
                               {label}

@@ -59,6 +59,7 @@ interface UseEventWizardReturn {
   currentStep: number;
   nextStep: () => Promise<void>;
   prevStep: () => void;
+  goToStep: (step: number) => void;
   form: UseFormReturn<EventFormData>;
   isStepValid: boolean;
   getStepFields: (step: number) => (keyof EventFormData)[];
@@ -132,10 +133,19 @@ export function useEventWizard(): UseEventWizardReturn {
     setIsStepValid(true); // Assume previous step was valid
   };
 
+  // Go to a specific step (only for completed steps)
+  const goToStep = (step: number) => {
+    if (step >= 1 && step < currentStep) {
+      setCurrentStep(step);
+      setIsStepValid(true);
+    }
+  };
+
   return {
     currentStep,
     nextStep,
     prevStep,
+    goToStep,
     form,
     isStepValid,
     getStepFields,

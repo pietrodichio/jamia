@@ -178,14 +178,22 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
     const description = prediction.description || prediction.placePrediction?.text?.text || prediction.placePrediction?.text?.toString();
     const placeId = prediction.place_id || prediction.placePrediction?.placeId;
 
-    form.setValue("location.description", description, { shouldDirty: true });
+    // Optimistic update - clear coordinates until we fetch them
+    form.setValue('location', {
+      description,
+      latitude: undefined,
+      longitude: undefined,
+      googleMapsUrl: '',
+    }, { shouldDirty: true });
 
     if (!googleMaps?.places || !placeId) {
-      form.setValue(
-        "location.googleMapsUrl",
-        `https://www.google.com/maps/place/?q=place_id:${placeId}`,
-        { shouldDirty: true },
-      );
+      const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+      form.setValue('location', {
+        description,
+        googleMapsUrl: url,
+        latitude: undefined,
+        longitude: undefined,
+      }, { shouldDirty: true });
       return;
     }
 
@@ -197,25 +205,31 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
         });
 
         const location = place.location;
-        form.setValue("location.description", description || place.displayName || place.formattedAddress, {
-          shouldDirty: true,
-        });
-        form.setValue("location.googleMapsUrl", place.googleMapsURI || '', { shouldDirty: true });
-        form.setValue("location.latitude", location?.lat(), { shouldDirty: true });
-        form.setValue("location.longitude", location?.lng(), { shouldDirty: true });
+        const finalDescription = description || place.displayName || place.formattedAddress;
+
+        form.setValue('location', {
+          description: finalDescription,
+          googleMapsUrl: place.googleMapsURI || '',
+          latitude: location?.lat(),
+          longitude: location?.lng(),
+        }, { shouldDirty: true });
       } else {
-        form.setValue(
-          "location.googleMapsUrl",
-          `https://www.google.com/maps/place/?q=place_id:${placeId}`,
-          { shouldDirty: true },
-        );
+        const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+        form.setValue('location', {
+          description,
+          googleMapsUrl: url,
+          latitude: undefined,
+          longitude: undefined,
+        }, { shouldDirty: true });
       }
     } catch {
-      form.setValue(
-        "location.googleMapsUrl",
-        `https://www.google.com/maps/place/?q=place_id:${placeId}`,
-        { shouldDirty: true },
-      );
+      const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
+      form.setValue('location', {
+        description,
+        googleMapsUrl: url,
+        latitude: undefined,
+        longitude: undefined,
+      }, { shouldDirty: true });
     }
   };
 
@@ -295,7 +309,12 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
             <FormControl>
               <LocationInput
                 value={field.value?.description || ''}
-                onChange={(value) => form.setValue('location.description', value, { shouldDirty: true })}
+                onChange={(value) => {
+                  field.onChange({
+                    ...field.value,
+                    description: value,
+                  });
+                }}
                 disabled={form.formState.isSubmitting}
                 placePredictions={placePredictions}
                 isLoadingPlaces={isLoadingPlaces}
@@ -312,7 +331,7 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
         control={form.control}
         name="tags"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="flex flex-col gap-y-2">
             <FormLabel>Tag</FormLabel>
             <FormControl>
               <MultiSelect

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
-import { CreateEventDto } from './dto/create-event.dto';
+import { CreateEventDto, LocationDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { UpdateOccurrenceDto } from './dto/update-occurrence.dto';
 import { SearchEventsDto } from './dto/search-events.dto';
@@ -22,6 +22,36 @@ export class EventsService {
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
     private readonly auditService: AuditService,
   ) {}
+
+  /**
+   * Extract location fields from DTO, handling both string and object formats
+   */
+  private extractLocationFields(dto: any): {
+    location_text?: string;
+    location_lat?: number;
+    location_lng?: number;
+    gmaps_link?: string;
+  } {
+    const result: any = {};
+
+    // Handle location_text as object (from frontend location picker)
+    if (dto.location_text && typeof dto.location_text === 'object') {
+      const loc = dto.location_text as LocationDto;
+      result.location_text = loc.description;
+      if (loc.latitude !== undefined) result.location_lat = loc.latitude;
+      if (loc.longitude !== undefined) result.location_lng = loc.longitude;
+      if (loc.googleMapsUrl) result.gmaps_link = loc.googleMapsUrl;
+    } else if (typeof dto.location_text === 'string') {
+      result.location_text = dto.location_text;
+    }
+
+    // Also check for direct location fields (higher priority)
+    if (dto.location_lat !== undefined) result.location_lat = dto.location_lat;
+    if (dto.location_lng !== undefined) result.location_lng = dto.location_lng;
+    if (dto.gmaps_link) result.gmaps_link = dto.gmaps_link;
+
+    return result;
+  }
 
   async isOwnerOrCoOrganizer(
     eventId: string,
@@ -89,11 +119,18 @@ export class EventsService {
       );
     }
 
+    // Extract location fields from DTO
+    const locationFields = this.extractLocationFields(createEventDto);
+
+    // Remove the original location_text if it was an object (we've extracted it)
+    const { location_text, ...restDto } = createEventDto;
+
     const { data, error } = await this.supabase
       .from('events')
       .insert({
         owner_id: ownerId,
-        ...createEventDto,
+        ...restDto,
+        ...locationFields,
         status: 'draft',
       })
       .select()
@@ -204,11 +241,18 @@ export class EventsService {
       }
     }
 
+    // Extract location fields from DTO
+    const locationFields = this.extractLocationFields(dto);
+
+    // Remove the original location_text if it was an object (we've extracted it)
+    const { location_text, ...restDto } = dto;
+
     const { data, error } = await this.supabase
       .from('events')
       .upsert(
         {
-          ...dto,
+          ...restDto,
+          ...locationFields,
           owner_id: userId,
           status: 'draft',
           updated_at: new Date().toISOString(),
@@ -339,9 +383,19 @@ export class EventsService {
       }
     }
 
+    // Extract location fields from DTO if location_text is an object
+    const locationFields = this.extractLocationFields(updateEventDto);
+
+    // Prepare update data, removing location_text if it was an object
+    const { location_text, ...restDto } = updateEventDto as any;
+    const updateData = {
+      ...restDto,
+      ...locationFields,
+    };
+
     const { data, error } = await this.supabase
       .from('events')
-      .update(updateEventDto)
+      .update(updateData)
       .eq('id', eventId)
       .select()
       .single();

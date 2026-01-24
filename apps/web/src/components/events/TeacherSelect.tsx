@@ -27,8 +27,8 @@ export function TeacherSelect({ eventId, currentTeachers, isOwner }: TeacherSele
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, photo_url')
-        .ilike('name', `%${searchQuery}%`)
+        .select('id, first_name, last_name, photo_url')
+        .or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`)
         .limit(10);
 
       if (error) throw error;
@@ -96,10 +96,12 @@ export function TeacherSelect({ eventId, currentTeachers, isOwner }: TeacherSele
               <div key={user.id} className="flex items-center gap-2 p-2 border rounded">
                 <img
                   src={user.photo_url || '/default-avatar.png'}
-                  alt={user.name}
+                  alt={`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User'}
                   className="w-10 h-10 rounded-full object-cover"
                 />
-                <span className="flex-1">{user.name}</span>
+                <span className="flex-1">
+                  {[user.first_name, user.last_name].filter(Boolean).join(' ') || 'Nome non disponibile'}
+                </span>
                 {isTeacher ? (
                   <Button
                     variant="outline"

@@ -20,7 +20,7 @@ export const teachersApi = {
     teacherIds: string[]
   ): Promise<EventTeacher[]> {
     const promises = teacherIds.map(teacherId =>
-      this.addTeacher(eventId, { teacherId })
+      this.addTeacher(eventId, { user_id: teacherId })
     );
     return Promise.all(promises);
   },

@@ -39,7 +39,7 @@ export function WizardNavigation({
 
       {/* Next or Submit button */}
       {isLastStep ? (
-        <Button type="button" onClick={onSubmit} disabled={isSubmitting}>
+        <Button type="submit" onClick={onSubmit} disabled={isSubmitting}>
           {isSubmitting ? t('common.loading') : 'Pubblica'}
         </Button>
       ) : (

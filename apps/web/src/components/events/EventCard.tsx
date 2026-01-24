@@ -41,7 +41,7 @@ export function EventCard({ event }: EventCardProps) {
       jam: 'Jam',
       class: 'Lezione',
       workshop: 'Workshop',
-      convention: 'Convegno',
+      convention: 'Convention',
     };
     return labels[type] || type;
   };

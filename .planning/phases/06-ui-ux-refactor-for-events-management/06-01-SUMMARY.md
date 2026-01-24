@@ -94,7 +94,7 @@ completed: 2026-01-23
 1. **Footer**: "Realizzato con ❤️ per la comunità acroyoga", "Vedi su GitHub"
 2. **LocationSearch**: All labels, buttons ("Usa la mia posizione"), placeholders, error messages in Italian
 3. **KeywordSearch**: "Cerca Eventi" label, placeholder using translation key
-4. **EventFilters**: "Filtri", "Tipo di evento", "Intervallo date", Italian event type labels (Lezione, Convegno)
+4. **EventFilters**: "Filtri", "Tipo di evento", "Intervallo date", Italian event type labels (Lezione, Convention)
 5. **CreateEvent**: Complete translation of all labels, placeholders, buttons, toast messages
 
 ### Already Italian

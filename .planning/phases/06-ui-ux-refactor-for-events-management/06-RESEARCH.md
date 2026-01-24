@@ -179,7 +179,7 @@ const italianTime = format(new Date(), 'HH:mm', { locale: it }); // 14:30
     "jam": "Jam",
     "class": "Lezione",
     "workshop": "Workshop",
-    "convention": "Convegno"
+    "convention": "Convention"
   },
   "filters": {
     "all_types": "Tutti i tipi"
@@ -782,7 +782,7 @@ Verified patterns from official sources:
     "jam": "Jam",
     "class": "Lezione",
     "workshop": "Workshop",
-    "convention": "Convegno"
+    "convention": "Convention"
   },
   "fields": {
     "title": "Titolo",

@@ -6,12 +6,14 @@ interface WizardStepIndicatorProps {
   currentStep: number;
   totalSteps: number;
   stepLabels: string[];
+  onStepClick?: (step: number) => void;
 }
 
 export function WizardStepIndicator({
   currentStep,
   totalSteps,
   stepLabels,
+  onStepClick,
 }: WizardStepIndicatorProps) {
   return (
     <div className="w-full py-6">
@@ -23,18 +25,21 @@ export function WizardStepIndicator({
           const isUpcoming = stepNumber > currentStep;
 
           return (
-            <>
+            <div key={stepNumber} className="contents">
               {/* Step circle and label */}
-              <div key={stepNumber} className="flex flex-col items-center">
+              <div className="flex flex-col items-center">
                 {/* Step circle */}
-                <div
+                <button
+                  type="button"
+                  onClick={() => isCompleted && onStepClick?.(stepNumber)}
+                  disabled={isUpcoming}
                   className={cn(
                     'flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors',
                     isCompleted &&
-                      'bg-primary border-primary text-primary-foreground',
+                      'bg-primary border-primary text-primary-foreground cursor-pointer hover:opacity-80',
                     isActive &&
                       'bg-primary border-primary text-primary-foreground',
-                    isUpcoming && 'bg-muted border-muted-foreground/30 text-muted-foreground'
+                    isUpcoming && 'bg-muted border-muted-foreground/30 text-muted-foreground cursor-not-allowed'
                   )}
                 >
                   {isCompleted ? (
@@ -42,7 +47,7 @@ export function WizardStepIndicator({
                   ) : (
                     <span className="text-sm font-medium">{stepNumber}</span>
                   )}
-                </div>
+                </button>
 
                 {/* Step label - show abbreviated on mobile, full on desktop */}
                 <span
@@ -74,7 +79,7 @@ export function WizardStepIndicator({
                   )}
                 />
               )}
-            </>
+            </div>
           );
         })}
       </div>

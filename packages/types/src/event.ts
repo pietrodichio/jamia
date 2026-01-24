@@ -74,17 +74,26 @@ export interface EventOrganizer {
   // Joined user profile
   user?: {
     id: string;
-    name: string;
+    first_name: string | null;
+    last_name: string | null;
     email: string;
     photo_url?: string;
   };
+}
+
+// Location DTO to match backend structure
+export interface LocationDto {
+  description: string;
+  latitude?: number;
+  longitude?: number;
+  googleMapsUrl?: string;
 }
 
 // DTOs (mirror backend DTOs)
 export interface CreateEventDto {
   type: EventType;
   title: string;
-  location_text: string;
+  location_text: string | LocationDto;
   starts_at: string;
   ends_at: string;
   description?: string;
@@ -129,7 +138,9 @@ export interface EventTeacher {
   created_at: string;
   profiles?: {
     id: string;
-    name: string;
+    first_name: string | null;
+    last_name: string | null;
+    email?: string;
     photo_url?: string;
   };
 }

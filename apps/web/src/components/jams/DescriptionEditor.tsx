@@ -35,7 +35,7 @@ export const DescriptionEditor = ({ value, onChange, disabled }: DescriptionEdit
           value={value}
           onChange={onChange}
           modules={toolbarModules}
-          placeholder="Descrivi la tua jam, livello, cosa portare..."
+          placeholder="Descrivi il tuo evento, livello, cosa portare..."
           readOnly={disabled}
         />
       </div>

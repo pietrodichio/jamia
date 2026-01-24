@@ -9,7 +9,7 @@ const EVENT_TYPES = [
   { value: 'jam', label: 'Jam' },
   { value: 'class', label: 'Lezione' },
   { value: 'workshop', label: 'Workshop' },
-  { value: 'convention', label: 'Convegno' },
+  { value: 'convention', label: 'Convention' },
 ] as const;
 
 export function EventFilters() {

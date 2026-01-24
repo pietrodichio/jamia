@@ -15,7 +15,7 @@ interface EventPreviewStepProps {
 
 export function EventPreviewStep({ form }: EventPreviewStepProps) {
   const { t } = useTranslation(['common', 'events']);
-  const formValues = form.getValues();
+  const formValues = form.watch();
 
   // Helper to format date and time with null safety
   const formatDateTime = (date?: Date, time?: string): string => {
@@ -95,7 +95,7 @@ export function EventPreviewStep({ form }: EventPreviewStepProps) {
               <p className="text-sm font-medium text-muted-foreground">
                 {t('events:fields.location')}:
               </p>
-              <p>{formValues.location || 'Non specificata'}</p>
+              <p>{formValues.location?.description || 'Non specificata'}</p>
             </div>
 
             {/* Tags */}

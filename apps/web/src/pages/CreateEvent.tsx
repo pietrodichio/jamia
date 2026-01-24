@@ -18,7 +18,7 @@ import { EventTeachersStep } from '@/components/forms/event/EventTeachersStep';
 import { EventPreviewStep } from '@/components/forms/event/EventPreviewStep';
 import { ArrowLeft, Save, Check, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { CreateEventDto } from '@jamia/types/event';
+import type { CreateEventDto, UpdateEventDto } from '@jamia/types/event';
 
 export default function CreateEvent() {
   const { t } = useTranslation(['common', 'events', 'forms']);
@@ -26,7 +26,7 @@ export default function CreateEvent() {
   const { toast } = useToast();
 
   // Initialize wizard
-  const { currentStep, nextStep, prevStep, form } = useEventWizard();
+  const { currentStep, nextStep, prevStep, goToStep, form } = useEventWizard();
 
   // Watch event type to conditionally show teachers step
   const eventType = form.watch('type');
@@ -38,17 +38,40 @@ export default function CreateEvent() {
   // Auto-save integration
   const { saveStatus, draftId } = useAutoSave(formData);
 
+  // Add teachers mutation
+  const addTeachersMutation = useMutation({
+    mutationFn: ({ eventId, teacherIds }: { eventId: string; teacherIds: string[] }) =>
+      teachersApi.addTeachers(eventId, teacherIds),
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast({
+        title: 'Errore nell\'aggiunta degli insegnanti',
+        description: err.response?.data?.message || 'Riprova',
+        variant: 'destructive'
+      });
+    }
+  });
+
   // Create event mutation
   const createMutation = useMutation({
     mutationFn: (data: CreateEventDto) => eventsApi.createEvent(data),
-    onSuccess: (event) => {
+    onSuccess: async (event) => {
+      // Get teacherIds from form data if available
+      const teacherIds = form.getValues('teacherIds');
+
+      // Add teachers if any selected
+      if (teacherIds && teacherIds.length > 0) {
+        await addTeachersMutation.mutateAsync({ eventId: event.id, teacherIds });
+      }
+
       toast({ title: t('events:messages.eventCreated') });
       navigate(`/events/${event.id}`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
       toast({
         title: 'Errore nella creazione dell\'evento',
-        description: error.response?.data?.message || 'Riprova',
+        description: err.response?.data?.message || 'Riprova',
         variant: 'destructive'
       });
     }
@@ -56,23 +79,32 @@ export default function CreateEvent() {
 
   // Update event mutation (for publishing drafts)
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<CreateEventDto> }) =>
+    mutationFn: ({ id, data }: { id: string; data: UpdateEventDto }) =>
       eventsApi.updateEvent(id, data),
-    onSuccess: (event) => {
+    onSuccess: async (event) => {
+      // Get teacherIds from form data if available
+      const teacherIds = form.getValues('teacherIds');
+
+      // Add teachers if any selected
+      if (teacherIds && teacherIds.length > 0) {
+        await addTeachersMutation.mutateAsync({ eventId: event.id, teacherIds });
+      }
+
       toast({ title: t('events:messages.eventCreated') });
       navigate(`/events/${event.id}`);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
       toast({
         title: 'Errore nella pubblicazione dell\'evento',
-        description: error.response?.data?.message || 'Riprova',
+        description: err.response?.data?.message || 'Riprova',
         variant: 'destructive'
       });
     }
   });
 
   // Handle form submission
-  const handleSubmit = form.handleSubmit(async (data) => {
+  const handleSubmit = form.handleSubmit((data) => {
     // Combine date and time into ISO string
     const startsAt = data.date && data.time
       ? new Date(`${data.date.toISOString().split('T')[0]}T${data.time}:00`).toISOString()
@@ -82,12 +114,25 @@ export default function CreateEvent() {
       ? new Date(`${data.end_date.toISOString().split('T')[0]}T${data.end_time}:00`).toISOString()
       : undefined;
 
+    // Map location_text as object (matching useAutoSave pattern)
+    let location_text: CreateEventDto['location_text'] | undefined;
+    if (data.location?.description) {
+      // TypeScript needs explicit cast for union type (string | LocationDto)
+      const locationObj = {
+        description: data.location.description,
+        latitude: data.location.latitude,
+        longitude: data.location.longitude,
+        googleMapsUrl: data.location.googleMapsUrl,
+      };
+      location_text = locationObj as unknown as CreateEventDto['location_text'];
+    }
+
     const eventData: CreateEventDto = {
       type: data.type,
       title: data.title,
-      location_text: data.location,
+      location_text,
       starts_at: startsAt,
-      ends_at: endsAt,
+      ends_at: endsAt || startsAt, // Ensure ends_at is set
       description: data.description || undefined,
       tags: data.tags && data.tags.length > 0 ? data.tags : undefined,
       price: data.price?.toString() || undefined,
@@ -102,29 +147,11 @@ export default function CreateEvent() {
     // system should be used separately. This unified flow creates event listings only.
     // Capacity and visibility are jam management features, not event listing fields.
 
-    try {
-      let createdEvent;
-
-      // If we have a draft, update it to published; otherwise create new
-      if (draftId) {
-        createdEvent = await eventsApi.updateEvent(draftId, { ...eventData, status: 'published' });
-      } else {
-        createdEvent = await eventsApi.createEvent(eventData);
-      }
-
-      // Insert teachers if any selected
-      if (data.teacherIds && data.teacherIds.length > 0) {
-        await teachersApi.addTeachers(createdEvent.id, data.teacherIds);
-      }
-
-      toast({ title: t('events:messages.eventCreated') });
-      navigate(`/events/${createdEvent.id}`);
-    } catch (error: any) {
-      toast({
-        title: 'Errore nella creazione dell\'evento',
-        description: error.response?.data?.message || 'Riprova',
-        variant: 'destructive'
-      });
+    // Use mutations instead of direct API calls
+    if (draftId) {
+      updateMutation.mutate({ id: draftId, data: { ...eventData, status: 'published' } });
+    } else {
+      createMutation.mutate(eventData);
     }
   });
 
@@ -190,6 +217,7 @@ export default function CreateEvent() {
             currentStep={currentStep}
             totalSteps={showTeachersStep ? 5 : 4}
             stepLabels={stepLabels}
+            onStepClick={goToStep}
           />
 
           {/* Form */}
@@ -212,7 +240,7 @@ export default function CreateEvent() {
                 onBack={prevStep}
                 onNext={nextStep}
                 onSubmit={handleSubmit}
-                isSubmitting={createMutation.isPending || updateMutation.isPending}
+                isSubmitting={createMutation.isPending || updateMutation.isPending || addTeachersMutation.isPending}
                 canGoNext={true}
               />
             </form>

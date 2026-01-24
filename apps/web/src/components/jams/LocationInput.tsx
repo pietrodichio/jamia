@@ -28,10 +28,6 @@ export const LocationInput = ({
 }: LocationInputProps) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="jam-location">
-        <MapPin className="inline h-4 w-4 mr-1" />
-        Luogo *
-      </Label>
       <Input
         id="jam-location"
         placeholder="Scrivi il luogo della jam"

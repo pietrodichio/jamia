@@ -14,6 +14,7 @@ import { DateTimePicker } from '@/components/jams/DateTimePicker';
 import { RecurrenceEditor } from '@/components/events/RecurrenceEditor';
 import { EventFormData } from '@/hooks/useEventWizard';
 import { ExternalRegistrationFields } from './ExternalRegistrationFields';
+import { Label } from '@/components/ui/label';
 
 interface EventScheduleStepProps {
   form: UseFormReturn<EventFormData>;
@@ -27,6 +28,8 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
   const timeFrom = form.watch('time');
   const eventType = form.watch('type');
 
+  const isRecurringType = eventType === 'class';
+
   // Auto-fill end time when start date/time changes
   useEffect(() => {
     if (!dateFrom || !timeFrom) return;
@@ -36,9 +39,13 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
       const [hours, minutes] = timeFrom.split(':').map(Number);
       startDateTime.setHours(hours, minutes);
 
-      // Propose end time = start + 4 hours (default duration)
+      // For class events, default duration is 1.5 hours
+      // For other events, default duration is 4 hours
+      const defaultDuration = isRecurringType ? 1.5 : 4;
+
       const proposedEnd = new Date(startDateTime);
-      proposedEnd.setHours(proposedEnd.getHours() + 4);
+      proposedEnd.setHours(proposedEnd.getHours() + Math.floor(defaultDuration));
+      proposedEnd.setMinutes(proposedEnd.getMinutes() + (defaultDuration % 1) * 60);
 
       // Don't extend past end of day (23:59)
       const endOfDay = new Date(startDateTime);
@@ -46,10 +53,13 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
 
       const finalEnd = proposedEnd > endOfDay ? endOfDay : proposedEnd;
 
-      // Only auto-fill if end_date/end_time not already set
-      if (!form.getValues('end_date')) {
+      // For class events, always sync end_date with start date
+      if (isRecurringType) {
+        form.setValue('end_date', dateFrom, { shouldDirty: false });
+      } else if (!form.getValues('end_date')) {
         form.setValue('end_date', finalEnd, { shouldDirty: false });
       }
+
       if (!form.getValues('end_time')) {
         const endTime = finalEnd.toTimeString().slice(0, 5);
         form.setValue('end_time', endTime, { shouldDirty: false });
@@ -57,13 +67,32 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
     }, 500); // Debounce 500ms
 
     return () => clearTimeout(timer);
-  }, [dateFrom, timeFrom, form]);
+  }, [dateFrom, timeFrom, form, isRecurringType]);
+
+  // For class events, keep end_date synced with start date
+  useEffect(() => {
+    if (isRecurringType && dateFrom) {
+      form.setValue('end_date', dateFrom, { shouldDirty: false });
+    }
+  }, [dateFrom, isRecurringType, form]);
 
   return (
     <div className="space-y-6">
       {/* Schedule Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">{t('events:wizard.scheduleSection')}</h3>
+
+        {/* Info for recurring events */}
+        {isRecurringType && (
+          <div className="bg-muted/50 border rounded-lg p-4 text-sm space-y-2">
+            <p className="font-medium">Come funziona per le lezioni ricorrenti:</p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+              <li><strong>Data e ora di inizio</strong> = quando inizia ogni lezione</li>
+              <li><strong>Ora di fine</strong> = quando finisce ogni lezione (stesso giorno)</li>
+              <li><strong>Ricorrenza</strong> = ogni quanto si ripete e fino a quando</li>
+            </ul>
+          </div>
+        )}
 
         {/* Start Date and Time */}
         <FormField
@@ -77,7 +106,7 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
                 <FormItem>
                   <FormControl>
                     <DateTimePicker
-                      label="Data e ora di inizio"
+                      label={isRecurringType ? "Data e ora della prima lezione" : "Data e ora di inizio"}
                       date={dateField.value}
                       time={timeField.value || ''}
                       onDateChange={dateField.onChange}
@@ -97,49 +126,76 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
           )}
         />
 
-        {/* End Date and Time */}
-        <FormField
-          control={form.control}
-          name="end_date"
-          render={({ field: dateField }) => (
-            <FormField
-              control={form.control}
-              name="end_time"
-              render={({ field: timeField }) => (
-                <FormItem>
-                  <FormControl>
-                    <DateTimePicker
-                      label="Data e ora di fine (opzionale)"
-                      date={dateField.value}
-                      time={timeField.value || ''}
-                      onDateChange={dateField.onChange}
-                      onTimeChange={timeField.onChange}
-                      minDate={dateFrom || new Date()}
+        {/* End Time Only for Class events */}
+        {isRecurringType ? (
+          <FormField
+            control={form.control}
+            name="end_time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ora di fine lezione</FormLabel>
+                <FormControl>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="time"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      className="w-32"
                       disabled={form.formState.isSubmitting}
-                      timeId="end-time"
-                      dateButtonId="end-date-button"
-                      error={form.formState.errors.end_date?.message || form.formState.errors.end_time?.message}
                     />
-                  </FormControl>
-                  <FormMessage>{form.formState.errors.end_date?.message}</FormMessage>
-                  <FormMessage>{form.formState.errors.end_time?.message}</FormMessage>
-                </FormItem>
-              )}
-            />
-          )}
-        />
+                    <span className="text-sm text-muted-foreground">
+                      (stesso giorno)
+                    </span>
+                  </div>
+                </FormControl>
+                <FormDescription>
+                  A che ora finisce ogni lezione
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        ) : (
+          /* End Date and Time for non-recurring events */
+          <FormField
+            control={form.control}
+            name="end_date"
+            render={({ field: dateField }) => (
+              <FormField
+                control={form.control}
+                name="end_time"
+                render={({ field: timeField }) => (
+                  <FormItem>
+                    <FormControl>
+                      <DateTimePicker
+                        label="Data e ora di fine (opzionale)"
+                        date={dateField.value}
+                        time={timeField.value || ''}
+                        onDateChange={dateField.onChange}
+                        onTimeChange={timeField.onChange}
+                        minDate={dateFrom || new Date()}
+                        disabled={form.formState.isSubmitting}
+                        timeId="end-time"
+                        dateButtonId="end-date-button"
+                        error={form.formState.errors.end_date?.message || form.formState.errors.end_time?.message}
+                      />
+                    </FormControl>
+                    <FormMessage>{form.formState.errors.end_date?.message}</FormMessage>
+                    <FormMessage>{form.formState.errors.end_time?.message}</FormMessage>
+                  </FormItem>
+                )}
+              />
+            )}
+          />
+        )}
 
         {/* Recurrence Editor for Class Events */}
-        {eventType === 'class' && (
+        {isRecurringType && (
           <FormField
             control={form.control}
             name="recurrence"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Ricorrenza</FormLabel>
-                <FormDescription>
-                  Configura la ricorrenza per lezioni settimanali
-                </FormDescription>
                 <FormControl>
                   <RecurrenceEditor
                     value={field.value || { rule: null, dtstart: null, until: null }}

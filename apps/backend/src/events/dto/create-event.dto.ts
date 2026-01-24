@@ -5,8 +5,28 @@ import {
   IsNumber,
   IsIn,
   IsArray,
+  ValidateNested,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+// Location can be sent as an object with description and coordinates
+export class LocationDto {
+  @IsString()
+  description: string;
+
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsString()
+  googleMapsUrl?: string;
+}
 
 export class CreateEventDto {
   // Required: Event type
@@ -18,8 +38,11 @@ export class CreateEventDto {
   @IsString()
   title: string;
 
-  @IsString()
-  location_text: string;
+  // Location: accepts either a string or a LocationDto object
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LocationDto)
+  location_text?: string | LocationDto;
 
   @IsDateString()
   starts_at: string;
@@ -57,7 +80,7 @@ export class CreateEventDto {
   @IsString({ each: true })
   tags?: string[];
 
-  // Optional: Location fields
+  // Optional: Location fields (can be set directly or extracted from location_text object)
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

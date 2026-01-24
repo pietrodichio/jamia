@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,67 +16,74 @@ interface EventTeachersStepProps {
 
 interface Profile {
   id: string;
-  full_name: string | null;
-  avatar_url: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  photo_url: string | null;
+}
+
+// Helper to get display name from profile
+function getDisplayName(profile: Profile): string {
+  const parts = [profile.first_name, profile.last_name].filter(Boolean);
+  return parts.length > 0 ? parts.join(' ') : 'Nome non disponibile';
+}
+
+// Helper to get initials from profile
+function getInitials(profile: Profile): string {
+  const first = profile.first_name?.charAt(0).toUpperCase() || '';
+  const last = profile.last_name?.charAt(0).toUpperCase() || '';
+  return first + last || '?';
 }
 
 export function EventTeachersStep({ form }: EventTeachersStepProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [selectedTeachers, setSelectedTeachers] = useState<Profile[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Load selected teachers on mount
+  // Get teacherIds from form
+  const teacherIds = form.watch('teacherIds') || [];
+
+  // Load selected teachers on mount using useQuery
+  const { data: loadedTeachers } = useQuery({
+    queryKey: ['profiles', 'teachers', teacherIds],
+    queryFn: async () => {
+      if (teacherIds.length === 0) return [];
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, photo_url')
+        .in('id', teacherIds);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: teacherIds.length > 0,
+  });
+
+  // Update selectedTeachers when loadedTeachers changes
   useEffect(() => {
-    const loadSelectedTeachers = async () => {
-      const teacherIds = form.getValues('teacherIds') || [];
-      if (teacherIds.length === 0) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .in('id', teacherIds);
-
-        if (error) throw error;
-        if (data) setSelectedTeachers(data);
-      } catch (error) {
-        console.error('Failed to load selected teachers:', error);
-      }
-    };
-
-    loadSelectedTeachers();
-  }, []);
-
-  // Search for profiles
-  useEffect(() => {
-    if (!debouncedSearch || debouncedSearch.length < 2) {
-      setSearchResults([]);
-      return;
+    if (loadedTeachers) {
+      setSelectedTeachers(loadedTeachers);
     }
+  }, [loadedTeachers]);
 
-    const searchProfiles = async () => {
-      setIsSearching(true);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .ilike('full_name', `%${debouncedSearch}%`)
-          .limit(10);
+  // Search for profiles using useQuery
+  const { data: searchResults = [], isLoading: isSearching } = useQuery({
+    queryKey: ['profiles', 'search', debouncedSearch],
+    queryFn: async () => {
+      if (!debouncedSearch || debouncedSearch.length < 2) return [];
 
-        if (error) throw error;
-        setSearchResults(data || []);
-      } catch (error) {
-        console.error('Search failed:', error);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    };
+      // Search in both first_name and last_name
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, photo_url')
+        .or(`first_name.ilike.%${debouncedSearch}%,last_name.ilike.%${debouncedSearch}%`)
+        .limit(10);
 
-    searchProfiles();
-  }, [debouncedSearch]);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: debouncedSearch.length >= 2,
+  });
 
   // Add teacher to selection
   const addTeacher = (teacher: Profile) => {
@@ -85,7 +93,6 @@ export function EventTeachersStep({ form }: EventTeachersStepProps) {
       setSelectedTeachers([...selectedTeachers, teacher]);
     }
     setSearchQuery(''); // Clear search
-    setSearchResults([]); // Clear results
   };
 
   // Remove teacher from selection
@@ -125,6 +132,7 @@ export function EventTeachersStep({ form }: EventTeachersStepProps) {
             <div className="p-2">
               {searchResults.map((result) => {
                 const isAlreadySelected = selectedTeachers.some(t => t.id === result.id);
+                const displayName = getDisplayName(result);
                 return (
                   <button
                     key={result.id}
@@ -133,21 +141,21 @@ export function EventTeachersStep({ form }: EventTeachersStepProps) {
                     disabled={isAlreadySelected}
                     className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed text-left"
                   >
-                    {result.avatar_url ? (
+                    {result.photo_url ? (
                       <img
-                        src={result.avatar_url}
-                        alt={result.full_name || 'Avatar'}
+                        src={result.photo_url}
+                        alt={displayName}
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                         <span className="text-sm font-medium">
-                          {result.full_name?.charAt(0).toUpperCase() || '?'}
+                          {getInitials(result)}
                         </span>
                       </div>
                     )}
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{result.full_name || 'Nome non disponibile'}</p>
+                      <p className="text-sm font-medium">{displayName}</p>
                     </div>
                     {isAlreadySelected && (
                       <Badge variant="secondary" className="text-xs">Selezionato</Badge>
@@ -172,25 +180,28 @@ export function EventTeachersStep({ form }: EventTeachersStepProps) {
         <div className="space-y-3">
           <p className="text-sm font-medium">Insegnanti selezionati ({selectedTeachers.length})</p>
           <div className="flex flex-wrap gap-2">
-            {selectedTeachers.map((teacher) => (
-              <Badge
-                key={teacher.id}
-                variant="secondary"
-                className="flex items-center gap-2 pr-1 pl-3 py-1.5"
-              >
-                <span>{teacher.full_name || 'Nome non disponibile'}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 w-5 p-0 hover:bg-destructive/20"
-                  onClick={() => removeTeacher(teacher.id)}
+            {selectedTeachers.map((teacher) => {
+              const displayName = getDisplayName(teacher);
+              return (
+                <Badge
+                  key={teacher.id}
+                  variant="secondary"
+                  className="flex items-center gap-2 pr-1 pl-3 py-1.5"
                 >
-                  <X className="h-3 w-3" />
-                  <span className="sr-only">Rimuovi {teacher.full_name}</span>
-                </Button>
-              </Badge>
-            ))}
+                  <span>{displayName}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-destructive/20"
+                    onClick={() => removeTeacher(teacher.id)}
+                  >
+                    <X className="h-3 w-3" />
+                    <span className="sr-only">Rimuovi {displayName}</span>
+                  </Button>
+                </Badge>
+              );
+            })}
           </div>
         </div>
       )}

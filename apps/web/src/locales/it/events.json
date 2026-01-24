@@ -3,7 +3,7 @@
 		"jam": "Jam",
 		"class": "Lezione",
 		"workshop": "Workshop",
-		"convention": "Convegno"
+		"convention": "Convention"
 	},
 	"fields": {
 		"title": "Titolo",
@@ -31,8 +31,8 @@
 		"step1Title": "Tipo e Informazioni Base",
 		"step2Title": "Programmazione e Dettagli",
 		"step3Title": "Anteprima",
-		"askManageParticipants": "Vuoi gestire i partecipanti?",
-		"askManageParticipantsHelp": "Abilita capacità, ruoli e inviti",
+		"askManageParticipants": "Vuoi gestire i partecipanti tramite Jamia?",
+		"askManageParticipantsHelp": "Abilita gestione della lista dei partecipanti, lista d'attesa e cancellazioni",
 		"eventTypeQuestion": "Che tipo di evento vuoi creare?",
 		"basicInfoSection": "Informazioni di base",
 		"scheduleSection": "Programmazione",
