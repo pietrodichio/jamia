@@ -12,6 +12,7 @@ import { WizardStepIndicator } from '@/components/forms/wizard/WizardStepIndicat
 import { WizardNavigation } from '@/components/forms/wizard/WizardNavigation';
 import { EventTypeStep } from '@/components/forms/event/EventTypeStep';
 import { EventScheduleStep } from '@/components/forms/event/EventScheduleStep';
+import { EventImageStep } from '@/components/forms/event/EventImageStep';
 import { EventPreviewStep } from '@/components/forms/event/EventPreviewStep';
 import { ArrowLeft, Save, Check, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -82,10 +83,13 @@ export default function CreateEvent() {
       starts_at: startsAt,
       ends_at: endsAt,
       description: data.description || undefined,
+      tags: data.tags && data.tags.length > 0 ? data.tags : undefined,
       price: data.price?.toString() || undefined,
       external_link: data.link || data.externalLink || undefined,
       // External registration fields (only if NOT managing participants)
       cta_text: (!data.manageParticipants || data.type !== 'jam') ? data.ctaText : undefined,
+      // Image URL
+      image_url: data.image_url || undefined,
     };
 
     // Note: For managed jams (manageParticipants = true), the jam management
@@ -104,6 +108,7 @@ export default function CreateEvent() {
   const stepLabels = [
     t('events:wizard.step1Title'),
     t('events:wizard.step2Title'),
+    'Immagine',
     t('events:wizard.step3Title'),
   ];
 
@@ -158,7 +163,7 @@ export default function CreateEvent() {
           {/* Wizard Step Indicator */}
           <WizardStepIndicator
             currentStep={currentStep}
-            totalSteps={3}
+            totalSteps={4}
             stepLabels={stepLabels}
           />
 
@@ -169,13 +174,14 @@ export default function CreateEvent() {
               <div className="min-h-[400px]">
                 {currentStep === 1 && <EventTypeStep form={form} />}
                 {currentStep === 2 && <EventScheduleStep form={form} />}
-                {currentStep === 3 && <EventPreviewStep form={form} />}
+                {currentStep === 3 && <EventImageStep form={form} />}
+                {currentStep === 4 && <EventPreviewStep form={form} />}
               </div>
 
               {/* Wizard Navigation */}
               <WizardNavigation
                 currentStep={currentStep}
-                totalSteps={3}
+                totalSteps={4}
                 onBack={prevStep}
                 onNext={nextStep}
                 onSubmit={handleSubmit}
