@@ -9,18 +9,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Plan: 4 of 6
-Status: In progress - wizard layout, preview, images, teachers, and schedule step complete
-Last activity: 2026-01-24 — Completed 06.1-04-PLAN.md (enhance event schedule step)
+Plan: 5 of 6
+Status: In progress - wizard layout, preview, images, teachers, schedule, and rich inputs complete
+Last activity: 2026-01-24 — Completed 06.1-03-PLAN.md (description and location enhancement)
 
 Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (5/6 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 40
+- Total plans completed: 41
 - Average duration: 4 min
-- Total execution time: 2.6 hours
+- Total execution time: 2.7 hours
 
 **By Phase:**
 
@@ -32,11 +32,11 @@ Progress: [██████████░░] 100% (6/6 planned phases comple
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
 | 5. Event Enhancements | 10/10 | 65 min | 7 min |
 | 6. UI/UX Refactor | 7/7 | 29 min | 4 min |
-| 6.1. Event Creation Flow Fixes | 5/6 | 15 min | 3 min |
+| 6.1. Event Creation Flow Fixes | 5/6 | 19 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 06.1-01 (2 min), 06.1-02 (3 min), 06.1-05 (2 min), 06.1-06 (5 min), 06.1-04 (3 min)
-- Trend: Phase 6.1 fixing event creation wizard gaps
+- Last 5 plans: 06.1-02 (3 min), 06.1-05 (2 min), 06.1-06 (5 min), 06.1-04 (3 min), 06.1-03 (4 min)
+- Trend: Phase 6.1 fixing event creation wizard gaps, nearing completion
 
 *Updated after each plan completion*
 
@@ -197,6 +197,11 @@ Recent decisions affecting current work:
 - 500ms debounce on auto-fill prevents excessive form updates during typing
 - RecurrenceEditor conditional rendering for class type only (primary use case for recurring events)
 - shouldDirty: false on auto-fill prevents marking form dirty for suggested values
+- Event location field structured as object (description, lat, lng, googleMapsUrl) instead of plain string for coordinate support
+- Event description field unconstrained to support rich HTML content from ReactQuill editor
+- Google Maps autocomplete with 350ms debounce for location predictions in event wizard
+- DescriptionEditor used as self-contained component with own label in event creation
+- LocationInput presentational component receives predictions and handlers from parent
 
 
 ### Roadmap Evolution
@@ -214,7 +219,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-24T17:08:34Z
-Stopped at: Completed 06.1-04-PLAN.md (enhance event schedule step)
+Last session: 2026-01-24T17:09:54Z
+Stopped at: Completed 06.1-03-PLAN.md (description and location enhancement)
 Resume file: None
-Next: Continue Phase 6.1 - remaining plan (06.1-03 - enhance event type step with rich text, location, tags)
+Next: Phase 6.1 complete - all 6 plans executed (wizard layout, preview, schedule, images, teachers, rich inputs)
