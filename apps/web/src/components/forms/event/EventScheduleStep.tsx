@@ -1,5 +1,6 @@
 import { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useEffect } from 'react';
 import {
   FormControl,
   FormDescription,
@@ -9,7 +10,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DateTimePicker } from '@/components/jams/DateTimePicker';
+import { RecurrenceEditor } from '@/components/events/RecurrenceEditor';
 import { EventFormData } from '@/hooks/useEventWizard';
 import { ExternalRegistrationFields } from './ExternalRegistrationFields';
 
@@ -20,100 +22,120 @@ interface EventScheduleStepProps {
 export function EventScheduleStep({ form }: EventScheduleStepProps) {
   const { t } = useTranslation(['common', 'events', 'forms']);
 
+  // Watch form values for auto-fill logic and conditional rendering
+  const dateFrom = form.watch('date');
+  const timeFrom = form.watch('time');
+  const eventType = form.watch('type');
+
+  // Auto-fill end time when start date/time changes
+  useEffect(() => {
+    if (!dateFrom || !timeFrom) return;
+
+    const timer = setTimeout(() => {
+      const startDateTime = new Date(dateFrom);
+      const [hours, minutes] = timeFrom.split(':').map(Number);
+      startDateTime.setHours(hours, minutes);
+
+      // Propose end time = start + 4 hours (default duration)
+      const proposedEnd = new Date(startDateTime);
+      proposedEnd.setHours(proposedEnd.getHours() + 4);
+
+      // Don't extend past end of day (23:59)
+      const endOfDay = new Date(startDateTime);
+      endOfDay.setHours(23, 59, 0, 0);
+
+      const finalEnd = proposedEnd > endOfDay ? endOfDay : proposedEnd;
+
+      // Only auto-fill if end_date/end_time not already set
+      if (!form.getValues('end_date')) {
+        form.setValue('end_date', finalEnd, { shouldDirty: false });
+      }
+      if (!form.getValues('end_time')) {
+        const endTime = finalEnd.toTimeString().slice(0, 5);
+        form.setValue('end_time', endTime, { shouldDirty: false });
+      }
+    }, 500); // Debounce 500ms
+
+    return () => clearTimeout(timer);
+  }, [dateFrom, timeFrom, form]);
+
   return (
     <div className="space-y-6">
       {/* Schedule Section */}
       <div className="space-y-4">
         <h3 className="text-lg font-medium">{t('events:wizard.scheduleSection')}</h3>
 
-        {/* Start Date */}
+        {/* Start Date and Time */}
         <FormField
           control={form.control}
           name="date"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>{t('events:fields.date')}</FormLabel>
-              <FormControl>
-                <DatePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t('forms:placeholders.selectDate')}
-                />
-              </FormControl>
-              <FormDescription>
-                La data deve essere futura
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Start Time */}
-        <FormField
-          control={form.control}
-          name="time"
-          render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('events:fields.time')}</FormLabel>
               <FormControl>
-                <Input
-                  type="time"
-                  placeholder={t('forms:placeholders.selectTime')}
-                  {...field}
+                <DateTimePicker
+                  label="Data e ora di inizio"
+                  date={field.value}
+                  time={form.watch('time')}
+                  onDateChange={field.onChange}
+                  onTimeChange={(time) => form.setValue('time', time)}
+                  minDate={new Date()}
+                  disabled={form.formState.isSubmitting}
+                  timeId="start-time"
+                  dateButtonId="start-date-button"
                 />
               </FormControl>
-              <FormDescription>
-                Formato 24 ore (es. 14:30)
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* End Date */}
+        {/* End Date and Time */}
         <FormField
           control={form.control}
           name="end_date"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>
-                {t('events:fields.endDate')} {t('forms:placeholders.optional')}
-              </FormLabel>
+            <FormItem>
               <FormControl>
-                <DatePicker
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t('forms:placeholders.selectDate')}
+                <DateTimePicker
+                  label="Data e ora di fine (opzionale)"
+                  date={field.value}
+                  time={form.watch('end_time') || ''}
+                  onDateChange={field.onChange}
+                  onTimeChange={(time) => form.setValue('end_time', time)}
+                  minDate={dateFrom || new Date()}
+                  disabled={form.formState.isSubmitting}
+                  timeId="end-time"
+                  dateButtonId="end-date-button"
                 />
               </FormControl>
-              <FormDescription>
-                Deve essere uguale o successiva alla data di inizio
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* End Time */}
-        <FormField
-          control={form.control}
-          name="end_time"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Ora fine {t('forms:placeholders.optional')}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="time"
-                  placeholder={t('forms:placeholders.selectTime')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Recurrence Editor for Class Events */}
+        {eventType === 'class' && (
+          <FormField
+            control={form.control}
+            name="recurrence"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ricorrenza</FormLabel>
+                <FormDescription>
+                  Configura la ricorrenza per lezioni settimanali
+                </FormDescription>
+                <FormControl>
+                  <RecurrenceEditor
+                    value={field.value || { rule: null, dtstart: null, until: null }}
+                    onChange={field.onChange}
+                    startsAt={dateFrom?.toISOString() || ''}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
       </div>
 
       {/* Additional Details Section */}
