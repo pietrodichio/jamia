@@ -18,6 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Event Discovery** - Location-based search, filtering, and views
 - [x] **Phase 5: Event Enhancements** - Recurring events, teachers, jam integration, and advanced filters
 - [x] **Phase 6: UI/UX Refactor for Events Management** - Improve user experience and interface for event management features
+- [ ] **Phase 6.1: Event Creation Flow Fixes (INSERTED)** - Fix critical gaps in event creation wizard discovered during Phase 6 execution
 
 ## Phase Details
 
@@ -155,10 +156,36 @@ Plans:
 - Dashboard displays: upcoming events, recommended nearby events, statistics
 - Event detail with hero image, organizer visibility logic, teachers display, calendar export
 
+### Phase 6.1: Event Creation Flow Fixes (INSERTED)
+
+**Goal:** Fix critical gaps in event creation wizard discovered during Phase 6 execution
+**Depends on:** Phase 6
+**Plans:** 6 plans
+
+Plans:
+- [ ] 06.1-01-PLAN.md — Extract reusable components (DescriptionEditor, LocationInput, DateTimePicker)
+- [ ] 06.1-02-PLAN.md — Fix wizard infrastructure (WizardStepIndicator spacing, EventPreviewStep null-safety)
+- [ ] 06.1-03-PLAN.md — Enhance EventTypeStep with rich text and location autocomplete
+- [ ] 06.1-04-PLAN.md — Enhance EventScheduleStep with DateTimePicker and RecurrenceEditor
+- [ ] 06.1-05-PLAN.md — Add image upload step with compression
+- [ ] 06.1-06-PLAN.md — Add teacher selection step for class/workshop/convention types
+
+**Details:**
+Issues addressed:
+- WizardStepIndicator layout and spacing consistency (Plan 02)
+- Rich text editor for event description (Plans 01, 03)
+- Google Maps location picker integration (Plans 01, 03)
+- Multi-select tags component (verified in Plan 03)
+- Recurring event support for classes (Plan 04)
+- Event preview fixes (undefined values, missing date/time display) (Plan 02)
+- Date/time validation improvements with auto-fill logic (Plans 01, 04)
+- Image upload capability with compression (Plan 05)
+- Teacher management in creation flow (Plan 06)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -168,3 +195,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Event Discovery | 7/7 | Complete | 2026-01-21 |
 | 5. Event Enhancements | 10/10 | Complete | 2026-01-21 |
 | 6. UI/UX Refactor for Events Management | 7/7 | Complete | 2026-01-23 |
+| 6.1. Event Creation Flow Fixes (INSERTED) | 0/6 | Planned | - |
