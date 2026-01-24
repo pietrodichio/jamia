@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Event Discovery** - Location-based search, filtering, and views
 - [x] **Phase 5: Event Enhancements** - Recurring events, teachers, jam integration, and advanced filters
 - [x] **Phase 6: UI/UX Refactor for Events Management** - Improve user experience and interface for event management features
-- [ ] **Phase 6.1: Event Creation Flow Fixes (INSERTED)** - Fix critical gaps in event creation wizard discovered during Phase 6 execution
+- [x] **Phase 6.1: Event Creation Flow Fixes (INSERTED)** - Fix critical gaps in event creation wizard discovered during Phase 6 execution
 
 ## Phase Details
 
@@ -163,12 +163,12 @@ Plans:
 **Plans:** 6 plans
 
 Plans:
-- [ ] 06.1-01-PLAN.md — Extract reusable components (DescriptionEditor, LocationInput, DateTimePicker)
-- [ ] 06.1-02-PLAN.md — Fix wizard infrastructure (WizardStepIndicator spacing, EventPreviewStep null-safety)
-- [ ] 06.1-03-PLAN.md — Enhance EventTypeStep with rich text and location autocomplete
-- [ ] 06.1-04-PLAN.md — Enhance EventScheduleStep with DateTimePicker and RecurrenceEditor
-- [ ] 06.1-05-PLAN.md — Add image upload step with compression
-- [ ] 06.1-06-PLAN.md — Add teacher selection step for class/workshop/convention types
+- [x] 06.1-01-PLAN.md — Extract reusable components (DescriptionEditor, LocationInput, DateTimePicker)
+- [x] 06.1-02-PLAN.md — Fix wizard infrastructure (WizardStepIndicator spacing, EventPreviewStep null-safety)
+- [x] 06.1-03-PLAN.md — Enhance EventTypeStep with rich text and location autocomplete
+- [x] 06.1-04-PLAN.md — Enhance EventScheduleStep with DateTimePicker and RecurrenceEditor
+- [x] 06.1-05-PLAN.md — Add image upload step with compression
+- [x] 06.1-06-PLAN.md — Add teacher selection step for class/workshop/convention types
 
 **Details:**
 Issues addressed:
@@ -195,4 +195,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1
 | 4. Event Discovery | 7/7 | Complete | 2026-01-21 |
 | 5. Event Enhancements | 10/10 | Complete | 2026-01-21 |
 | 6. UI/UX Refactor for Events Management | 7/7 | Complete | 2026-01-23 |
-| 6.1. Event Creation Flow Fixes (INSERTED) | 0/6 | Planned | - |
+| 6.1. Event Creation Flow Fixes (INSERTED) | 6/6 | Complete | 2026-01-24 |

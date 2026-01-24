@@ -9,11 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Plan: 5 of 6
-Status: In progress - wizard layout, preview, images, teachers, schedule, and rich inputs complete
-Last activity: 2026-01-24 — Completed 06.1-03-PLAN.md (description and location enhancement)
+Phase: 6.1 (Event Creation Flow Fixes) - COMPLETE
+Plan: 6 of 6 complete (06.1-01, 06.1-02, 06.1-03, 06.1-04, 06.1-05, 06.1-06)
+Status: All critical gaps in event creation wizard fixed and verified (18/18 must-haves passed)
+Last activity: 2026-01-24 — Phase 6.1 verified complete
 
-Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (5/6 plans)
+Progress: [██████████] 100% (7/7 phases complete including urgent insertion)
 
 ## Performance Metrics
 
