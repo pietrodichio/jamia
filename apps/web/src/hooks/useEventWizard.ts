@@ -50,7 +50,7 @@ export type EventFormData = z.infer<typeof eventFormSchema>;
 // Define which fields belong to each step
 const stepFields: Record<number, (keyof EventFormData)[]> = {
   1: ['type', 'title', 'description', 'location', 'tags', 'manageParticipants', 'capacity', 'visibility'],
-  2: ['date', 'time', 'end_date', 'end_time', 'price', 'link', 'externalLink', 'ctaText'],
+  2: ['date', 'time', 'end_date', 'end_time', 'price', 'link', 'externalLink', 'ctaText', 'recurrence'],
   3: ['image_url'], // Image upload step
   4: ['teacherIds'], // Teacher selection step
   5: [], // Preview step - no validation needed
