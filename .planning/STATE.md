@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 6.1 (Event Creation Flow Fixes) - INSERTED, NOT PLANNED
-Plan: 2 of 6
-Status: In progress - wizard layout and preview null-safety complete
-Last activity: 2026-01-24 — Completed 06.1-02-PLAN.md (wizard layout & preview fixes)
+Plan: 3 of 6
+Status: In progress - wizard layout, preview fixes, and image upload complete
+Last activity: 2026-01-24 — Completed 06.1-05-PLAN.md (event image upload)
+Last activity: 2026-01-24 — Completed 06.1-06-PLAN.md (teacher selection in event creation)
 
-Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (2/6 plans)
+Progress: [██████████░░] 100% (6/6 planned phases complete) + 6.1 in progress (4/6 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 37
+- Total plans completed: 39
 - Average duration: 4 min
-- Total execution time: 2.4 hours
+- Total execution time: 2.5 hours
 
 **By Phase:**
 
@@ -33,10 +33,10 @@ Progress: [██████████░░] 100% (6/6 planned phases comple
 | 4. Event Discovery | 7/7 | 15 min | 2 min |
 | 5. Event Enhancements | 10/10 | 65 min | 7 min |
 | 6. UI/UX Refactor | 7/7 | 29 min | 4 min |
-| 6.1. Event Creation Flow Fixes | 2/6 | 5 min | 2.5 min |
+| 6.1. Event Creation Flow Fixes | 4/6 | 12 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 06-05 (5 min), 06-06 (4 min), 06-07 (6 min), 06.1-01 (2 min), 06.1-02 (3 min)
+- Last 5 plans: 06-07 (6 min), 06.1-01 (2 min), 06.1-02 (3 min), 06.1-05 (2 min), 06.1-06 (5 min)
 - Trend: Phase 6.1 fixing event creation wizard gaps
 
 *Updated after each plan completion*
@@ -186,6 +186,10 @@ Recent decisions affecting current work:
 - DOMPurify with explicit ALLOWED_TAGS whitelist for rich text sanitization (security control over default sanitization)
 - Italian placeholder messages for missing form data instead of empty/null values (better UX in preview)
 - formatDateTime helper returns string fallbacks instead of null for consistent null-safe rendering
+- Client-side image compression (max 1MB, 1920px) before upload reduces storage costs and bandwidth usage
+- File upload with validation, compression, preview pattern for better UX and security
+- Image upload optional in event creation wizard (can be skipped or added later)
+
 
 ### Roadmap Evolution
 
@@ -199,10 +203,10 @@ None yet.
 ### Blockers/Concerns
 
 None yet.
+Last session: 2026-01-24T17:03:45Z
+Stopped at: Completed 06.1-05-PLAN.md (event image upload)
 
-## Session Continuity
-
-Last session: 2026-01-24T17:02:59Z
+Next: Continue with remaining plans in Phase 6.1 (tags, recurring events)
 Stopped at: Completed 06.1-02-PLAN.md (wizard layout & preview fixes)
 Resume file: None
 Next: Continue Phase 6.1 - Plan 03 (rich text editor integration)
