@@ -14,6 +14,7 @@ import { UpcomingEventsSection } from "@/components/dashboard/UpcomingEventsSect
 import { RecommendationsSection } from "@/components/dashboard/RecommendationsSection";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { DashboardActions } from "@/components/dashboard/DashboardActions";
+import { DashboardTabs } from "@/components/dashboard/DashboardTabs";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const Dashboard = () => {
@@ -288,18 +289,33 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Information-first sections */}
-        <div className="space-y-6">
-          {/* Statistics section - top, full width */}
-          <StatisticsSection userId={currentUser?.id} />
+        {/* Dashboard Tabs - URL synchronized */}
+        <DashboardTabs>
+          {{
+            participateContent: (
+              <div className="space-y-6">
+                {/* Statistics section - top, full width */}
+                <StatisticsSection userId={currentUser?.id} />
 
-          {/* Upcoming Events section */}
-          <UpcomingEventsSection userId={currentUser?.id} />
+                {/* Upcoming Events section */}
+                <UpcomingEventsSection userId={currentUser?.id} />
 
-          {/* Recommendations section */}
-          <RecommendationsSection userId={currentUser?.id} />
-        </div>
+                {/* Recommendations section */}
+                <RecommendationsSection userId={currentUser?.id} />
+              </div>
+            ),
+            manageContent: (
+              <div className="space-y-6">
+                {/* For now, placeholder - Plan 02 will fill this */}
+                <p className="text-muted-foreground text-center py-8">
+                  Gestione eventi in arrivo...
+                </p>
+              </div>
+            ),
+          }}
+        </DashboardTabs>
 
+        {/* TODO: Plan 02 will move this content into manageContent tab */}
         {/* Legacy Jams Management - kept for backward compatibility */}
         <div className="pt-6 border-t border-border">
           <h2 className="text-2xl font-bold mb-4">Gestione Jam</h2>
