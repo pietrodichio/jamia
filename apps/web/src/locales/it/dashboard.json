@@ -1,4 +1,8 @@
 {
+  "tabs": {
+    "participate": "Partecipazioni",
+    "manage": "Gestione Eventi"
+  },
   "sections": {
     "upcomingEvents": "Eventi imminenti",
     "recommendations": "Consigliati per te",
