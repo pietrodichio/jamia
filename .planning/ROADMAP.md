@@ -187,10 +187,12 @@ Issues addressed:
 
 **Goal:** Reorganize dashboard into two distinct sections for clearer user workflows
 **Depends on:** Phase 6.1
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 6.2 to break down)
+- [ ] 06.2-01-PLAN.md — Dashboard tabs infrastructure with URL sync
+- [ ] 06.2-02-PLAN.md — Event Management tab with jam/event management
+- [ ] 06.2-03-PLAN.md — Participations tab with discovery and participations
 
 **Details:**
 Dashboard refactor with two main sections:
@@ -209,7 +211,7 @@ Dashboard refactor with two main sections:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -220,3 +222,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1
 | 5. Event Enhancements | 10/10 | Complete | 2026-01-21 |
 | 6. UI/UX Refactor for Events Management | 7/7 | Complete | 2026-01-23 |
 | 6.1. Event Creation Flow Fixes (INSERTED) | 6/6 | Complete | 2026-01-24 |
+| 6.2. Dashboard Refactor (INSERTED) | 0/3 | In Progress | - |
