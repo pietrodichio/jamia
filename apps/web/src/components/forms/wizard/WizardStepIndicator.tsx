@@ -1,5 +1,7 @@
-import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { useMemo } from 'react';
+import { defineStepper } from '@stepperize/react';
+import { cn } from '@/lib/utils';
 
 interface WizardStepIndicatorProps {
   currentStep: number;
@@ -14,85 +16,69 @@ export function WizardStepIndicator({
   stepLabels,
   onStepClick,
 }: WizardStepIndicatorProps) {
-  // Calculate width percentage for the active line
-  // (currentStep - 1) because steps are 1-based, divided by (totalSteps - 1) intervals
-  const progressWidth = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  const stepper = useMemo(() => {
+    const stepConfigs = Array.from({ length: totalSteps }, (_, index) => ({
+      id: `step-${index + 1}`,
+      label: stepLabels[index] ?? `Step ${index + 1}`,
+    }));
+    return defineStepper(...stepConfigs);
+  }, [stepLabels, totalSteps]);
+
+  const stepCount = stepper.steps.length;
+  const clampedStep = Math.min(Math.max(currentStep, 1), stepCount || 1);
+
+
 
   return (
-    <div className="w-full py-8 px-2 md:px-0">
-      <div className="relative flex items-center justify-between">
-        {/* Background Line */}
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[2px] bg-muted -z-10" />
+    <nav aria-label="Wizard progress" className="w-full py-6 px-2 md:px-0">
+      <div className="relative rounded-2xl border bg-card/70 px-4 py-6 shadow-sm">
 
-        {/* Active Progress Line */}
-        <div
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-[2px] bg-primary transition-all duration-500 ease-in-out -z-10"
-          style={{ width: `${progressWidth}%` }}
-        />
 
-        {Array.from({ length: totalSteps }, (_, index) => {
-          const stepNumber = index + 1;
-          const isCompleted = stepNumber < currentStep;
-          const isActive = stepNumber === currentStep;
-          const isUpcoming = stepNumber > currentStep;
+        <ol className="relative grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-4 pt-1">
+          {stepper.steps.map((step) => {
+            const stepNumber = stepper.utils.getIndex(step.id) + 1;
+            const isCompleted = stepNumber < clampedStep;
+            const isActive = stepNumber === clampedStep;
+            const isUpcoming = stepNumber > clampedStep;
 
-          return (
-            <div
-              key={stepNumber}
-              className="relative flex flex-col items-center group"
-            >
-              {/* Step Circle */}
-              <button
-                type="button"
-                onClick={() => isCompleted && onStepClick?.(stepNumber)}
-                disabled={!isCompleted}
-                className={cn(
-                  'relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 bg-background transition-all duration-300 ease-in-out',
-                  isCompleted &&
-                    'border-primary bg-primary text-primary-foreground hover:scale-110 cursor-pointer',
-                  isActive &&
-                    'border-primary ring-4 ring-primary/20 scale-110',
-                  isUpcoming && 'border-muted-foreground/30 text-muted-foreground'
-                )}
-              >
-                {isCompleted ? (
-                  <Check className="w-5 h-5 animate-in zoom-in spin-in-45 duration-300" />
-                ) : (
-                  <span
-                    className={cn(
-                      'text-sm font-semibold transition-colors duration-300',
-                      isActive ? 'text-primary' : 'text-muted-foreground'
-                    )}
-                  >
-                    {stepNumber}
-                  </span>
-                )}
-              </button>
-
-              {/* Step Label */}
-              <div
-                className={cn(
-                  'absolute top-14 left-1/2 -translate-x-1/2 w-max max-w-[120px] text-center transition-all duration-300',
-                  isActive
-                    ? 'opacity-100 translate-y-0'
-                    : 'opacity-70 group-hover:opacity-100'
-                )}
-              >
-                <span
+            return (
+              <li key={step.id} className="flex flex-col items-center text-center">
+                <button
+                  type="button"
+                  onClick={() => isCompleted && onStepClick?.(stepNumber)}
+                  disabled={!isCompleted}
+                  aria-current={isActive ? 'step' : undefined}
                   className={cn(
-                    'text-xs md:text-sm font-medium block truncate px-2 py-1 rounded-md transition-colors',
-                    isActive
-                      ? 'text-primary font-semibold bg-primary/5'
-                      : 'text-muted-foreground'
+                    'relative z-10 flex h-10 w-10 items-center justify-center rounded-full border bg-background transition-all duration-300',
+                    isCompleted && 'border-primary bg-primary text-primary-foreground shadow-sm',
+                    isActive && 'border-primary ring-4 ring-primary/20 scale-105 shadow-md',
+                    isUpcoming && 'border-muted-foreground/30 text-muted-foreground'
                   )}
                 >
-                  {stepLabels[index] ?? `Step ${stepNumber}`}
+                  {isCompleted ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <span className={cn('text-sm font-semibold', isActive ? 'text-primary' : 'text-muted-foreground')}>
+                      {stepNumber}
+                    </span>
+                  )}
+                </button>
+
+                <span
+                  className={cn(
+                    'mt-3 text-xs md:text-sm font-medium px-2 py-1 rounded-full transition-colors',
+                    isActive && 'text-primary bg-primary/10',
+                    isCompleted && 'text-primary',
+                    isUpcoming && 'text-muted-foreground'
+                  )}
+                >
+                  {step.label ?? `Step ${stepNumber}`}
                 </span>
-              </div>
-            </div>
-          );
-        })}
+              </li>
+            );
+          })}
+        </ol>
       </div>
-    </div>
+    </nav>
   );
 }

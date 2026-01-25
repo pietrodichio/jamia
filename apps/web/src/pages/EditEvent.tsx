@@ -1,9 +1,11 @@
+import type { FormEvent } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { eventsApi } from '@/api/events.api';
 import { teachersApi } from '@/api/teachers.api';
+import { eventOrganizersApi } from '@/api/event-organizers.api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -40,9 +42,19 @@ export default function EditEvent() {
     enabled: !!eventId,
   });
 
+  const { data: coOrganizers } = useQuery({
+    queryKey: ['events', eventId, 'organizers'],
+    queryFn: () => eventOrganizersApi.getCoOrganizers(eventId!),
+    enabled: !!eventId,
+  });
+
   const teacherIds = useMemo(
     () => teachers?.map((teacher) => teacher.user_id) ?? [],
     [teachers]
+  );
+  const coOrganizerIds = useMemo(
+    () => coOrganizers?.map((organizer) => organizer.user_id) ?? [],
+    [coOrganizers]
   );
   const hasInitializedForm = useRef(false);
 
@@ -72,8 +84,10 @@ export default function EditEvent() {
       type: event.type,
       title: event.title,
       description: event.description || '',
+      organizerContact: event.organizer_contact || '',
       location: {
         description: locationDescription,
+        city: event.location_city || undefined,
         latitude: event.location_lat,
         longitude: event.location_lng,
         googleMapsUrl: event.gmaps_link || locationGoogleMapsUrl || '',
@@ -88,6 +102,7 @@ export default function EditEvent() {
       ctaText: event.cta_text || 'Registrati',
       image_url: event.image_url || '',
       teacherIds,
+      coOrganizerIds,
       recurrence: {
         rule: event.recurrence_rule || null,
         dtstart: event.recurrence_dtstart || null,
@@ -95,12 +110,17 @@ export default function EditEvent() {
       },
     });
     hasInitializedForm.current = true;
-  }, [event, form, teacherIds]);
+  }, [event, form, teacherIds, coOrganizerIds]);
 
   useEffect(() => {
     if (!hasInitializedForm.current || teachers === undefined) return;
     form.setValue('teacherIds', teacherIds, { shouldDirty: false });
   }, [form, teacherIds, teachers]);
+
+  useEffect(() => {
+    if (!hasInitializedForm.current || coOrganizers === undefined) return;
+    form.setValue('coOrganizerIds', coOrganizerIds, { shouldDirty: false });
+  }, [form, coOrganizerIds, coOrganizers]);
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateEventDto) => eventsApi.updateEvent(eventId!, data),
@@ -133,6 +153,41 @@ export default function EditEvent() {
         });
       }
 
+      const selectedCoOrganizerIds = form.getValues('coOrganizerIds') || [];
+      const currentCoOrganizers = coOrganizers || [];
+      const currentCoOrganizerIds = currentCoOrganizers.map((organizer) => organizer.user_id);
+
+      const coOrganizersToAdd = selectedCoOrganizerIds.filter(
+        (id) => !currentCoOrganizerIds.includes(id)
+      );
+      const coOrganizersToRemove = currentCoOrganizers.filter(
+        (organizer) => !selectedCoOrganizerIds.includes(organizer.user_id)
+      );
+
+      try {
+        if (coOrganizersToAdd.length > 0) {
+          await Promise.all(
+            coOrganizersToAdd.map((userId) =>
+              eventOrganizersApi.addCoOrganizer(eventId!, { userId })
+            )
+          );
+        }
+        if (coOrganizersToRemove.length > 0) {
+          await Promise.all(
+            coOrganizersToRemove.map((organizer) =>
+              eventOrganizersApi.removeCoOrganizer(eventId!, organizer.id)
+            )
+          );
+        }
+      } catch (error) {
+        console.error('Co-organizer update failed:', error);
+        toast({
+          title: 'Errore aggiornando i co-organizzatori',
+          description: 'Le modifiche ai co-organizzatori potrebbero non essere state salvate',
+          variant: 'destructive',
+        });
+      }
+
       toast({ title: t('events:messages.eventUpdated') });
       navigate(`/events/${eventId}`);
     },
@@ -158,6 +213,7 @@ export default function EditEvent() {
     if (data.location?.description) {
       const locationObj = {
         description: data.location.description,
+        city: data.location.city,
         latitude: data.location.latitude,
         longitude: data.location.longitude,
         googleMapsUrl: data.location.googleMapsUrl,
@@ -172,6 +228,7 @@ export default function EditEvent() {
       starts_at: startsAt,
       ends_at: endsAt,
       description: data.description || undefined,
+      organizer_contact: data.organizerContact || '',
       tags: data.tags && data.tags.length > 0 ? data.tags : [],
       price: data.price !== undefined ? data.price.toString() : undefined,
       external_link: data.externalLink || '',
@@ -184,6 +241,16 @@ export default function EditEvent() {
 
     updateMutation.mutate(eventData);
   });
+
+  const totalSteps = showTeachersStep ? 5 : 4;
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (currentStep !== totalSteps) {
+      event.preventDefault();
+      void nextStep();
+      return;
+    }
+    handleSubmit(event);
+  };
 
   if (isLoading) {
     return (
@@ -245,7 +312,7 @@ export default function EditEvent() {
           />
 
           <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleFormSubmit} className="space-y-8">
               <div className="min-h-[400px]">
                 {currentStep === 1 && <EventTypeStep form={form} />}
                 {currentStep === 2 && <EventScheduleStep form={form} />}
@@ -257,10 +324,9 @@ export default function EditEvent() {
 
               <WizardNavigation
                 currentStep={currentStep}
-                totalSteps={showTeachersStep ? 5 : 4}
+                totalSteps={totalSteps}
                 onBack={prevStep}
                 onNext={nextStep}
-                onSubmit={handleSubmit}
                 isSubmitting={updateMutation.isPending}
                 canGoNext={true}
               />

@@ -78,6 +78,7 @@ export function EventPreviewStep({ form }: EventPreviewStepProps) {
               {formValues.description ? (
                 <div
                   className="text-muted-foreground prose prose-sm max-w-none"
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
                   dangerouslySetInnerHTML={{
                     __html: DOMPurify.sanitize(formValues.description, {
                       ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'img'],
@@ -162,6 +163,17 @@ export function EventPreviewStep({ form }: EventPreviewStepProps) {
                 >
                   {formValues.externalLink}
                 </a>
+              ) : (
+                <p className="text-muted-foreground italic">Non specificato</p>
+              )}
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Contatto organizzatore:
+              </p>
+              {formValues.organizerContact ? (
+                <p className="text-base">{formValues.organizerContact}</p>
               ) : (
                 <p className="text-muted-foreground italic">Non specificato</p>
               )}

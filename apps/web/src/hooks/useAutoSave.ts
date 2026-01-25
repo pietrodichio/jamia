@@ -15,6 +15,7 @@ interface AutoSaveFormData {
   title?: string;
   type?: EventType;
   description?: string;
+  organizerContact?: string;
   price?: number | string | null;
   externalLink?: string;
   ctaText?: string;
@@ -49,6 +50,9 @@ function mapFormToDto(formData: AutoSaveFormData): Partial<CreateEventDto> {
     title: formData.title,
     type: formData.type || 'jam',
     description: formData.description || undefined,
+    organizer_contact: formData.organizerContact === ''
+      ? ''
+      : formData.organizerContact || undefined,
     price: formData.price !== undefined && formData.price !== null ? String(formData.price) : undefined,
     external_link: formData.externalLink || undefined,
     cta_text: formData.ctaText || undefined,

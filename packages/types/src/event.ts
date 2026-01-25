@@ -15,6 +15,7 @@ export interface Event {
   // Required fields
   title: string;
   location_text: string;
+  location_city?: string;
   starts_at: string;
   ends_at: string;
 
@@ -50,6 +51,9 @@ export interface Event {
   // Timestamps
   created_at: string;
   updated_at: string;
+  
+  // Relations
+  teachers?: EventTeacher[];
 }
 
 // Event with organizer details (for list views)
@@ -84,6 +88,7 @@ export interface EventOrganizer {
 // Location DTO to match backend structure
 export interface LocationDto {
   description: string;
+  city?: string;
   latitude?: number;
   longitude?: number;
   googleMapsUrl?: string;
@@ -94,6 +99,7 @@ export interface CreateEventDto {
   type: EventType;
   title: string;
   location_text: string | LocationDto;
+  location_city?: string;
   starts_at: string;
   ends_at: string;
   description?: string;
@@ -114,6 +120,7 @@ export interface CreateEventDto {
 
 export interface UpdateEventDto extends Partial<CreateEventDto> {
   status?: EventStatus;
+  location_city?: string;
 }
 
 export interface AddCoOrganizerDto {

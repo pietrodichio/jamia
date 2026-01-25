@@ -28,7 +28,6 @@ export class EventsService {
    */
   private extractLocationFields(dto: any): {
     location_text?: string;
-    location_city?: string;
     location_lat?: number;
     location_lng?: number;
     gmaps_link?: string;
@@ -39,7 +38,6 @@ export class EventsService {
     if (dto.location_text && typeof dto.location_text === 'object') {
       const loc = dto.location_text as LocationDto;
       result.location_text = loc.description;
-      if (loc.city) result.location_city = loc.city;
       if (loc.latitude !== undefined) result.location_lat = loc.latitude;
       if (loc.longitude !== undefined) result.location_lng = loc.longitude;
       if (loc.googleMapsUrl) result.gmaps_link = loc.googleMapsUrl;
@@ -48,7 +46,6 @@ export class EventsService {
     }
 
     // Also check for direct location fields (higher priority)
-    if (dto.location_city) result.location_city = dto.location_city;
     if (dto.location_lat !== undefined) result.location_lat = dto.location_lat;
     if (dto.location_lng !== undefined) result.location_lng = dto.location_lng;
     if (dto.gmaps_link) result.gmaps_link = dto.gmaps_link;
@@ -250,92 +247,23 @@ export class EventsService {
     // Remove the original location_text if it was an object (we've extracted it)
     const { location_text, ...restDto } = dto;
 
-    let data;
-    let error;
-
-    if (dto.id) {
-       // Try to update first if ID is provided
-       // We know if it exists from the check above, but purely relying on ID presence:
-       
-       // If we found 'existing' above, we update. 
-       // If we didn't (and it was allowed), we technically could be creating with specific ID, 
-       // but typically drafts shouldn't be created with specific IDs from client unless dealing with offline sync/UUIDs.
-       // Assuming if ID is present and passed checks, we treat as Update or Upsert-with-defaults?
-       
-       // Simplest fix: Use upsert but ensure we merge with defaults IF it's a new record? No, upsert doesn't work that way.
-       
-       // If it essentially exists (we checked 'existing' variable in previous block if dto.id was present):
-       // Wait, I need access to 'existing' variable from the block above.
-       // The previous block scope limits 'existing'.
-       // Let's assume if dto.id is present, we try to UPDATE.
-       // If it fails (doesn't exist), we catch and insert? 
-       // Or better: The user sends ID for existing drafts.
-       
-       // Let's modify the flow slightly to verify existence properly.
-       
-       const { data: existingCheck } = await this.supabase
-         .from('events')
-         .select('id')
-         .eq('id', dto.id)
-         .maybeSingle();
-         
-       if (existingCheck) {
-         // Update existing
-         const updateResult = await this.supabase
-           .from('events')
-           .update({
-             ...restDto,
-             ...locationFields,
-             updated_at: new Date().toISOString(),
-           })
-           .eq('id', dto.id)
-           .select('*')
-           .single();
-           
-           data = updateResult.data;
-           error = updateResult.error;
-       } else {
-         // Create new with specific ID (or fail? let's allow create)
-         // Need defaults
-         const insertResult = await this.supabase
-           .from('events')
-           .insert({
-             id: dto.id,
-             title: restDto.title || 'Untitled Draft',
-             location_text: locationFields.location_text || '',
-             starts_at: restDto.starts_at || new Date().toISOString(),
-             ends_at: restDto.ends_at || new Date(Date.now() + 3600000).toISOString(),
-             status: 'draft',
-             owner_id: userId,
-             ...restDto,
-             ...locationFields,
-           })
-           .select('*')
-           .single();
-           
-           data = insertResult.data;
-           error = insertResult.error;
-       }
-    } else {
-      // Create new (no ID provided)
-      const insertResult = await this.supabase
-        .from('events')
-        .insert({
-           title: restDto.title || 'Untitled Draft',
-           location_text: locationFields.location_text || '',
-           starts_at: restDto.starts_at || new Date().toISOString(),
-           ends_at: restDto.ends_at || new Date(Date.now() + 3600000).toISOString(),
-           status: 'draft',
-           owner_id: userId,
-           ...restDto,
-           ...locationFields,
-        })
-        .select('*')
-        .single();
-        
-        data = insertResult.data;
-        error = insertResult.error;
-    }
+    const { data, error } = await this.supabase
+      .from('events')
+      .upsert(
+        {
+          ...restDto,
+          ...locationFields,
+          owner_id: userId,
+          status: 'draft',
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        },
+      )
+      .select('*')
+      .single();
 
     if (error) {
       throw new Error(`Failed to save draft: ${error.message}`);
@@ -769,23 +697,13 @@ export class EventsService {
       query = query.contains('food_options', dto.food_options);
     }
 
-    const { data, error } = await query
-      .select('*, event_teachers(user:profiles(id, first_name, last_name, photo_url))');
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Failed to fetch public events: ${error.message}`);
     }
 
-    // Transform result to match Event interface structure for teachers
-    const eventsWithTeachers = data?.map((event: any) => ({
-      ...event,
-      teachers: event.event_teachers?.map((et: any) => ({
-        ...et,
-        profiles: et.user
-      })) || []
-    })) || [];
-
-    return eventsWithTeachers;
+    return data || [];
   }
 
   /**

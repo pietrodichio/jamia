@@ -1,15 +1,13 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesApi, type Profile } from "@/api/profiles.api";
 import { jamsApi, type Jam } from "@/api/jams.api";
 import { managersApi, type JamManager } from "@/api/managers.api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Calendar, Users, LogOut, Loader2, User, History, Search, CalendarDays } from "lucide-react";
+import { Plus, Calendar, Users, LogOut, Loader2, User, History, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import JamCard from "@/components/JamCard";
 import { UpcomingEventsSection } from "@/components/dashboard/UpcomingEventsSection";
@@ -22,7 +20,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { t } = useTranslation('dashboard');
 
   // Auth state listener for sign out
   useEffect(() => {
@@ -42,12 +39,14 @@ const Dashboard = () => {
   const currentUserQuery = useQuery<SupabaseUser | null>({
     queryKey: ["current-user"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        // Clear invalid session and redirect to auth
+        await supabase.auth.signOut();
         navigate("/auth");
         return null;
       }
-      return session.user;
+      return user;
     },
     staleTime: 5 * 60 * 1000,
     refetchOnMount: true,
@@ -243,11 +242,17 @@ const Dashboard = () => {
     .filter(jam => isJamPast(jam))
     .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
 
-  const activeOwnedJams = myJams
+  const draftOwnedJams = myJams
+    .filter(jam => jam.status === "draft")
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+
+  const nonDraftOwnedJams = myJams.filter(jam => jam.status !== "draft");
+
+  const activeOwnedJams = nonDraftOwnedJams
     .filter(jam => !isJamPast(jam))
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
 
-  const pastOwnedJams = myJams
+  const pastOwnedJams = nonDraftOwnedJams
     .filter(jam => isJamPast(jam))
     .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
 
@@ -257,8 +262,8 @@ const Dashboard = () => {
         {/* Header with compact actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Bacheca</h1>
-            <p className="text-muted-foreground">Ciao, {profile.first_name}!</p>
+            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground">Ciao, {profile.first_name}! 👋</p>
           </div>
           <div className="flex gap-2 justify-between w-full md:justify-end md:w-auto flex-wrap">
             <DashboardActions />
@@ -337,160 +342,199 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* Jams Tabs */}
-          <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 rounded-xl">
-            <TabsTrigger value="upcoming" className="rounded-xl">Prossime Jam</TabsTrigger>
-            <TabsTrigger value="my-jams" className="rounded-xl">Le mie Jam</TabsTrigger>
-            <TabsTrigger value="history" className="rounded-xl">Storico</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="upcoming" className="mt-6">
-            <Card className="border-primary/10 rounded-2xl">
-              <CardHeader>
-                <CardTitle>Prossime Jam</CardTitle>
-                <CardDescription>Jam a cui hai deciso di partecipare</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {participatingJamsQuery.isLoading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : activeParticipatedJams.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Non hai ancora prenotato nessuna jam</p>
-                    <p className="text-sm text-muted-foreground mt-2">Inizia a cercare jam nella tua zona!</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {activeParticipatedJams.map((jam) => (
-                      <JamCard 
-                        key={jam.id} 
-                        jam={jam} 
-                        isOwnerOrManager={isOwnerOrManager(jam)}
-                        isOwner={isOwner(jam)}
-                        onClone={() => handleClone(jam)}
-                        onManageManagers={handleManageManagers}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <div className="space-y-10">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold">Gestisci le tue Jam</h3>
+                <p className="text-sm text-muted-foreground">Bozze, jam attive e storico organizzazione</p>
+              </div>
 
-          <TabsContent value="my-jams" className="mt-6">
-            <Card className="border-primary/10 rounded-2xl">
-              <CardHeader>
-                <CardTitle>Le mie Jam</CardTitle>
-                <CardDescription>Jam che hai creato e stai organizzando</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {myJamsQuery.isLoading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : activeOwnedJams.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Non hai ancora creato nessuna jam</p>
-                    <Button
-                      onClick={() => navigate("/create-jam")}
-                      className="mt-4 rounded-xl"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Crea la tua prima Jam
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {activeOwnedJams.map((jam) => (
-                      <JamCard 
-                        key={jam.id} 
-                        jam={jam} 
-                        showStatus 
-                        isOwnerOrManager={isOwnerOrManager(jam)}
-                        isOwner={isOwner(jam)}
-                        onClone={() => handleClone(jam)}
-                        onManageManagers={handleManageManagers}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+              <Card className="border-primary/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle>Bozze</CardTitle>
+                  <CardDescription>Jam salvate ma non ancora pubblicate</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {myJamsQuery.isLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : draftOwnedJams.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <CalendarDays className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Nessuna bozza salvata</p>
+                      <Button
+                        onClick={() => navigate("/create-jam")}
+                        className="mt-4 rounded-xl"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Crea una nuova Jam
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {draftOwnedJams.map((jam) => (
+                        <JamCard
+                          key={jam.id}
+                          jam={jam}
+                          showStatus
+                          isOwnerOrManager={isOwnerOrManager(jam)}
+                          isOwner={isOwner(jam)}
+                          onClone={() => handleClone(jam)}
+                          onManageManagers={handleManageManagers}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-          <TabsContent value="history" className="mt-6 space-y-6">
-            {/* Past Managed Jams */}
-            <Card className="border-primary/10 rounded-2xl">
-              <CardHeader>
-                <CardTitle>Jam Gestite</CardTitle>
-                <CardDescription>Jam che hai organizzato nel passato</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {myJamsQuery.isLoading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : pastOwnedJams.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <History className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Nessuna jam gestita nel passato</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {pastOwnedJams.map((jam) => (
-                      <JamCard 
-                        key={jam.id} 
-                        jam={jam} 
-                        showStatus 
-                        isOwnerOrManager={isOwnerOrManager(jam)}
-                        isOwner={isOwner(jam)}
-                        onClone={() => handleClone(jam)}
-                        onManageManagers={handleManageManagers}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <Card className="border-primary/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle>Jam attive</CardTitle>
+                  <CardDescription>Jam pubblicate che stai organizzando</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {myJamsQuery.isLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : activeOwnedJams.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Nessuna jam attiva in questo momento</p>
+                      <Button
+                        onClick={() => navigate("/create-jam")}
+                        className="mt-4 rounded-xl"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Crea una Jam
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {activeOwnedJams.map((jam) => (
+                        <JamCard
+                          key={jam.id}
+                          jam={jam}
+                          showStatus
+                          isOwnerOrManager={isOwnerOrManager(jam)}
+                          isOwner={isOwner(jam)}
+                          onClone={() => handleClone(jam)}
+                          onManageManagers={handleManageManagers}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-            {/* Past Participations */}
-            <Card className="border-primary/10 rounded-2xl">
-              <CardHeader>
-                <CardTitle>Partecipazioni Passate</CardTitle>
-                <CardDescription>Jam a cui hai partecipato nel passato</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {participatingJamsQuery.isLoading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : pastParticipatedJams.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <History className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Nessuna partecipazione passata</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {pastParticipatedJams.map((jam) => (
-                      <JamCard 
-                        key={jam.id} 
-                        jam={jam} 
-                        isOwnerOrManager={isOwnerOrManager(jam)}
-                        isOwner={isOwner(jam)}
-                        onClone={() => handleClone(jam)}
-                        onManageManagers={handleManageManagers}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          </Tabs>
+              <Card className="border-primary/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle>Storico gestione</CardTitle>
+                  <CardDescription>Jam che hai organizzato nel passato</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {myJamsQuery.isLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : pastOwnedJams.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <History className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Nessuna jam gestita nel passato</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {pastOwnedJams.map((jam) => (
+                        <JamCard
+                          key={jam.id}
+                          jam={jam}
+                          showStatus
+                          isOwnerOrManager={isOwnerOrManager(jam)}
+                          isOwner={isOwner(jam)}
+                          onClone={() => handleClone(jam)}
+                          onManageManagers={handleManageManagers}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-semibold">Le tue partecipazioni</h3>
+                <p className="text-sm text-muted-foreground">Jam a cui partecipi come dancer</p>
+              </div>
+
+              <Card className="border-primary/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle>Prossime Jam</CardTitle>
+                  <CardDescription>Jam a cui hai deciso di partecipare</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {participatingJamsQuery.isLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : activeParticipatedJams.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Non hai ancora prenotato nessuna jam</p>
+                      <p className="text-sm text-muted-foreground mt-2">Inizia a cercare jam nella tua zona!</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {activeParticipatedJams.map((jam) => (
+                        <JamCard
+                          key={jam.id}
+                          jam={jam}
+                          isOwnerOrManager={isOwnerOrManager(jam)}
+                          isOwner={isOwner(jam)}
+                          onClone={() => handleClone(jam)}
+                          onManageManagers={handleManageManagers}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/10 rounded-2xl">
+                <CardHeader>
+                  <CardTitle>Storico partecipazioni</CardTitle>
+                  <CardDescription>Jam a cui hai partecipato nel passato</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {participatingJamsQuery.isLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : pastParticipatedJams.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <History className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Nessuna partecipazione passata</p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {pastParticipatedJams.map((jam) => (
+                        <JamCard
+                          key={jam.id}
+                          jam={jam}
+                          isOwnerOrManager={isOwnerOrManager(jam)}
+                          isOwner={isOwner(jam)}
+                          onClone={() => handleClone(jam)}
+                          onManageManagers={handleManageManagers}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -6,7 +6,6 @@ interface WizardNavigationProps {
   totalSteps: number;
   onBack: () => void;
   onNext: () => void;
-  onSubmit: () => void;
   isSubmitting: boolean;
   canGoNext: boolean;
 }
@@ -16,7 +15,6 @@ export function WizardNavigation({
   totalSteps,
   onBack,
   onNext,
-  onSubmit,
   isSubmitting,
   canGoNext,
 }: WizardNavigationProps) {
@@ -39,7 +37,7 @@ export function WizardNavigation({
 
       {/* Next or Submit button */}
       {isLastStep ? (
-        <Button type="submit" onClick={onSubmit} disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting ? t('common.loading') : 'Pubblica'}
         </Button>
       ) : (

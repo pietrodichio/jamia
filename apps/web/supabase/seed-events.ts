@@ -42,42 +42,50 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 // Italian cities with real coordinates
 const locations = {
   milan: {
-    text: 'Centro Sportivo XXV Aprile, Via Cimabue 24, Milano',
+    text: 'Centro Sportivo XXV Aprile',
+    city: 'Milano',
     lat: 45.4642,
     lng: 9.1900,
   },
   rome: {
-    text: 'Parco della Caffarella, Via della Caffarella, Roma',
+    text: 'Parco della Caffarella',
+    city: 'Roma',
     lat: 41.8719,
     lng: 12.5210,
   },
   florence: {
-    text: 'Parco delle Cascine, Piazzale delle Cascine, Firenze',
+    text: 'Parco delle Cascine',
+    city: 'Firenze',
     lat: 43.7696,
     lng: 11.2355,
   },
   turin: {
-    text: 'Parco del Valentino, Corso Massimo d\'Azeglio, Torino',
+    text: 'Parco del Valentino',
+    city: 'Torino',
     lat: 45.0553,
     lng: 7.6869,
   },
   bologna: {
-    text: 'Giardini Margherita, Via Castiglione, Bologna',
+    text: 'Giardini Margherita',
+    city: 'Bologna',
     lat: 44.4831,
     lng: 11.3547,
   },
   naples: {
-    text: 'Villa Comunale, Via Caracciolo, Napoli',
+    text: 'Villa Comunale',
+    city: 'Napoli',
     lat: 40.8318,
     lng: 14.2472,
   },
   venice: {
-    text: 'Parco San Giuliano, Via San Giuliano, Mestre',
+    text: 'Parco San Giuliano',
+    city: 'Mestre',
     lat: 45.4654,
     lng: 12.2630,
   },
   genoa: {
-    text: 'Parco di Nervi, Via Capolungo, Genova',
+    text: 'Parco di Nervi',
+    city: 'Genova',
     lat: 44.3849,
     lng: 9.0444,
   },
@@ -326,6 +334,7 @@ async function seedEvents() {
       title: event.title,
       description: event.description,
       location_text: event.location.text,
+      location_city: event.location.city,
       location_lat: event.location.lat,
       location_lng: event.location.lng,
       starts_at: event.starts_at.toISOString(),
@@ -364,7 +373,7 @@ async function seedEvents() {
 
   console.log('\n📍 Events by city:');
   const byCity = testEvents.reduce((acc, e) => {
-    const city = e.location.text.split(',').pop()?.trim() || 'Unknown';
+    const city = e.location.city || 'Unknown';
     acc[city] = (acc[city] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);

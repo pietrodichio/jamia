@@ -1,14 +1,32 @@
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 /**
  * Marketing hero section for home page
  * Colorful design with gradient text and sparkles badge
- * CTAs: "Trova eventi" → /discover, "Accedi" → /auth
+ * CTAs: "Trova eventi" → /discover, "Accedi" → /auth (or "Dashboard" when logged in)
  */
 export function HeroSection() {
   const navigate = useNavigate();
+
+  // Check if user is logged in
+  const currentUserQuery = useQuery<SupabaseUser | null>({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.user ?? null;
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  const currentUser = currentUserQuery.data ?? null;
+  const isLoggedIn = Boolean(currentUser);
 
   return (
     <div className="py-16 md:py-24">
@@ -42,13 +60,24 @@ export function HeroSection() {
           >
             Trova eventi
           </Button>
-          <Button
-            variant="outline"
-            className="rounded-xl text-lg h-14 px-8"
-            onClick={() => navigate('/auth')}
-          >
-            Accedi
-          </Button>
+          {currentUserQuery.isLoading ? (
+            <Button
+              variant="outline"
+              className="rounded-xl text-lg h-14 px-8"
+              disabled
+            >
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Caricamento...
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              className="rounded-xl text-lg h-14 px-8"
+              onClick={() => navigate(isLoggedIn ? '/dashboard' : '/auth')}
+            >
+              {isLoggedIn ? 'Dashboard' : 'Accedi'}
+            </Button>
+          )}
         </div>
       </div>
     </div>

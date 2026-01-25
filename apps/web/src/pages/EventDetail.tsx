@@ -361,6 +361,7 @@ export default function EventDetail() {
                   email: event.organizer.email,
                   photo_url: event.organizer.photo_url,
                 }}
+                organizerContact={event.organizer_contact}
                 isSuperAdmin={isSuperAdmin}
               />
             )}

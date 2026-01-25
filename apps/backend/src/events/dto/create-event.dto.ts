@@ -16,6 +16,10 @@ export class LocationDto {
   description: string;
 
   @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
   @IsNumber()
   latitude?: number;
 
@@ -81,6 +85,10 @@ export class CreateEventDto {
   tags?: string[];
 
   // Optional: Location fields (can be set directly or extracted from location_text object)
+  @IsOptional()
+  @IsString()
+  location_city?: string;
+
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

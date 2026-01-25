@@ -5,6 +5,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getOptimizedImageUrl, getResponsiveSrcSet } from '@/lib/image-utils';
 import type { Event } from '@jamia/types/event';
+import { MapPin, CalendarDays } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface EventCardProps {
   event: Event;
@@ -83,7 +91,6 @@ export function EventCard({ event }: EventCardProps) {
     ? undefined
     : getResponsiveSrcSet('event-images', imagePath, [400, 800], 80);
 
-  console.log('event', event);
 
   return (
     <Card
@@ -106,26 +113,66 @@ export function EventCard({ event }: EventCardProps) {
         >
           {getEventTypeLabel(event.type)}
         </Badge>
+
+        {/* Location badge - positioned in bottom-left corner */}
+        {(event.location_city || event.location_text) && (
+          <Badge
+            variant="secondary"
+            className="absolute bottom-2 left-2 shadow-sm flex items-center gap-1 backdrop-blur-md bg-background/90 hover:bg-background/100 border-0"
+          >
+            <MapPin className="w-3 h-3 shrink-0" />
+            <span className="line-clamp-1 max-w-[150px]">
+              {event.location_city || event.location_text}
+            </span>
+          </Badge>
+        )}
+
+        {/* Teachers Avatars - positioned in bottom-right corner */}
+        {event.teachers && event.teachers.length > 0 && (
+          <div className="absolute bottom-2 right-2 flex -space-x-2 overflow-visible pl-1 z-10">
+            {event.teachers.slice(0, 4).map((teacher) => (
+              <TooltipProvider key={teacher.id}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar className="inline-block h-8 w-8 rounded-full ring-2 ring-background cursor-pointer hover:z-20 transition-all hover:scale-110">
+                      <AvatarImage src={teacher.profiles?.photo_url || undefined} />
+                      <AvatarFallback className="bg-primary/80 text-[10px]">
+                        {teacher.profiles?.first_name?.[0]}
+                        {teacher.profiles?.last_name?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {teacher.profiles?.first_name} {teacher.profiles?.last_name}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+            {event.teachers.length > 4 && (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full ring-2 ring-background bg-muted text-xs font-medium text-muted-foreground z-10">
+                +{event.teachers.length - 4}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Card content */}
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex flex-col gap-3">
         {/* Title - max 2 lines with ellipsis */}
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+        <h3 className="font-semibold text-lg line-clamp-2 leading-tight">
           {event.title}
         </h3>
 
-        {/* Date and time - Italian format */}
-        <p className="text-sm text-muted-foreground mb-2">
-          {formatItalianDate(event.starts_at)}
-        </p>
-
-        {/* Description preview - max 2 lines */}
-        {event.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {truncateDescription(event.description)}
-          </p>
-        )}
+        {/* Date */}
+        <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 shrink-0" />
+            <span>{formatItalianDate(event.starts_at)}</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

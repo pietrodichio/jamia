@@ -37,9 +37,10 @@ apiClient.interceptors.request.use(
 // Add response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid, redirect to auth
+      // Token expired or invalid, clear session and redirect to auth
+      await supabase.auth.signOut();
       window.location.href = '/auth';
     }
     return Promise.reject(error);

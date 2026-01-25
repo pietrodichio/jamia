@@ -254,7 +254,7 @@ export function RecurrenceEditor({ value, onChange, startsAt }: RecurrenceEditor
           )}
 
           {/* End date */}
-          <div className="space-y-2">
+          <div className="space-y-2 flex flex-col">
             <Label htmlFor="until" className="text-sm">
               Fino a quando ripetere (opzionale)
             </Label>

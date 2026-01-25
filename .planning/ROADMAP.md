@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Event Enhancements** - Recurring events, teachers, jam integration, and advanced filters
 - [x] **Phase 6: UI/UX Refactor for Events Management** - Improve user experience and interface for event management features
 - [x] **Phase 6.1: Event Creation Flow Fixes (INSERTED)** - Fix critical gaps in event creation wizard discovered during Phase 6 execution
+- [ ] **Phase 6.2: Dashboard Refactor (INSERTED)** - Separate dashboard into participations/discovery and event management sections
 
 ## Phase Details
 
@@ -181,6 +182,29 @@ Issues addressed:
 - Date/time validation improvements with auto-fill logic (Plans 01, 04)
 - Image upload capability with compression (Plan 05)
 - Teacher management in creation flow (Plan 06)
+
+### Phase 6.2: Dashboard Refactor (INSERTED)
+
+**Goal:** Reorganize dashboard into two distinct sections for clearer user workflows
+**Depends on:** Phase 6.1
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 6.2 to break down)
+
+**Details:**
+Dashboard refactor with two main sections:
+
+**Section 1: Participations & Event Discovery**
+- Events user is participating in
+- Event discovery and recommendations
+- Upcoming events in user's area
+
+**Section 2: Event Management**
+- Create new events
+- Edit existing events
+- View and manage draft events
+- Event statistics and analytics
 
 ## Progress
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // Schemas
 const loginSchema = z.object({
@@ -53,6 +55,35 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+
+  // Check if user is already logged in
+  const currentUserQuery = useQuery<SupabaseUser | null>({
+    queryKey: ["current-user"],
+    queryFn: async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        // Clear invalid session (e.g., user doesn't exist in DB after reset)
+        await supabase.auth.signOut();
+        return null;
+      }
+      return user ?? null;
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+
+  const currentUser = currentUserQuery.data ?? null;
+  const isEmailConfirmed = Boolean(
+    currentUser?.email_confirmed_at || currentUser?.confirmed_at,
+  );
+
+  // Redirect to dashboard if already logged in and email confirmed
+  useEffect(() => {
+    if (currentUserQuery.isSuccess && currentUser && isEmailConfirmed) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [currentUser, currentUserQuery.isSuccess, isEmailConfirmed, navigate]);
 
   // Forms
   const loginForm = useForm<LoginFormValues>({
@@ -256,6 +287,20 @@ const Auth = () => {
       setIsGoogleLoading(false);
     }
   });
+
+  // Show loading while checking auth state
+  if (currentUserQuery.isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Don't render form if user is logged in (redirect is handled in useEffect)
+  if (currentUser && isEmailConfirmed) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">

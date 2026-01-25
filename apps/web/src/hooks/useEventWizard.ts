@@ -8,8 +8,10 @@ const eventFormSchema = z.object({
   type: z.enum(['jam', 'class', 'workshop', 'convention']),
   title: z.string().min(3, 'Minimo 3 caratteri').max(100, 'Massimo 100 caratteri'),
   description: z.string().optional(),
+  organizerContact: z.string().max(120, 'Massimo 120 caratteri').optional().or(z.literal('')),
   location: z.object({
     description: z.string().min(3, 'Minimo 3 caratteri'),
+    city: z.string().optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
     googleMapsUrl: z.string().url().optional().or(z.literal('')),
@@ -36,6 +38,8 @@ const eventFormSchema = z.object({
   image_url: z.string().url('URL non valido').optional().or(z.literal('')),
   // Teacher selection (for class/workshop/convention)
   teacherIds: z.array(z.string().uuid()).optional(),
+  // Co-organizers
+  coOrganizerIds: z.array(z.string().uuid()).optional(),
   // Recurrence (for class events)
   recurrence: z.object({
     rule: z.string().nullable(),
@@ -48,7 +52,18 @@ export type EventFormData = z.infer<typeof eventFormSchema>;
 
 // Define which fields belong to each step
 const stepFields: Record<number, (keyof EventFormData)[]> = {
-  1: ['type', 'title', 'description', 'location', 'tags', 'manageParticipants', 'capacity', 'visibility'],
+  1: [
+    'type',
+    'title',
+    'description',
+    'organizerContact',
+    'coOrganizerIds',
+    'location',
+    'tags',
+    'manageParticipants',
+    'capacity',
+    'visibility',
+  ],
   2: ['date', 'time', 'end_date', 'end_time', 'price', 'externalLink', 'ctaText', 'recurrence'],
   3: ['image_url'], // Image upload step
   4: ['teacherIds'], // Teacher selection step
@@ -78,8 +93,10 @@ export function useEventWizard(): UseEventWizardReturn {
       type: 'jam',
       title: '',
       description: '',
+      organizerContact: '',
       location: {
         description: '',
+        city: undefined,
         latitude: undefined,
         longitude: undefined,
         googleMapsUrl: '',
@@ -99,6 +116,7 @@ export function useEventWizard(): UseEventWizardReturn {
       ctaText: 'Registrati',
       image_url: '',
       teacherIds: [],
+      coOrganizerIds: [],
       recurrence: {
         rule: null,
         dtstart: null,

@@ -1,6 +1,4 @@
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { MapPin } from "lucide-react";
 
 type GoogleMapsPrediction = {
   place_id: string;
@@ -30,9 +28,12 @@ export const LocationInput = ({
     <div className="space-y-2">
       <Input
         id="jam-location"
-        placeholder="Scrivi il luogo della jam"
+        placeholder="Scrivi il luogo dell'evento"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          console.log('[LocationInput] Input onChange', { value: e.target.value });
+          onChange(e.target.value);
+        }}
         disabled={disabled}
         className="rounded-xl"
       />
@@ -43,7 +44,13 @@ export const LocationInput = ({
               key={prediction.place_id}
               type="button"
               className="w-full text-left px-3 py-2 hover:bg-secondary/50 transition-colors"
-              onClick={() => onSelectPrediction(prediction)}
+              onClick={() => {
+                console.log('[LocationInput] Prediction clicked', {
+                  place_id: prediction.place_id,
+                  description: prediction.description,
+                });
+                onSelectPrediction(prediction);
+              }}
               disabled={disabled}
             >
               {prediction.description}

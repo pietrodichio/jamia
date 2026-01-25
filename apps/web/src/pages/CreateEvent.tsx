@@ -1,8 +1,10 @@
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { eventsApi } from '@/api/events.api';
 import { teachersApi } from '@/api/teachers.api';
+import { eventOrganizersApi } from '@/api/event-organizers.api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -52,6 +54,26 @@ export default function CreateEvent() {
     }
   });
 
+  const addCoOrganizers = async (eventId: string) => {
+    const coOrganizerIds = form.getValues('coOrganizerIds') || [];
+    if (coOrganizerIds.length === 0) return;
+
+    try {
+      await Promise.all(
+        coOrganizerIds.map((userId) =>
+          eventOrganizersApi.addCoOrganizer(eventId, { userId })
+        )
+      );
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast({
+        title: 'Errore nell\'aggiunta dei co-organizzatori',
+        description: err.response?.data?.message || 'Riprova',
+        variant: 'destructive'
+      });
+    }
+  };
+
   // Create event mutation
   const createMutation = useMutation({
     mutationFn: (data: CreateEventDto) => eventsApi.createEvent(data),
@@ -63,6 +85,8 @@ export default function CreateEvent() {
       if (teacherIds && teacherIds.length > 0) {
         await addTeachersMutation.mutateAsync({ eventId: event.id, teacherIds });
       }
+
+      await addCoOrganizers(event.id);
 
       toast({ title: t('events:messages.eventCreated') });
       navigate(`/events/${event.id}`);
@@ -89,6 +113,8 @@ export default function CreateEvent() {
       if (teacherIds && teacherIds.length > 0) {
         await addTeachersMutation.mutateAsync({ eventId: event.id, teacherIds });
       }
+
+      await addCoOrganizers(event.id);
 
       toast({ title: t('events:messages.eventCreated') });
       navigate(`/events/${event.id}`);
@@ -120,6 +146,7 @@ export default function CreateEvent() {
       // TypeScript needs explicit cast for union type (string | LocationDto)
       const locationObj = {
         description: data.location.description,
+        city: data.location.city,
         latitude: data.location.latitude,
         longitude: data.location.longitude,
         googleMapsUrl: data.location.googleMapsUrl,
@@ -134,6 +161,7 @@ export default function CreateEvent() {
       starts_at: startsAt,
       ends_at: endsAt || startsAt, // Ensure ends_at is set
       description: data.description || undefined,
+      organizer_contact: data.organizerContact || undefined,
       tags: data.tags && data.tags.length > 0 ? data.tags : undefined,
       price: data.price?.toString() || undefined,
       external_link: data.externalLink || undefined,
@@ -154,6 +182,16 @@ export default function CreateEvent() {
       createMutation.mutate(eventData);
     }
   });
+
+  const totalSteps = showTeachersStep ? 5 : 4;
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (currentStep !== totalSteps) {
+      event.preventDefault();
+      void nextStep();
+      return;
+    }
+    handleSubmit(event);
+  };
 
   // Step labels - conditional based on event type
   const stepLabels = [
@@ -222,7 +260,7 @@ export default function CreateEvent() {
 
           {/* Form */}
           <Form {...form}>
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleFormSubmit} className="space-y-8">
               {/* Step Content */}
               <div className="min-h-[400px]">
                 {currentStep === 1 && <EventTypeStep form={form} />}
@@ -236,10 +274,9 @@ export default function CreateEvent() {
               {/* Wizard Navigation */}
               <WizardNavigation
                 currentStep={currentStep}
-                totalSteps={showTeachersStep ? 5 : 4}
+                totalSteps={totalSteps}
                 onBack={prevStep}
                 onNext={nextStep}
-                onSubmit={handleSubmit}
                 isSubmitting={createMutation.isPending || updateMutation.isPending || addTeachersMutation.isPending}
                 canGoNext={true}
               />

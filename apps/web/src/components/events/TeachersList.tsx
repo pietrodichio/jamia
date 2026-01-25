@@ -19,7 +19,6 @@ interface TeachersListProps {
 }
 
 export function TeachersList({ teachers, eventType }: TeachersListProps) {
-  console.log('teachers', teachers);
   const { t } = useTranslation('events');
 
   // Only display for classes, workshops, and conventions
