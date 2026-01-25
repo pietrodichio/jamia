@@ -325,12 +325,24 @@ describe('EventOrganizersService', () => {
                   id: 'org-1',
                   event_id: 'event-123',
                   user_id: 'user-2',
-                  profiles: {
-                    id: 'user-2',
-                    first_name: 'John',
-                    last_name: 'Doe',
-                    email: 'john@example.com',
-                  },
+                  added_by: 'user-1',
+                  created_at: '2025-01-01T10:00:00.000Z',
+                },
+              ],
+              error: null,
+            },
+          },
+        ],
+        profiles: [
+          {
+            response: {
+              data: [
+                {
+                  id: 'user-2',
+                  first_name: 'John',
+                  last_name: 'Doe',
+                  email: 'john@example.com',
+                  photo_url: null,
                 },
               ],
               error: null,

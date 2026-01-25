@@ -6,6 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Calendar as CalendarIcon, ChevronDownIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Frequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
@@ -38,6 +42,7 @@ export function RecurrenceEditor({ value, onChange, startsAt }: RecurrenceEditor
   const [interval, setInterval] = useState(1);
   const [until, setUntil] = useState<string>(value.until || '');
   const [selectedDays, setSelectedDays] = useState<Weekday[]>([]);
+  const [untilOpen, setUntilOpen] = useState(false);
 
   // Get the day of week from startsAt
   const startDate = startsAt ? new Date(startsAt) : null;
@@ -52,23 +57,7 @@ export function RecurrenceEditor({ value, onChange, startsAt }: RecurrenceEditor
     if (enabled && freq === 'WEEKLY' && selectedDays.length === 0 && startRRuleDay) {
       setSelectedDays([startRRuleDay]);
     }
-  }, [enabled, freq, startRRuleDay]);
-
-  // Update rule whenever parameters change
-  useEffect(() => {
-    if (!enabled) return;
-    updateRule();
-  }, [enabled, freq, interval, until, startsAt, selectedDays]);
-
-  const handleToggle = (checked: boolean) => {
-    setEnabled(checked);
-    if (!checked) {
-      onChange({ rule: null, dtstart: null, until: null });
-      setSelectedDays([]);
-    } else if (startRRuleDay) {
-      setSelectedDays([startRRuleDay]);
-    }
-  };
+  }, [enabled, freq, startRRuleDay, selectedDays.length]);
 
   const updateRule = () => {
     if (!enabled || !startsAt) return;
@@ -100,6 +89,25 @@ export function RecurrenceEditor({ value, onChange, startsAt }: RecurrenceEditor
     }
   };
 
+  // Update rule whenever parameters change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <selectedDays will cause infinite loop>
+  useEffect(() => {
+    if (!enabled) return;
+    updateRule();
+  }, [enabled, freq, interval, until, startsAt, selectedDays]);
+
+  const handleToggle = (checked: boolean) => {
+    setEnabled(checked);
+    if (!checked) {
+      onChange({ rule: null, dtstart: null, until: null });
+      setSelectedDays([]);
+    } else if (startRRuleDay) {
+      setSelectedDays([startRRuleDay]);
+    }
+  };
+
+
+
   const handleFreqChange = (newFreq: string) => {
     setFreq(newFreq as Frequency);
     // Reset selected days when changing frequency
@@ -115,9 +123,18 @@ export function RecurrenceEditor({ value, onChange, startsAt }: RecurrenceEditor
     setInterval(Math.max(1, newInterval));
   };
 
-  const handleUntilChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUntil(e.target.value);
+  const handleUntilChange = (date: Date | undefined) => {
+    if (date) {
+      const dateString = format(date, 'yyyy-MM-dd');
+      setUntil(dateString);
+    } else {
+      setUntil('');
+    }
+    setUntilOpen(false);
   };
+
+  // Convert until string to Date object for Calendar
+  const untilDate = until ? new Date(until) : undefined;
 
   const toggleDay = (day: Weekday) => {
     setSelectedDays(prev => {
@@ -241,24 +258,39 @@ export function RecurrenceEditor({ value, onChange, startsAt }: RecurrenceEditor
             <Label htmlFor="until" className="text-sm">
               Fino a quando ripetere (opzionale)
             </Label>
-            <Input
-              id="until"
-              type="date"
-              value={until}
-              onChange={(e) => {
-                const newUntil = e.target.value;
-                // Validate that until is after start date
-                if (startDate && newUntil) {
-                  const untilDate = new Date(newUntil);
-                  if (untilDate < startDate) {
-                    return; // Don't allow dates before start
-                  }
-                }
-                handleUntilChange(e);
-              }}
-              min={startDate ? format(startDate, 'yyyy-MM-dd') : undefined}
-              className="w-48"
-            />
+            <Popover open={untilOpen} onOpenChange={setUntilOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="until"
+                  variant="outline"
+                  className={cn(
+                    'w-48 justify-start text-left font-normal rounded-md',
+                    !untilDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {untilDate ? format(untilDate, 'dd MMM yyyy', { locale: it }) : 'Seleziona data'}
+                  <ChevronDownIcon className="ml-auto h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={untilDate}
+                  onSelect={(date) => {
+                    // Validate that until is after start date
+                    if (startDate && date) {
+                      if (date < startDate) {
+                        return; // Don't allow dates before start
+                      }
+                    }
+                    handleUntilChange(date);
+                  }}
+                  disabled={startDate ? { before: startDate } : undefined}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
             <p className="text-xs text-muted-foreground">
               Lascia vuoto per una serie senza scadenza
             </p>

@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale/it';
 import { eventsApi } from '@/api/events.api';
 import { teachersApi } from '@/api/teachers.api';
+import { profilesApi } from '@/api/profiles.api';
+import { eventOrganizersApi } from '@/api/event-organizers.api';
 import { supabase } from '@/integrations/supabase/client';
 import { useEventOccurrences } from '@/hooks/useEventOccurrences';
 import { EventHero } from '@/components/events/EventHero';
@@ -20,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { EVENT_TAG_LABELS, EVENT_TAG_OPTIONS } from '@/lib/event-tags';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { MapPin, DollarSign, ArrowLeft, Clock, Tag } from 'lucide-react';
+import { type Profile } from '@/api/profiles.api';
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -39,15 +42,41 @@ export default function EventDetail() {
 
   const { data: event, isLoading, error } = useQuery({
     queryKey: ['events', eventId],
-    queryFn: () => eventsApi.getEvent(eventId!),
+    queryFn: async () => {
+      if (!eventId) throw new Error('No event ID');
+      return eventsApi.getEvent(eventId);
+    },
     enabled: !!eventId,
   });
 
   // Fetch teachers for this event
   const { data: teachers } = useQuery({
     queryKey: ['events', eventId, 'teachers'],
-    queryFn: () => teachersApi.listTeachers(eventId!),
+    queryFn: async () => {
+      if (!eventId) throw new Error('No event ID');
+      return teachersApi.listTeachers(eventId);
+    },
     enabled: !!eventId && event?.type !== 'jam',
+  });
+
+  // Fetch current user's profile to check if super admin
+  const { data: currentUserProfile } = useQuery<Profile & { is_super_admin?: boolean }>({
+    queryKey: ['profile', currentUserId],
+    queryFn: async () => {
+      if (!currentUserId) throw new Error('No user ID');
+      return profilesApi.getProfile(currentUserId);
+    },
+    enabled: !!currentUserId,
+  });
+
+  // Fetch co-organizers for this event
+  const { data: coOrganizers } = useQuery({
+    queryKey: ['events', eventId, 'organizers'],
+    queryFn: async () => {
+      if (!eventId) throw new Error('No event ID');
+      return eventOrganizersApi.getCoOrganizers(eventId);
+    },
+    enabled: !!eventId && !!currentUserId,
   });
 
   // Generate occurrences for recurring events (next 90 days)
@@ -62,6 +91,22 @@ export default function EventDetail() {
     occurrenceRangeStart,
     occurrenceRangeEnd
   );
+
+  // Apply event time to occurrences (must be before early returns)
+  const occurrencesWithTime = useMemo(() => {
+    if (!event?.starts_at || occurrences.length === 0) {
+      return [];
+    }
+    const eventStartDate = new Date(event.starts_at);
+    const eventHours = eventStartDate.getUTCHours();
+    const eventMinutes = eventStartDate.getUTCMinutes();
+
+    return occurrences.map((date) => {
+      const dateWithTime = new Date(date);
+      dateWithTime.setUTCHours(eventHours, eventMinutes, 0, 0);
+      return dateWithTime;
+    });
+  }, [occurrences, event?.starts_at]);
 
   if (isLoading) {
     return (
@@ -96,9 +141,20 @@ export default function EventDetail() {
   // Check if current user is owner
   const isOwner = currentUserId === event.owner_id;
 
-  // Check if organizer is super admin
-  const isSuperAdmin = Boolean(event.organizer?.is_super_admin);
+  // Check if current user is super admin (backend returns is_super_admin even if not in type)
+  const isCurrentUserSuperAdmin = Boolean(currentUserProfile?.is_super_admin);
 
+  // Check if current user is co-organizer
+  const isCoOrganizer = Boolean(
+    currentUserId &&
+    coOrganizers?.some((org) => org.user_id === currentUserId)
+  );
+
+  // Check if user can edit occurrences (owner, co-organizer, or super admin)
+  const canEditOccurrences = isOwner || isCoOrganizer || isCurrentUserSuperAdmin;
+
+  // Check if organizer is super admin (for display purposes)
+  const isSuperAdmin = Boolean(event.organizer?.is_super_admin);
 
   // Transform teachers data for TeachersList component
   const teachersForDisplay = teachers?.map(t => {
@@ -138,7 +194,11 @@ export default function EventDetail() {
           {/* Main Content - Left Column (2/3) */}
           <div className="lg:col-span-2 space-y-6">
             {/* Action Buttons */}
-            <EventActions event={event} isOwner={isOwner} />
+            <EventActions
+              event={event}
+              isOwner={isOwner}
+              isSuperAdmin={isCurrentUserSuperAdmin}
+            />
 
             {/* Description Section */}
             {event.description && (
@@ -147,10 +207,9 @@ export default function EventDetail() {
                   <CardTitle>Descrizione</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {/* eslint-disable-next-line */}
                   <div
                     className="text-muted-foreground prose prose-sm max-w-none leading-relaxed"
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: HTML is sanitized before rendering
                     dangerouslySetInnerHTML={{
                       __html: sanitizeHtml(event.description),
                     }}
@@ -198,17 +257,7 @@ export default function EventDetail() {
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-primary mt-0.5" />
                   <div className="flex-1">
-                    <div className="font-medium mb-2">{event.location_text}</div>
-                    {event.gmaps_link && (
-                      <a
-                        href={event.gmaps_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline"
-                      >
-                        Visualizza su Google Maps
-                      </a>
-                    )}
+                    <a href={event.gmaps_link} target="_blank" rel="noopener noreferrer" className="font-medium mb-2 text-primary hover:underline">{event.location_text}</a>
                   </div>
                 </div>
               </CardContent>
@@ -259,14 +308,14 @@ export default function EventDetail() {
             </Card>
 
             {/* Upcoming Occurrences (for recurring events) */}
-            {event.recurrence_rule && occurrences.length > 0 && (
+            {event.recurrence_rule && occurrencesWithTime.length > 0 && (
               <Card className="border-primary/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle>Prossime occorrenze</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {occurrences.slice(0, 5).map((date) => (
+                    {occurrencesWithTime.slice(0, 5).map((date) => (
                       <div
                         key={date.toISOString()}
                         className="flex items-center justify-between border rounded-lg p-3"
@@ -279,18 +328,20 @@ export default function EventDetail() {
                             {format(date, 'HH:mm', { locale: it })}
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingOccurrence(date.toISOString())}
-                        >
-                          Modifica
-                        </Button>
+                        {canEditOccurrences && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingOccurrence(date.toISOString())}
+                          >
+                            Modifica
+                          </Button>
+                        )}
                       </div>
                     ))}
-                    {occurrences.length > 5 && (
+                    {occurrencesWithTime.length > 5 && (
                       <p className="text-sm text-muted-foreground text-center pt-2">
-                        E altre {occurrences.length - 5} occorrenze...
+                        E altre {occurrencesWithTime.length - 5} occorrenze...
                       </p>
                     )}
                   </div>

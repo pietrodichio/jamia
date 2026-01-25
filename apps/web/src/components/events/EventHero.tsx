@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale/it';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
-import { getOptimizedImageUrl } from '@/lib/image-utils';
+import { getOptimizedImageUrl, extractPathFromUrl } from '@/lib/image-utils';
 import type { EventWithOrganizer } from '@jamia/types';
 
 interface EventHeroProps {
@@ -11,6 +12,7 @@ interface EventHeroProps {
 
 export function EventHero({ event }: EventHeroProps) {
   const { t } = useTranslation('events');
+  const [imageError, setImageError] = useState(false);
 
   const eventTypeBadgeVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
     jam: 'default',
@@ -20,18 +22,42 @@ export function EventHero({ event }: EventHeroProps) {
   };
 
   // Generate optimized hero image URL if image exists
+  // Handle both full URLs and paths
   const heroImageUrl = event.image_url
-    ? getOptimizedImageUrl('event-images', event.image_url, { width: 1200, quality: 90 })
+    ? (() => {
+      // Check if it's a full URL
+      if (event.image_url.startsWith('http')) {
+        // Extract path from full URL
+        const path = extractPathFromUrl(event.image_url, 'event-images');
+        if (path) {
+          // Use extracted path to generate optimized URL
+          return getOptimizedImageUrl('event-images', path, { width: 1200, quality: 90 });
+        }
+        // If we can't extract path, use the URL directly (fallback)
+        return event.image_url;
+      }
+      // It's already a path, use it directly
+      return getOptimizedImageUrl('event-images', event.image_url, { width: 1200, quality: 90 });
+    })()
     : null;
+
+  // Fallback to direct public URL if optimized URL fails to load
+  const displayImageUrl = imageError && event.image_url ? event.image_url : heroImageUrl;
 
   return (
     <div className="relative h-96 w-full overflow-hidden rounded-2xl">
       {/* Hero Image */}
-      {heroImageUrl ? (
+      {displayImageUrl ? (
         <img
-          src={heroImageUrl}
+          src={displayImageUrl}
           alt={event.title}
           className="absolute inset-0 h-full w-full object-cover"
+          onError={() => {
+            // If optimized URL fails, fall back to direct public URL
+            if (!imageError && heroImageUrl !== event.image_url) {
+              setImageError(true);
+            }
+          }}
         />
       ) : (
         // Gradient placeholder if no image

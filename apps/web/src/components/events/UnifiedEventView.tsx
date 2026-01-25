@@ -111,7 +111,7 @@ export function UnifiedEventView() {
       <div className="container mx-auto p-4 max-w-7xl">
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
           className="mb-4 w-fit pl-0 hover:pl-2 transition-all"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

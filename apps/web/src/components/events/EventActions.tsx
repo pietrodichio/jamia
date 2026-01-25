@@ -16,9 +16,14 @@ import type { EventWithOrganizer } from '@jamia/types';
 interface EventActionsProps {
   event: EventWithOrganizer;
   isOwner: boolean;
+  isSuperAdmin: boolean;
 }
 
-export function EventActions({ event, isOwner }: EventActionsProps) {
+export function EventActions({
+  event,
+  isOwner,
+  isSuperAdmin,
+}: EventActionsProps) {
   const navigate = useNavigate();
   const { t } = useTranslation('events');
   const { toast } = useToast();
@@ -160,7 +165,7 @@ export function EventActions({ event, isOwner }: EventActionsProps) {
       </Button>
 
       {/* Edit button - only for owner */}
-      {isOwner && (
+      {(isOwner || isSuperAdmin) && (
         <Button variant="outline" onClick={handleEdit} className="rounded-xl">
           <Edit className="mr-2 h-4 w-4" />
           {t('actions.editEvent')}

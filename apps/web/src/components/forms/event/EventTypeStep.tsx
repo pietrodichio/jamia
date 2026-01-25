@@ -1,4 +1,4 @@
-import { UseFormReturn } from 'react-hook-form';
+import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -21,8 +21,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { DescriptionEditor } from '@/components/jams/DescriptionEditor';
 import { LocationInput } from '@/components/jams/LocationInput';
-import { parseGoogleMapsUrl, loadGoogleMaps } from '@/components/jams/utils/google-maps';
-import { EventFormData } from '@/hooks/useEventWizard';
+import { parseGoogleMapsUrl } from '@/components/jams/utils/google-maps';
+import type { EventFormData } from '@/hooks/useEventWizard';
+import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { JamParticipantFields } from './JamParticipantFields';
 import { EVENT_TAG_OPTIONS } from '@/lib/event-tags';
 
@@ -41,43 +42,14 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
   // Google Maps autocomplete state
   const [placePredictions, setPlacePredictions] = useState<any[]>([]);
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
-  const mapsLoader = useRef<Promise<void> | null>(null);
   const lastPredictionRequestId = useRef(0);
   const predictionsTimeout = useRef<NodeJS.Timeout | null>(null);
   const suppressNextPredictions = useRef(false);
-  const placesLibraryLoaded = useRef(false);
 
   const googleApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-  // Load Google Maps API
-  useEffect(() => {
-    if (!googleApiKey) {
-      return;
-    }
-
-    let cancelled = false;
-
-    loadGoogleMaps(googleApiKey, mapsLoader)
-      .then(async () => {
-        if (cancelled) return;
-        const googleMaps = (window as any).google?.maps;
-        if (!googleMaps?.places) return;
-
-        try {
-          await googleMaps.importLibrary("places");
-          placesLibraryLoaded.current = true;
-        } catch {
-          // ignore load errors, fallback to manual input
-        }
-      })
-      .catch(() => {
-        // ignore load errors, fallback to manual input
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [googleApiKey]);
+  // Load Google Maps API using React Query
+  const { isLoaded: placesLibraryLoaded } = useGoogleMaps(googleApiKey);
 
   // Parse Google Maps URLs for coordinates
   useEffect(() => {
@@ -103,7 +75,7 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
 
   // Fetch autocomplete predictions
   useEffect(() => {
-    if (!placesLibraryLoaded.current || !locationDescription || locationDescription.length < 3) {
+    if (!placesLibraryLoaded || !locationDescription || locationDescription.length < 3) {
       setPlacePredictions([]);
       return;
     }
@@ -122,31 +94,39 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
       const requestId = ++lastPredictionRequestId.current;
       setIsLoadingPlaces(true);
 
-      const googleMaps = (window as any).google?.maps;
-      if (!googleMaps?.places?.AutocompleteSuggestion) {
+      // Access googleMaps from window to avoid dependency issues
+      const maps = (window as any).google?.maps;
+      if (!maps?.places?.AutocompleteSuggestion) {
         setIsLoadingPlaces(false);
         return;
       }
 
       try {
-        const sessionToken = new googleMaps.places.AutocompleteSessionToken();
+        const sessionToken = new maps.places.AutocompleteSessionToken();
 
         const request = {
           input: locationDescription,
           sessionToken: sessionToken,
         };
 
-        const { suggestions } = await googleMaps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+        const { suggestions } = await maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
 
         if (requestId !== lastPredictionRequestId.current) return;
 
         setIsLoadingPlaces(false);
 
         if (Array.isArray(suggestions)) {
-          const mappedPredictions = suggestions.slice(0, 5).map((suggestion: any) => {
+          const mappedPredictions = suggestions.slice(0, 5).map((suggestion: {
+            placePrediction: {
+              text: { text?: string } | string;
+              placeId: string;
+            };
+          }) => {
             const placePrediction = suggestion.placePrediction;
             return {
-              description: placePrediction.text.text || placePrediction.text.toString(),
+              description: typeof placePrediction.text === 'object'
+                ? placePrediction.text.text || placePrediction.text.toString()
+                : placePrediction.text.toString(),
               place_id: placePrediction.placeId,
               placePrediction: placePrediction,
             };
@@ -167,29 +147,48 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
         clearTimeout(predictionsTimeout.current);
       }
     };
-  }, [locationDescription]);
+  }, [locationDescription, placesLibraryLoaded]);
 
-  const handleSelectPrediction = async (prediction: any) => {
+  const handleSelectPrediction = async (prediction: {
+    description?: string;
+    place_id?: string;
+    placePrediction?: {
+      text?: { text?: string } | string;
+      placeId?: string;
+      toPlace?: () => {
+        fetchFields: (options: { fields: string[] }) => Promise<void>;
+        displayName?: string;
+        formattedAddress?: string;
+        location?: { lat: () => number; lng: () => number };
+        googleMapsURI?: string;
+      };
+    };
+  }) => {
     if (!prediction) return;
-    const googleMaps = (window as any).google?.maps;
     setPlacePredictions([]);
     suppressNextPredictions.current = true;
 
-    const description = prediction.description || prediction.placePrediction?.text?.text || prediction.placePrediction?.text?.toString();
+    const description = prediction.description ||
+      (typeof prediction.placePrediction?.text === 'object'
+        ? prediction.placePrediction.text.text
+        : prediction.placePrediction?.text?.toString()) ||
+      prediction.placePrediction?.text?.toString();
     const placeId = prediction.place_id || prediction.placePrediction?.placeId;
 
     // Optimistic update - clear coordinates until we fetch them
     form.setValue('location', {
-      description,
+      description: description || '',
       latitude: undefined,
       longitude: undefined,
       googleMapsUrl: '',
     }, { shouldDirty: true });
 
-    if (!googleMaps?.places || !placeId) {
+    // Access googleMaps from window to avoid dependency issues
+    const maps = (window as any).google?.maps;
+    if (!maps?.places || !placeId) {
       const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
       form.setValue('location', {
-        description,
+        description: description || '',
         googleMapsUrl: url,
         latitude: undefined,
         longitude: undefined,
@@ -198,14 +197,14 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
     }
 
     try {
-      if (prediction.placePrediction) {
+      if (prediction.placePrediction?.toPlace) {
         const place = prediction.placePrediction.toPlace();
         await place.fetchFields({
           fields: ["displayName", "formattedAddress", "location", "id", "googleMapsURI"],
         });
 
         const location = place.location;
-        const finalDescription = description || place.displayName || place.formattedAddress;
+        const finalDescription = description || place.displayName || place.formattedAddress || '';
 
         form.setValue('location', {
           description: finalDescription,
@@ -216,7 +215,7 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
       } else {
         const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
         form.setValue('location', {
-          description,
+          description: description || '',
           googleMapsUrl: url,
           latitude: undefined,
           longitude: undefined,
@@ -225,7 +224,7 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
     } catch {
       const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
       form.setValue('location', {
-        description,
+        description: description || '',
         googleMapsUrl: url,
         latitude: undefined,
         longitude: undefined,
@@ -335,7 +334,7 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
             <FormLabel>Tag</FormLabel>
             <FormControl>
               <MultiSelect
-                options={EVENT_TAG_OPTIONS}
+                options={[...EVENT_TAG_OPTIONS]}
                 selected={field.value || []}
                 onChange={field.onChange}
                 placeholder="Tag"

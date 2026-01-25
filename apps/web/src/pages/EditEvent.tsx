@@ -1,24 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { eventsApi } from '@/api/events.api';
+import { teachersApi } from '@/api/teachers.api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RecurrenceEditor } from '@/components/events/RecurrenceEditor';
-import { MultiSelect } from '@/components/ui/multi-select';
+import { Form } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { EVENT_TAG_OPTIONS } from '@/lib/event-tags';
+import { useEventWizard } from '@/hooks/useEventWizard';
+import { WizardStepIndicator } from '@/components/forms/wizard/WizardStepIndicator';
+import { WizardNavigation } from '@/components/forms/wizard/WizardNavigation';
+import { EventTypeStep } from '@/components/forms/event/EventTypeStep';
+import { EventScheduleStep } from '@/components/forms/event/EventScheduleStep';
+import { EventImageStep } from '@/components/forms/event/EventImageStep';
+import { EventTeachersStep } from '@/components/forms/event/EventTeachersStep';
+import { EventPreviewStep } from '@/components/forms/event/EventPreviewStep';
 import { ArrowLeft } from 'lucide-react';
-import type { EventType, UpdateEventDto } from '@jamia/types/event';
+import type { UpdateEventDto } from '@jamia/types/event';
 
 export default function EditEvent() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation(['common', 'events', 'forms']);
+
+  // Initialize wizard form
+  const { currentStep, nextStep, prevStep, goToStep, form } = useEventWizard();
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['events', eventId],
@@ -26,86 +34,164 @@ export default function EditEvent() {
     enabled: !!eventId,
   });
 
-  // Form state
-  const [type, setType] = useState<EventType>('jam');
-  const [title, setTitle] = useState('');
-  const [locationText, setLocationText] = useState('');
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
-  const [description, setDescription] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [price, setPrice] = useState('');
-  const [externalLink, setExternalLink] = useState('');
-  const [organizerContact, setOrganizerContact] = useState('');
-  const [recurrence, setRecurrence] = useState<{
-    rule: string | null;
-    dtstart: string | null;
-    until: string | null;
-  }>({ rule: null, dtstart: null, until: null });
+  const { data: teachers } = useQuery({
+    queryKey: ['events', eventId, 'teachers'],
+    queryFn: () => teachersApi.listTeachers(eventId!),
+    enabled: !!eventId,
+  });
 
-  // Load event data into form
+  const teacherIds = useMemo(
+    () => teachers?.map((teacher) => teacher.user_id) ?? [],
+    [teachers]
+  );
+  const hasInitializedForm = useRef(false);
+
+  // Watch event type to conditionally show teachers step
+  const eventType = form.watch('type');
+  const showTeachersStep = ['class', 'workshop', 'convention'].includes(eventType);
+
+  // Load event data into wizard form
   useEffect(() => {
-    if (event) {
-      setType(event.type);
-      setTitle(event.title);
-      setLocationText(event.location_text);
-      setStartsAt(event.starts_at.slice(0, 16)); // Format for datetime-local input
-      setEndsAt(event.ends_at.slice(0, 16));
-      setDescription(event.description || '');
-      setTags(event.tags || []);
-      setPrice(event.price || '');
-      setExternalLink(event.external_link || '');
-      setOrganizerContact(event.organizer_contact || '');
-      setRecurrence({
+    if (!event || hasInitializedForm.current) return;
+
+    const locationText = event.location_text as unknown;
+    const locationDescription = typeof locationText === 'string'
+      ? locationText
+      : (locationText as { description?: string })?.description || '';
+
+    const locationGoogleMapsUrl = typeof locationText === 'object' && locationText !== null
+      ? (locationText as { googleMapsUrl?: string })?.googleMapsUrl
+      : undefined;
+
+    const startDate = event.starts_at ? new Date(event.starts_at) : undefined;
+    const endDate = event.ends_at ? new Date(event.ends_at) : undefined;
+
+    const parsedPrice = event.price ? Number(event.price) : undefined;
+
+    form.reset({
+      type: event.type,
+      title: event.title,
+      description: event.description || '',
+      location: {
+        description: locationDescription,
+        latitude: event.location_lat,
+        longitude: event.location_lng,
+        googleMapsUrl: event.gmaps_link || locationGoogleMapsUrl || '',
+      },
+      tags: event.tags || [],
+      date: startDate,
+      time: startDate ? startDate.toTimeString().slice(0, 5) : '',
+      end_date: endDate,
+      end_time: endDate ? endDate.toTimeString().slice(0, 5) : '',
+      price: Number.isFinite(parsedPrice) ? parsedPrice : undefined,
+      externalLink: event.external_link || '',
+      ctaText: event.cta_text || 'Registrati',
+      image_url: event.image_url || '',
+      teacherIds,
+      recurrence: {
         rule: event.recurrence_rule || null,
         dtstart: event.recurrence_dtstart || null,
         until: event.recurrence_until || null,
-      });
-    }
-  }, [event]);
+      },
+    });
+    hasInitializedForm.current = true;
+  }, [event, form, teacherIds]);
+
+  useEffect(() => {
+    if (!hasInitializedForm.current || teachers === undefined) return;
+    form.setValue('teacherIds', teacherIds, { shouldDirty: false });
+  }, [form, teacherIds, teachers]);
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateEventDto) => eventsApi.updateEvent(eventId!, data),
-    onSuccess: () => {
-      toast({ title: 'Event updated successfully!' });
+    onSuccess: async () => {
+      const selectedTeacherIds = form.getValues('teacherIds') || [];
+      const currentTeacherIds = teacherIds;
+
+      const teachersToAdd = selectedTeacherIds.filter(
+        (id) => !currentTeacherIds.includes(id)
+      );
+      const teachersToRemove = currentTeacherIds.filter(
+        (id) => !selectedTeacherIds.includes(id)
+      );
+
+      try {
+        if (teachersToAdd.length > 0) {
+          await teachersApi.addTeachers(eventId!, teachersToAdd);
+        }
+        if (teachersToRemove.length > 0) {
+          await Promise.all(
+            teachersToRemove.map((teacherId) => teachersApi.removeTeacher(eventId!, teacherId))
+          );
+        }
+      } catch (error) {
+        console.error('Teacher update failed:', error);
+        toast({
+          title: 'Errore aggiornando gli insegnanti',
+          description: 'Le modifiche agli insegnanti potrebbero non essere state salvate',
+          variant: 'destructive',
+        });
+      }
+
+      toast({ title: t('events:messages.eventUpdated') });
       navigate(`/events/${eventId}`);
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to update event',
-        description: error.response?.data?.message || 'Please try again',
+        title: 'Errore nell\'aggiornamento dell\'evento',
+        description: error.response?.data?.message || 'Riprova',
         variant: 'destructive'
       });
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = form.handleSubmit((data) => {
+    const startsAt = data.date && data.time
+      ? new Date(`${data.date.toISOString().split('T')[0]}T${data.time}:00`).toISOString()
+      : new Date().toISOString();
+
+    const endsAt = data.end_date && data.end_time
+      ? new Date(`${data.end_date.toISOString().split('T')[0]}T${data.end_time}:00`).toISOString()
+      : startsAt;
+
+    let location_text: UpdateEventDto['location_text'] | undefined;
+    if (data.location?.description) {
+      const locationObj = {
+        description: data.location.description,
+        latitude: data.location.latitude,
+        longitude: data.location.longitude,
+        googleMapsUrl: data.location.googleMapsUrl,
+      };
+      location_text = locationObj as unknown as UpdateEventDto['location_text'];
+    }
 
     const eventData: UpdateEventDto = {
-      type,
-      title,
-      location_text: locationText,
+      type: data.type,
+      title: data.title,
+      location_text,
       starts_at: startsAt,
       ends_at: endsAt,
-      description: description || undefined,
-      tags,
-      price: price || undefined,
-      external_link: externalLink || undefined,
-      organizer_contact: organizerContact || undefined,
-      recurrence_rule: recurrence.rule || undefined,
-      recurrence_dtstart: recurrence.dtstart || undefined,
-      recurrence_until: recurrence.until || undefined,
+      description: data.description || undefined,
+      tags: data.tags && data.tags.length > 0 ? data.tags : [],
+      price: data.price !== undefined ? data.price.toString() : undefined,
+      external_link: data.externalLink || '',
+      cta_text: data.ctaText || '',
+      image_url: data.image_url ?? '',
+      recurrence_rule: data.recurrence?.rule || undefined,
+      recurrence_dtstart: data.recurrence?.dtstart || undefined,
+      recurrence_until: data.recurrence?.until || undefined,
     };
 
     updateMutation.mutate(eventData);
-  };
+  });
 
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 max-w-2xl">
         <div className="flex items-center justify-center h-96">
-          <div className="text-lg text-muted-foreground">Loading event...</div>
+          <div className="text-lg text-muted-foreground">
+            {t('common:common.loading')}
+          </div>
         </div>
       </div>
     );
@@ -116,9 +202,9 @@ export default function EditEvent() {
       <div className="container mx-auto p-6 max-w-2xl">
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <p className="text-lg text-muted-foreground mb-4">Event not found</p>
-            <Link to="/calendar">
-              <Button variant="outline">Back to Calendar</Button>
+            <p className="text-lg text-muted-foreground mb-4">Evento non trovato</p>
+            <Link to="/discover">
+              <Button variant="outline">Torna agli eventi</Button>
             </Link>
           </div>
         </div>
@@ -126,167 +212,60 @@ export default function EditEvent() {
     );
   }
 
+  const stepLabels = [
+    t('events:wizard.step1Title'),
+    t('events:wizard.step2Title'),
+    'Immagine',
+    ...(showTeachersStep ? ['Insegnanti'] : []),
+    t('events:wizard.step3Title'),
+  ];
+
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
+    <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <Link to={`/events/${eventId}`}>
           <Button variant="ghost" className="rounded-xl">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Event
+            {t('common:buttons.back')}
           </Button>
         </Link>
       </div>
 
       <Card className="border-primary/10 rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-2xl">Edit Event</CardTitle>
-          <CardDescription>Update event details</CardDescription>
+          <CardTitle className="text-2xl">{t('events:actions.editEvent')}</CardTitle>
+          <CardDescription>Modifica i dettagli del tuo evento</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Event Type */}
-            <div className="space-y-2">
-              <Label htmlFor="type">Event Type</Label>
-              <Select value={type} onValueChange={(v) => setType(v as EventType)}>
-                <SelectTrigger id="type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="jam">Jam</SelectItem>
-                  <SelectItem value="class">Class</SelectItem>
-                  <SelectItem value="workshop">Workshop</SelectItem>
-                  <SelectItem value="convention">Convention</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <WizardStepIndicator
+            currentStep={currentStep}
+            totalSteps={showTeachersStep ? 5 : 4}
+            stepLabels={stepLabels}
+            onStepClick={goToStep}
+          />
 
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
+          <Form {...form}>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="min-h-[400px]">
+                {currentStep === 1 && <EventTypeStep form={form} />}
+                {currentStep === 2 && <EventScheduleStep form={form} />}
+                {currentStep === 3 && <EventImageStep key={event.id} form={form} />}
+                {currentStep === 4 && !showTeachersStep && <EventPreviewStep form={form} />}
+                {currentStep === 4 && showTeachersStep && <EventTeachersStep form={form} />}
+                {currentStep === 5 && showTeachersStep && <EventPreviewStep form={form} />}
+              </div>
+
+              <WizardNavigation
+                currentStep={currentStep}
+                totalSteps={showTeachersStep ? 5 : 4}
+                onBack={prevStep}
+                onNext={nextStep}
+                onSubmit={handleSubmit}
+                isSubmitting={updateMutation.isPending}
+                canGoNext={true}
               />
-            </div>
-
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
-              <Input
-                id="location"
-                value={locationText}
-                onChange={(e) => setLocationText(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Start Date/Time */}
-            <div className="space-y-2">
-              <Label htmlFor="starts-at">Starts At *</Label>
-              <Input
-                id="starts-at"
-                type="datetime-local"
-                value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* End Date/Time */}
-            <div className="space-y-2">
-              <Label htmlFor="ends-at">Ends At *</Label>
-              <Input
-                id="ends-at"
-                type="datetime-local"
-                value={endsAt}
-                onChange={(e) => setEndsAt(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Recurrence Editor */}
-            {startsAt && (
-              <RecurrenceEditor
-                value={recurrence}
-                onChange={setRecurrence}
-                startsAt={startsAt}
-              />
-            )}
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-              />
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label>Tag</Label>
-              <MultiSelect
-                options={EVENT_TAG_OPTIONS}
-                selected={tags}
-                onChange={setTags}
-                placeholder="Tag"
-                className="min-w-[200px] w-fit"
-              />
-            </div>
-
-            {/* Price */}
-            <div className="space-y-2">
-              <Label htmlFor="price">Price</Label>
-              <Input
-                id="price"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-              />
-            </div>
-
-            {/* External Link */}
-            <div className="space-y-2">
-              <Label htmlFor="external-link">External Link</Label>
-              <Input
-                id="external-link"
-                type="url"
-                value={externalLink}
-                onChange={(e) => setExternalLink(e.target.value)}
-              />
-            </div>
-
-            {/* Organizer Contact */}
-            <div className="space-y-2">
-              <Label htmlFor="organizer-contact">Contact Info</Label>
-              <Input
-                id="organizer-contact"
-                value={organizerContact}
-                onChange={(e) => setOrganizerContact(e.target.value)}
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/events/${eventId}`)}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={updateMutation.isPending}
-                className="flex-1"
-              >
-                {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

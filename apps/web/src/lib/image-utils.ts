@@ -11,6 +11,37 @@ export interface ImageTransformOptions {
 }
 
 /**
+ * Extracts the file path from a Supabase Storage public URL
+ *
+ * @param url - Full Supabase Storage public URL
+ * @param bucket - The bucket name to extract the path for
+ * @returns The file path/name, or null if URL doesn't match expected format
+ *
+ * @example
+ * extractPathFromUrl('http://127.0.0.1:54421/storage/v1/object/public/event-images/abc123.jpg', 'event-images')
+ * // Returns: 'abc123.jpg'
+ */
+export function extractPathFromUrl(url: string, bucket: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    // Match pattern: /storage/v1/object/public/{bucket}/{path}
+    // Escape bucket name for regex (though it shouldn't have special chars)
+    const escapedBucket = bucket.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = urlObj.pathname.match(
+      new RegExp(`^/storage/v1/object/public/${escapedBucket}/(.+)$`)
+    );
+    if (match && match[1]) {
+      // Decode any URL-encoded characters in the path
+      return decodeURIComponent(match[1]);
+    }
+    return null;
+  } catch (error) {
+    console.warn('Failed to extract path from URL:', url, error);
+    return null;
+  }
+}
+
+/**
  * Generates an optimized image URL using Supabase Storage transformations
  *
  * @param bucket - The Supabase storage bucket name (e.g., 'event-images')

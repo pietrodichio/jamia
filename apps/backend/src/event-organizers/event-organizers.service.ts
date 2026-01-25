@@ -50,23 +50,9 @@ export class EventOrganizersService {
       }
     }
 
-    const { data, error } = await this.supabase
+    const { data: organizers, error } = await this.supabase
       .from('event_organizers')
-      .select(
-        `
-        id,
-        event_id,
-        user_id,
-        added_by,
-        created_at,
-        profiles (
-          id,
-          first_name,
-          last_name,
-          email
-        )
-      `,
-      )
+      .select('id, event_id, user_id, added_by, created_at')
       .eq('event_id', eventId)
       .order('created_at', { ascending: true });
 
@@ -74,7 +60,30 @@ export class EventOrganizersService {
       throw new Error(`Failed to fetch event co-organizers: ${error.message}`);
     }
 
-    return data || [];
+    if (!organizers || organizers.length === 0) {
+      return [];
+    }
+
+    const userIds = Array.from(new Set(organizers.map((org) => org.user_id)));
+    const { data: profiles, error: profilesError } = await this.supabase
+      .from('profiles')
+      .select('id, first_name, last_name, email, photo_url')
+      .in('id', userIds);
+
+    if (profilesError) {
+      throw new Error(
+        `Failed to fetch event co-organizer profiles: ${profilesError.message}`,
+      );
+    }
+
+    const profilesById = new Map(
+      (profiles ?? []).map((profile) => [profile.id, profile]),
+    );
+
+    return organizers.map((org) => ({
+      ...org,
+      profiles: profilesById.get(org.user_id) ?? null,
+    }));
   }
 
   async addCoOrganizer(
