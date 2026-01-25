@@ -10,11 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Plus, Calendar, Users, LogOut, Loader2, User, History, CalendarDays } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import JamCard from "@/components/JamCard";
-import { UpcomingEventsSection } from "@/components/dashboard/UpcomingEventsSection";
-import { RecommendationsSection } from "@/components/dashboard/RecommendationsSection";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { DashboardActions } from "@/components/dashboard/DashboardActions";
 import { DashboardTabs } from "@/components/dashboard/DashboardTabs";
+import { ParticipationsTab } from "@/components/dashboard/ParticipationsTab";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const Dashboard = () => {
@@ -289,20 +288,23 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Statistics section - shared overview above tabs */}
+        <StatisticsSection userId={currentUser?.id} />
+
         {/* Dashboard Tabs - URL synchronized */}
         <DashboardTabs>
           {{
             participateContent: (
-              <div className="space-y-6">
-                {/* Statistics section - top, full width */}
-                <StatisticsSection userId={currentUser?.id} />
-
-                {/* Upcoming Events section */}
-                <UpcomingEventsSection userId={currentUser?.id} />
-
-                {/* Recommendations section */}
-                <RecommendationsSection userId={currentUser?.id} />
-              </div>
+              <ParticipationsTab
+                userId={currentUser?.id}
+                activeParticipatedJams={activeParticipatedJams}
+                pastParticipatedJams={pastParticipatedJams}
+                participationsLoading={participatingJamsQuery.isLoading}
+                isOwnerOrManager={isOwnerOrManager}
+                isOwner={isOwner}
+                onClone={handleClone}
+                onManageManagers={handleManageManagers}
+              />
             ),
             manageContent: (
               <div className="space-y-6">
