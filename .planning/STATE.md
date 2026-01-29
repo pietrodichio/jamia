@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-01-20)
 
 **Core value:** Dual-purpose platform - manage jam participants + discover acroyoga events
-**Current focus:** Milestone v1 - Complete
+**Current focus:** Milestone v1 - In Progress
 
 ## Current Position
 
-Phase: 6.2 (Dashboard Refactor) - COMPLETE
-Plan: 3 of 3 complete
-Status: Phase verified, milestone complete
-Last activity: 2026-01-25 — Phase 6.2 complete
+Phase: 6.3 (Location UX Improvements) - IN PROGRESS
+Plan: 1 of 3
+Status: Plan 01 complete (IP auto-detection)
+Last activity: 2026-01-29 — Completed 06.3-01-PLAN.md
 
-Progress: [██████████] 100% (44/44 plans complete)
+Progress: [██████████] 96% (45/47 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 44
+- Total plans completed: 45
 - Average duration: 4 min
 - Total execution time: 2.7 hours
 
@@ -35,10 +35,11 @@ Progress: [██████████] 100% (44/44 plans complete)
 | 6. UI/UX Refactor | 7/7 | 29 min | 4 min |
 | 6.1. Event Creation Flow Fixes | 6/6 | 24 min | 4 min |
 | 6.2. Dashboard Refactor | 3/3 | 7 min | 2 min |
+| 6.3. Location UX Improvements | 1/3 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 06.1-06 (5 min), 06.2-01 (2 min), 06.2-02 (3 min), 06.2-03 (2 min)
-- Trend: Phase 6.2 dashboard refactor complete, milestone v1 finished
+- Last 5 plans: 06.2-01 (2 min), 06.2-02 (3 min), 06.2-03 (2 min), 06.3-01 (2 min)
+- Trend: Phase 6.3 location UX in progress
 
 *Updated after each plan completion*
 
@@ -210,6 +211,9 @@ Recent decisions affecting current work:
 - Tab content container pattern (ParticipationsTab/EventManagementTab wrap multiple sections)
 - Deduplicate events by ID when merging owned and co-organized events
 - Visual separator between Events section and Legacy Jam section in EventManagementTab
+- IP location fetched via ipapi.co with 5min staleTime (avoids rate limiting)
+- useRef pattern prevents re-auto-apply after user clears location
+- enableHighAccuracy: true for GPS requests (precise location is user-initiated)
 
 
 ### Roadmap Evolution
@@ -217,6 +221,7 @@ Recent decisions affecting current work:
 - Phase 6 added: UI/UX refactor for events management
 - Phase 6.1 inserted after Phase 6: Event Creation Flow Fixes (URGENT) - Critical gaps discovered in wizard (layout, rich text, location picker, tags, recurring events, preview, validation, images, teachers)
 - Phase 6.2 inserted after Phase 6.1: Dashboard Refactor - Separate dashboard into participations/discovery section and event management section
+- Phase 6.3 inserted after Phase 6.2: Location UX Improvements - Auto-detect location, IP fallback, city search for trip planning (discovered during Phase 6.2 UAT)
 
 ### Pending Todos
 
@@ -228,7 +233,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-25
-Stopped at: Completed 06.2-02-PLAN.md
+Last session: 2026-01-29
+Stopped at: Completed 06.3-01-PLAN.md (IP auto-detection)
 Resume file: None
-Next: Execute 06.2-03-PLAN.md (Participations Tab Content)
+Next: 06.3-02-PLAN.md (City search for trip planning)
