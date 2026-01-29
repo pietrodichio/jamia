@@ -446,6 +446,18 @@ export function UnifiedSearchBar() {
   const locationDisplayText = getLocationDisplayText();
   const isSearchDisabled = !hasLocation;
 
+  // Check if pending location differs from URL location (staged but not applied)
+  const hasPendingChanges = (() => {
+    if (!pendingLocation) return false;
+    const urlLat = parseFloat(filters.lat || '0');
+    const urlLng = parseFloat(filters.lng || '0');
+    return pendingLocation.lat !== urlLat || pendingLocation.lng !== urlLng;
+  })();
+
+  // Generate unique IDs for accessibility
+  const dropdownId = 'unified-search-location-dropdown';
+  const locationLabelId = 'unified-search-location-label';
+
   return (
     <div className="flex items-center h-12 border rounded-full bg-background shadow-sm px-2">
       {/* Keyword Section */}
@@ -471,14 +483,27 @@ export function UnifiedSearchBar() {
       {/* Location Section */}
       <div
         ref={locationInputRef}
-        className="flex items-center flex-1 min-w-0 gap-2 px-2 cursor-pointer relative"
+        className={cn(
+          'flex items-center flex-1 min-w-0 gap-2 px-2 cursor-pointer relative',
+          hasPendingChanges && 'ring-2 ring-primary/20 rounded-full'
+        )}
         onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsLocationDropdownOpen(!isLocationDropdownOpen);
+          }
+        }}
         role="combobox"
         aria-expanded={isLocationDropdownOpen}
         aria-haspopup="listbox"
+        aria-controls={dropdownId}
+        aria-labelledby={locationLabelId}
+        tabIndex={0}
       >
         <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
         <span
+          id={locationLabelId}
           className={cn(
             'flex-1 min-w-0 truncate text-sm',
             locationDisplayText ? 'text-foreground' : 'text-muted-foreground'
@@ -486,6 +511,10 @@ export function UnifiedSearchBar() {
         >
           {locationDisplayText || t('search.location.placeholder')}
         </span>
+        {/* Pending change indicator */}
+        {hasPendingChanges && (
+          <span className="h-2 w-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
+        )}
         {hasLocation && (
           <button
             type="button"
@@ -502,9 +531,11 @@ export function UnifiedSearchBar() {
       {isLocationDropdownOpen && (
         <div
           ref={dropdownRef}
+          id={dropdownId}
           className="absolute top-full left-0 right-0 mt-2 mx-2 rounded-lg border bg-popover shadow-lg z-50"
           style={{ width: 'calc(100% - 16px)', maxWidth: '400px', left: '50%', transform: 'translateX(-50%)' }}
           role="listbox"
+          aria-label={t('search.location.placeholder')}
           onKeyDown={handleDropdownKeyDown}
         >
           {/* City search input */}
@@ -530,7 +561,14 @@ export function UnifiedSearchBar() {
           <div
             role="option"
             aria-selected={highlightedIndex === 0}
+            tabIndex={highlightedIndex === 0 ? 0 : -1}
             onClick={requestPreciseLocation}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                requestPreciseLocation();
+              }
+            }}
             className={cn(
               'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
               highlightedIndex === 0 ? 'bg-accent' : 'hover:bg-accent'
@@ -554,7 +592,14 @@ export function UnifiedSearchBar() {
                     key={prediction.place_id}
                     role="option"
                     aria-selected={highlightedIndex === index + 1}
+                    tabIndex={highlightedIndex === index + 1 ? 0 : -1}
                     onClick={() => void handleSelectPrediction(prediction)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        void handleSelectPrediction(prediction);
+                      }
+                    }}
                     onMouseEnter={() => setHighlightedIndex(index + 1)}
                     className={cn(
                       'flex items-center gap-3 px-4 py-2 cursor-pointer text-sm',
