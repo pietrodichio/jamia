@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { X, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEventFilters } from '@/hooks/useEventFilters';
+import { useIpLocation } from '@/hooks/useIpLocation';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -11,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { CitySearchInput } from './CitySearchInput';
 
 const RADIUS_OPTIONS = [
   { value: '10', label: '10 km' },
@@ -20,83 +22,88 @@ const RADIUS_OPTIONS = [
   { value: '200', label: '200 km' },
 ];
 
-const IP_LOCATION_ENDPOINT = 'https://ipapi.co/json/';
-
 export function LocationSearch() {
   const { t } = useTranslation(['common', 'events']);
   const { filters, updateFilter } = useEventFilters();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isApproximate, setIsApproximate] = useState(false);
+  const hasAutoApplied = useRef(false);
 
-  const applyLocation = (latitude: number, longitude: number) => {
+  // IP location hook with React Query caching
+  const { data: ipLocation, isSuccess: ipLocationReady } = useIpLocation();
+
+  const applyLocation = (
+    latitude: number,
+    longitude: number,
+    approximate = false
+  ) => {
     updateFilter('lat', latitude.toString());
     updateFilter('lng', longitude.toString());
+    setIsApproximate(approximate);
   };
 
-  const requestIpLocation = async (reason: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(IP_LOCATION_ENDPOINT, {
-        headers: { Accept: 'application/json' },
-      });
-      if (!response.ok) {
-        throw new Error('IP location request failed');
-      }
-      const data = (await response.json()) as {
-        latitude?: number;
-        longitude?: number;
-        lat?: number;
-        lon?: number;
-      };
-      const latitude = Number(data.latitude ?? data.lat);
-      const longitude = Number(data.longitude ?? data.lon);
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-        throw new Error('IP location response invalid');
-      }
-      applyLocation(latitude, longitude);
+  // Auto-apply IP location on mount when no location is set
+  useEffect(() => {
+    const hasExistingLocation = filters.lat && filters.lng;
+
+    // Only auto-apply once, and only if no location already set
+    if (
+      !hasAutoApplied.current &&
+      !hasExistingLocation &&
+      ipLocationReady &&
+      ipLocation
+    ) {
+      hasAutoApplied.current = true;
+      applyLocation(ipLocation.lat, ipLocation.lng, true);
       toast({
-        title: 'Posizione approssimativa',
-        description: reason,
+        title: 'Posizione rilevata automaticamente',
+        description: ipLocation.city
+          ? `Vicino a ${ipLocation.city}`
+          : 'Posizione approssimativa basata su IP',
       });
-    } catch (err) {
+    }
+  }, [ipLocationReady, ipLocation, filters.lat, filters.lng]);
+
+  const requestPreciseLocation = () => {
+    if (!navigator.geolocation) {
       toast({
-        title: 'Errore di localizzazione',
-        description: 'Impossibile stimare la posizione via IP',
+        title: 'Geolocalizzazione non supportata',
+        description: 'Il tuo browser non supporta la geolocalizzazione precisa',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      void requestIpLocation('Geolocalizzazione non supportata, uso la posizione via IP.');
       return;
     }
 
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        applyLocation(position.coords.latitude, position.coords.longitude);
+        applyLocation(
+          position.coords.latitude,
+          position.coords.longitude,
+          false
+        );
         setLoading(false);
+        toast({
+          title: 'Posizione precisa',
+          description: 'Posizione GPS rilevata con successo',
+        });
       },
       (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          void requestIpLocation('Permesso negato, uso la posizione via IP.');
-          return;
-        }
         toast({
           title: 'Errore di localizzazione',
-          description: err.message,
+          description:
+            err.code === err.PERMISSION_DENIED
+              ? 'Permesso di geolocalizzazione negato'
+              : err.message,
           variant: 'destructive',
         });
         setLoading(false);
       },
       {
-        enableHighAccuracy: false,
+        enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 300000,
+        maximumAge: 60000, // 1 minute cache for precise location
       }
     );
   };
@@ -108,27 +115,39 @@ export function LocationSearch() {
   const handleClearLocation = () => {
     updateFilter('lat', '');
     updateFilter('lng', '');
+    setIsApproximate(false);
+    hasAutoApplied.current = true; // Prevent re-auto-apply after clearing
   };
 
   const hasLocation = filters.lat && filters.lng;
 
+  // Determine button text based on state
+  const getButtonText = () => {
+    if (loading) return 'Rilevamento...';
+    if (!hasLocation) return 'Posizione';
+    if (isApproximate) return 'Posizione precisa';
+    return '\u2713 Posizione';
+  };
+
   return (
     <div className="flex items-center gap-2">
-      <Button
-        onClick={requestLocation}
-        disabled={loading}
-        size="sm"
-        variant={hasLocation ? 'default' : 'outline'}
-        className="h-9"
-      >
-        {loading ? 'Rilevamento...' : hasLocation ? '✓ Posizione' : 'Posizione'}
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          onClick={requestPreciseLocation}
+          disabled={loading}
+          size="sm"
+          variant={hasLocation && !isApproximate ? 'default' : 'outline'}
+          className="h-9"
+        >
+          {getButtonText()}
+        </Button>
+        {hasLocation && isApproximate && (
+          <span className="text-xs text-muted-foreground">(approssimativa)</span>
+        )}
+      </div>
       {hasLocation && (
         <>
-          <Select
-            value={filters.radius}
-            onValueChange={handleRadiusChange}
-          >
+          <Select value={filters.radius} onValueChange={handleRadiusChange}>
             <SelectTrigger id="radius" className="h-9 w-[100px] text-xs">
               <SelectValue />
             </SelectTrigger>
