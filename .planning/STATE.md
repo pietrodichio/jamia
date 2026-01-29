@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 6.3 (Location UX Improvements) - COMPLETE
-Plan: 3 of 3
-Status: Phase complete (empty states and loading improvements)
-Last activity: 2026-01-29 — Completed 06.3-03-PLAN.md
+Phase: 6.4 (Unified Search Bar) - IN PROGRESS
+Plan: 1 of 3 complete
+Status: Plan 01 complete, desktop UnifiedSearchBar created
+Last activity: 2026-01-29 — Completed 06.4-01-PLAN.md (UnifiedSearchBar desktop)
 
-Progress: [██████████] 100% (47/47 plans complete)
+Progress: [██████████] ~98% (48/~50 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 47
+- Total plans completed: 48
 - Average duration: 4 min
-- Total execution time: 2.78 hours
+- Total execution time: 2.83 hours
 
 **By Phase:**
 
@@ -36,10 +36,11 @@ Progress: [██████████] 100% (47/47 plans complete)
 | 6.1. Event Creation Flow Fixes | 6/6 | 24 min | 4 min |
 | 6.2. Dashboard Refactor | 3/3 | 7 min | 2 min |
 | 6.3. Location UX Improvements | 3/3 | 6 min | 2 min |
+| 6.4. Unified Search Bar | 1/3 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 06.2-03 (2 min), 06.3-01 (2 min), 06.3-02 (2 min), 06.3-03 (2 min)
-- Trend: Phase 6.3 location UX complete, all phases done
+- Last 5 plans: 06.3-01 (2 min), 06.3-02 (2 min), 06.3-03 (2 min), 06.4-01 (3 min)
+- Trend: Phase 6.4 unified search bar in progress
 
 *Updated after each plan completion*
 
@@ -221,6 +222,11 @@ Recent decisions affecting current work:
 - Three distinct empty states for no location, no results, and filters applied (context-aware guidance)
 - Progressive radius expansion 50->100->200->500 km (gradual search expansion)
 - EmptyStateContext pattern for passing state and callbacks to grid component
+- UnifiedSearchBar: Eventbrite-style pill layout with keyword | divider | location | search button
+- IP location auto-applies to URL on mount for immediate search results
+- Pending location uses ring + dot visual indicator to show unsaved changes
+- City selection stages but doesn't auto-search (explicit search button required)
+- Desktop-only render with null return for mobile (Plan 02 adds mobile version)
 
 
 ### Roadmap Evolution
@@ -229,6 +235,7 @@ Recent decisions affecting current work:
 - Phase 6.1 inserted after Phase 6: Event Creation Flow Fixes (URGENT) - Critical gaps discovered in wizard (layout, rich text, location picker, tags, recurring events, preview, validation, images, teachers)
 - Phase 6.2 inserted after Phase 6.1: Dashboard Refactor - Separate dashboard into participations/discovery section and event management section
 - Phase 6.3 inserted after Phase 6.2: Location UX Improvements - Auto-detect location, IP fallback, city search for trip planning (discovered during Phase 6.2 UAT)
+- Phase 6.4 inserted after Phase 6.3: Unified Search Bar - Eventbrite-style combined keyword and location search with mobile modal pattern
 
 ### Pending Todos
 
@@ -241,6 +248,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 06.3-03-PLAN.md (Empty states and loading improvements)
+Stopped at: Completed 06.4-01-PLAN.md (UnifiedSearchBar desktop component)
 Resume file: None
-Next: All phases complete - Milestone v1 ready for final UAT
+Next: Execute 06.4-02-PLAN.md (Mobile search modal)
