@@ -2,7 +2,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { ViewToggle } from '@/components/events/ViewToggle';
 import { EventCardGrid } from '@/components/events/EventCardGrid';
 import { CalendarView } from '@/components/events/CalendarView';
@@ -12,6 +13,56 @@ import { UnifiedFilters } from '@/components/events/UnifiedFilters';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { eventsApi } from '@/api/events.api';
 import type { EventType } from '@jamia/types/event';
+
+/**
+ * Skeleton loading card mimicking EventCard structure
+ */
+function EventCardSkeleton() {
+  return (
+    <div className="rounded-lg border bg-card overflow-hidden">
+      {/* Image skeleton - top 60% */}
+      <Skeleton className="h-48 w-full rounded-none" />
+      {/* Content area */}
+      <div className="p-4 space-y-3">
+        {/* Title - 2 lines */}
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        {/* Meta info - 1 line */}
+        <Skeleton className="h-4 w-2/3" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Loading state with skeleton cards
+ */
+function LoadingState() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <EventCardSkeleton />
+      <EventCardSkeleton />
+      <EventCardSkeleton />
+    </div>
+  );
+}
+
+/**
+ * Error state with retry button
+ */
+function ErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-96 border rounded-lg bg-destructive/10">
+      <p className="text-lg text-destructive mb-4">
+        Si e verificato un errore nel caricamento degli eventi.
+      </p>
+      <Button onClick={onRetry} variant="outline">
+        <RefreshCw className="mr-2 h-4 w-4" />
+        Riprova
+      </Button>
+    </div>
+  );
+}
 
 /**
  * Unified event discovery view
@@ -26,6 +77,8 @@ export function UnifiedEventView() {
   const {
     filters,
     tags,
+    updateFilter,
+    clearFilters,
   } = useEventFilters();
 
   // Read view from URL, default to grid
@@ -46,8 +99,17 @@ export function UnifiedEventView() {
   // Determine if location is set
   const hasLocation = !!filters.lat && !!filters.lng;
 
+  // Determine if filters are active (beyond location)
+  const hasActiveFilters = !!(
+    filters.query ||
+    (filters.types && filters.types.length > 0) ||
+    filters.dateFrom ||
+    filters.dateTo ||
+    tags.length > 0
+  );
+
   // Fetch events with current filters
-  const { data: events, isLoading, error } = useQuery({
+  const { data: events, isLoading, error, refetch } = useQuery({
     queryKey: ['events', hasLocation ? 'search' : 'public', filters, tags],
     queryFn: () => {
       if (hasLocation) {
@@ -106,6 +168,24 @@ export function UnifiedEventView() {
     },
   });
 
+  // Empty state context for EventCardGrid
+  const emptyStateContext = {
+    hasLocation,
+    radius: filters.radius,
+    searchQuery: filters.query,
+    hasActiveFilters,
+    onSetLocation: () => {
+      // Scroll to top where LocationSearch is located
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    onExpandRadius: () => {
+      const currentRadius = parseInt(filters.radius, 10);
+      const nextRadius = currentRadius < 100 ? 100 : currentRadius < 200 ? 200 : 500;
+      updateFilter('radius', nextRadius.toString());
+    },
+    onClearFilters: clearFilters,
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-background">
       <div className="container mx-auto p-4 max-w-7xl">
@@ -138,21 +218,13 @@ export function UnifiedEventView() {
         {/* Results Area */}
         <main>
           {isLoading ? (
-            <div className="flex items-center justify-center h-96 border rounded-lg">
-              <p className="text-lg text-muted-foreground">
-                {t('common:common.loading')}
-              </p>
-            </div>
+            <LoadingState />
           ) : error ? (
-            <div className="flex items-center justify-center h-96 border rounded-lg bg-destructive/10">
-              <p className="text-lg text-destructive">
-                {t('common:common.error')}. {t('common:common.tryAgain')}
-              </p>
-            </div>
+            <ErrorState onRetry={() => refetch()} />
           ) : (
             <>
               {view === 'grid' ? (
-                <EventCardGrid events={events || []} />
+                <EventCardGrid events={events || []} emptyStateContext={emptyStateContext} />
               ) : (
                 <div className="border rounded-lg p-4">
                   <CalendarView
