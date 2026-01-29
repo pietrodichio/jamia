@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6.1: Event Creation Flow Fixes (INSERTED)** - Fix critical gaps in event creation wizard discovered during Phase 6 execution
 - [x] **Phase 6.2: Dashboard Refactor (INSERTED)** - Separate dashboard into participations/discovery and event management sections
 - [x] **Phase 6.3: Location UX Improvements (INSERTED)** - Smart location detection and city search for event discovery
-- [ ] **Phase 6.4: Unified Search Bar (INSERTED)** - Eventbrite-style combined keyword and location search
+- [x] **Phase 6.4: Unified Search Bar (INSERTED)** - Eventbrite-style combined keyword and location search
 
 ## Phase Details
 
@@ -251,8 +251,8 @@ Location UX improvements addressing discovery friction:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 06.4-01-PLAN.md — UnifiedSearchBar desktop component with IP prefill, GPS, city autocomplete
-- [ ] 06.4-02-PLAN.md — Mobile drawer pattern and UnifiedEventView integration
+- [x] 06.4-01-PLAN.md — UnifiedSearchBar desktop component with IP prefill, GPS, city autocomplete
+- [x] 06.4-02-PLAN.md — Mobile drawer pattern and UnifiedEventView integration
 
 **Details:**
 Unified search bar with Eventbrite-style UX:
@@ -292,4 +292,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6.1. Event Creation Flow Fixes (INSERTED) | 6/6 | Complete | 2026-01-24 |
 | 6.2. Dashboard Refactor (INSERTED) | 3/3 | Complete | 2026-01-25 |
 | 6.3. Location UX Improvements (INSERTED) | 3/3 | Complete | 2026-01-29 |
-| 6.4. Unified Search Bar (INSERTED) | 0/2 | In Progress | - |
+| 6.4. Unified Search Bar (INSERTED) | 2/2 | Complete | 2026-01-29 |
