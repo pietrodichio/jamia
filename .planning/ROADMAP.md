@@ -21,6 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6.1: Event Creation Flow Fixes (INSERTED)** - Fix critical gaps in event creation wizard discovered during Phase 6 execution
 - [x] **Phase 6.2: Dashboard Refactor (INSERTED)** - Separate dashboard into participations/discovery and event management sections
 - [x] **Phase 6.3: Location UX Improvements (INSERTED)** - Smart location detection and city search for event discovery
+- [ ] **Phase 6.4: Unified Search Bar (INSERTED)** - Eventbrite-style combined keyword and location search
 
 ## Phase Details
 
@@ -243,10 +244,42 @@ Location UX improvements addressing discovery friction:
 - Actionable CTAs: set location, expand radius, clear filters
 - Skeleton loading states instead of generic text
 
+### Phase 6.4: Unified Search Bar (INSERTED)
+
+**Goal:** Create Eventbrite-style unified search bar combining keyword and location search
+**Depends on:** Phase 6.3
+**Plans:** 2 plans
+
+Plans:
+- [ ] 06.4-01-PLAN.md — UnifiedSearchBar desktop component with IP prefill, GPS, city autocomplete
+- [ ] 06.4-02-PLAN.md — Mobile drawer pattern and UnifiedEventView integration
+
+**Details:**
+Unified search bar with Eventbrite-style UX:
+
+**Structure:**
+- Single component: `[🔍 Keyword] | [📍 Location] [🔵 Search Button]`
+- Vertical divider between keyword and location inputs
+- Circular search button triggers location-based search
+
+**Location Behavior:**
+- Default: IP-based location prefilled with "(approssimativa)" indicator
+- "Use current location" option triggers GPS browser permission
+- Autocomplete: cities, countries, regions, provinces, neighborhoods (NOT addresses/zip codes)
+- Display: Always show city name (e.g., "Milano")
+
+**Search Triggers:**
+- Keyword: Real-time with debounce + Enter key
+- Location: Only on search button click (selection doesn't auto-search)
+
+**Mobile:**
+- Stack inputs vertically
+- Modal/sheet pattern for search interface
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2 → 6.3
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2 → 6.3 → 6.4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -259,3 +292,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6.1. Event Creation Flow Fixes (INSERTED) | 6/6 | Complete | 2026-01-24 |
 | 6.2. Dashboard Refactor (INSERTED) | 3/3 | Complete | 2026-01-25 |
 | 6.3. Location UX Improvements (INSERTED) | 3/3 | Complete | 2026-01-29 |
+| 6.4. Unified Search Bar (INSERTED) | 0/2 | In Progress | - |
