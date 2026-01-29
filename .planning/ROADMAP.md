@@ -20,6 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: UI/UX Refactor for Events Management** - Improve user experience and interface for event management features
 - [x] **Phase 6.1: Event Creation Flow Fixes (INSERTED)** - Fix critical gaps in event creation wizard discovered during Phase 6 execution
 - [x] **Phase 6.2: Dashboard Refactor (INSERTED)** - Separate dashboard into participations/discovery and event management sections
+- [ ] **Phase 6.3: Location UX Improvements (INSERTED)** - Smart location detection and city search for event discovery
 
 ## Phase Details
 
@@ -208,10 +209,44 @@ Dashboard refactor with two main sections:
 - View and manage draft events
 - Event statistics and analytics
 
+### Phase 6.3: Location UX Improvements (INSERTED)
+
+**Goal:** Improve location detection UX with auto-detect, IP fallback, and city search for trip planning
+**Depends on:** Phase 6.2
+**Plans:** 3 plans
+
+Plans:
+- [ ] 06.3-01-PLAN.md — IP location auto-detection and geolocation permission hooks
+- [ ] 06.3-02-PLAN.md — City search with Google Places autocomplete
+- [ ] 06.3-03-PLAN.md — Context-aware empty states with actionable guidance
+
+**Details:**
+Location UX improvements addressing discovery friction:
+
+**Auto-detection:**
+- IP-based location fetched silently on discovery page mount (no permission prompt)
+- GPS upgrade available via explicit user action (button click)
+- Visual indicator distinguishing approximate vs precise location
+
+**City/Place Search:**
+- Google Places autocomplete restricted to cities for trip planning
+- Reuses existing Google Maps integration from event creation
+- Selection applies coordinates to URL-based filter state
+
+**Temporary vs Profile Location:**
+- Search location is temporary (URL params only)
+- Does not modify user's profile location
+- City name displayed when using city search
+
+**Better Empty States:**
+- Context-aware messaging: no location vs no results vs filters too restrictive
+- Actionable CTAs: set location, expand radius, clear filters
+- Skeleton loading states instead of generic text
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2 → 6.3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -223,3 +258,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6. UI/UX Refactor for Events Management | 7/7 | Complete | 2026-01-23 |
 | 6.1. Event Creation Flow Fixes (INSERTED) | 6/6 | Complete | 2026-01-24 |
 | 6.2. Dashboard Refactor (INSERTED) | 3/3 | Complete | 2026-01-25 |
+| 6.3. Location UX Improvements (INSERTED) | 0/3 | Not Started | - |
