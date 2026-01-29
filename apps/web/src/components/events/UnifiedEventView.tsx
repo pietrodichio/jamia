@@ -7,8 +7,7 @@ import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { ViewToggle } from '@/components/events/ViewToggle';
 import { EventCardGrid } from '@/components/events/EventCardGrid';
 import { CalendarView } from '@/components/events/CalendarView';
-import { LocationSearch } from '@/components/search/LocationSearch';
-import { KeywordSearch } from '@/components/search/KeywordSearch';
+import { UnifiedSearchBar } from '@/components/search/UnifiedSearchBar';
 import { UnifiedFilters } from '@/components/events/UnifiedFilters';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { eventsApi } from '@/api/events.api';
@@ -201,18 +200,19 @@ export function UnifiedEventView() {
         <h1 className="text-2xl font-bold mb-4">{t('events:filters.searchPlaceholder')}</h1>
 
         {/* Filter Bar - Sticky at top */}
-        <div className="sticky top-0 z-10 mb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <LocationSearch />
-            <KeywordSearch />
-            <UnifiedFilters />
+        <div className="sticky top-0 z-10 mb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 -mx-4 px-4 py-3 border-b">
+          {/* Main search bar row */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 max-w-2xl">
+              <UnifiedSearchBar />
+            </div>
             <ViewToggle currentView={view} onViewChange={setView} />
           </div>
-        </div>
 
-        {/* View Toggle */}
-        <div className="flex justify-end mb-4">
-
+          {/* Filters row - below search bar */}
+          <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+            <UnifiedFilters />
+          </div>
         </div>
 
         {/* Results Area */}
