@@ -13,7 +13,7 @@
 		"location": "Luogo",
 		"capacity": "Capacità massima",
 		"manageParticipants": "Gestisci partecipanti",
-		"visibility": "Visibilità",
+		"visibility": "Visibilità dell'evento",
 		"type": "Tipo di evento",
 		"startDate": "Data inizio",
 		"endDate": "Data fine",
@@ -58,6 +58,21 @@
 		"tags": "Tag",
 		"amenities": "Servizi"
 	},
+	"search": {
+		"keyword": {
+			"placeholder": "Cerca eventi"
+		},
+		"location": {
+			"placeholder": "Scegli una citta",
+			"useCurrentLocation": "Usa la mia posizione attuale",
+			"approximate": "(approssimativa)",
+			"preciseFallback": "Posizione precisa",
+			"searchCity": "Cerca una citta..."
+		},
+		"button": {
+			"search": "Cerca"
+		}
+	},
 	"messages": {
 		"eventCreated": "Evento creato con successo",
 		"eventUpdated": "Evento aggiornato con successo",
@@ -68,5 +83,33 @@
 	"home": {
 		"upcomingEvents": "Prossimi eventi",
 		"viewAll": "Vedi tutti"
+	},
+	"admin": {
+		"title": "Sezione Admin",
+		"ownerActions": "Azioni Proprietario",
+		"occurrenceManagement": "Gestione Occorrenze",
+		"occurrenceManagementDescription": "Modifica o cancella occorrenze specifiche di questo evento ricorrente.",
+		"editOccurrences": "Modifica Occorrenze",
+		"noRecurrence": "Questo evento non è ricorrente.",
+		"coOrganizerInfo": "Come co-organizzatore, puoi modificare le occorrenze di questo evento ricorrente.",
+		"manageCoOrganizers": "Gestisci Co-Organizzatori",
+		"manageCoOrganizersDescription": "Aggiungi o rimuovi co-organizzatori per questo evento. I co-organizzatori possono modificare le occorrenze degli eventi ricorrenti.",
+		"addCoOrganizer": "Aggiungi Co-Organizzatore",
+		"currentCoOrganizers": "Co-Organizzatori Attuali",
+		"noCoOrganizers": "Nessun co-organizzatore aggiunto",
+		"coOrganizerAdded": "Co-organizzatore aggiunto",
+		"coOrganizerRemoved": "Co-organizzatore rimosso",
+		"manageTeachers": "Gestisci Insegnanti",
+		"manageTeachersDescription": "Aggiungi o rimuovi insegnanti per questo evento.",
+		"addTeacher": "Aggiungi Insegnante",
+		"currentTeachers": "Insegnanti Attuali",
+		"noTeachers": "Nessun insegnante aggiunto",
+		"teacherAdded": "Insegnante aggiunto",
+		"teacherAddedDescription": "L'insegnante è stato aggiunto con successo",
+		"teacherRemoved": "Insegnante rimosso",
+		"teacherRemovedDescription": "L'insegnante è stato rimosso con successo",
+		"teacherRemoveError": "Impossibile rimuovere l'insegnante",
+		"searchPlaceholder": "Cerca per nome o email...",
+		"noUsersFound": "Nessun utente trovato"
 	}
 }
