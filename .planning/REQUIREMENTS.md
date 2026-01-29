@@ -165,7 +165,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EVENT-08 | Phase 3 | Pending |
 | EVENT-09 | Phase 3 | Pending |
 | EVENT-10 | Phase 3 | Pending |
-| LOC-01 | Phase 4 | Pending |
+| LOC-01 | Phase 6.3 | Complete |
 | LOC-02 | Phase 4 | Complete |
 | LOC-03 | Phase 4 | Complete |
 | LOC-04 | Phase 4 | Complete |
