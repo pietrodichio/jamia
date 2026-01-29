@@ -1,14 +1,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useTranslation } from 'react-i18next';
-import { Search, MapPin, Crosshair, X, Loader2 } from 'lucide-react';
+import { Search, MapPin, Crosshair, X, Loader2, ChevronDown } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEventFilters } from '@/hooks/useEventFilters';
 import { useIpLocation } from '@/hooks/useIpLocation';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 import { cn } from '@/lib/utils';
 
 type LocationType = 'ip' | 'gps' | 'city' | null;
@@ -61,6 +71,7 @@ export function UnifiedSearchBar() {
   const [isLoadingPredictions, setIsLoadingPredictions] = useState(false);
   const [isLoadingGps, setIsLoadingGps] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Refs
   const hasAutoApplied = useRef(false);
@@ -70,11 +81,6 @@ export function UnifiedSearchBar() {
   const lastRequestId = useRef(0);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const sessionTokenRef = useRef<any>(null);
-
-  // Mobile: render nothing (Plan 02 will add mobile version)
-  if (isMobile) {
-    return null;
-  }
 
   // Create a new session token for Google Places
   const getSessionToken = useCallback(() => {
@@ -458,6 +464,178 @@ export function UnifiedSearchBar() {
   const dropdownId = 'unified-search-location-dropdown';
   const locationLabelId = 'unified-search-location-label';
 
+  // Get mobile trigger text
+  const getMobileTriggerText = () => {
+    const keyword = keywordValue;
+    const location = locationDisplayText;
+
+    if (keyword && location) {
+      return `${keyword} ${t('search.mobile.at')} ${location.replace(` ${t('search.location.approximate')}`, '')}`;
+    }
+    if (keyword) {
+      return keyword;
+    }
+    if (location) {
+      return `${t('search.mobile.at')} ${location.replace(` ${t('search.location.approximate')}`, '')}`;
+    }
+    return t('search.mobile.title');
+  };
+
+  // Handle search and close drawer (mobile)
+  const handleSearchAndClose = () => {
+    handleSearch();
+    setIsDrawerOpen(false);
+    setIsLocationDropdownOpen(false);
+  };
+
+  // Clear location without event (for mobile)
+  const handleClearLocationMobile = () => {
+    updateFilter('lat', '');
+    updateFilter('lng', '');
+    setPendingLocation(null);
+    setLocationType(null);
+    setCityName(null);
+    hasAutoApplied.current = true; // Prevent re-auto-apply
+  };
+
+  // Mobile: render drawer pattern
+  if (isMobile) {
+    return (
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <DrawerTrigger asChild>
+          <Button variant="outline" className="w-full justify-start h-12 rounded-full">
+            <Search className="h-4 w-4 mr-2" />
+            <span className="flex-1 text-left text-muted-foreground truncate">
+              {getMobileTriggerText()}
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0" />
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle>{t('search.mobile.title')}</DrawerTitle>
+          </DrawerHeader>
+
+          <div className="p-4 space-y-4">
+            {/* Keyword input - full width */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('search.mobile.keywordLabel')}</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder={t('search.keyword.placeholder')}
+                  value={keywordValue}
+                  onChange={handleKeywordChange}
+                  className="pl-9"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Location input - full width */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('search.mobile.locationLabel')}</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder={t('search.location.placeholder')}
+                  value={citySearchText}
+                  onChange={(e) => {
+                    setCitySearchText(e.target.value);
+                    setIsLocationDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsLocationDropdownOpen(true)}
+                  className="pl-9 pr-9"
+                />
+                {hasLocation && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                    onClick={handleClearLocationMobile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Current location display */}
+              {locationDisplayText && !citySearchText && (
+                <div className="text-sm text-muted-foreground flex items-center gap-2 pl-1">
+                  <MapPin className="h-3 w-3" />
+                  {locationDisplayText}
+                </div>
+              )}
+
+              {/* Inline dropdown for mobile (below input) */}
+              {isLocationDropdownOpen && (
+                <div className="border rounded-md bg-background">
+                  {/* GPS Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      requestPreciseLocation();
+                      setIsLocationDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left"
+                  >
+                    {isLoadingGps ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Crosshair className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className="text-sm">{t('search.location.useCurrentLocation')}</span>
+                  </button>
+
+                  {/* City Predictions */}
+                  {predictions.length > 0 && (
+                    <>
+                      <Separator />
+                      {predictions.map((prediction) => (
+                        <button
+                          key={prediction.place_id}
+                          type="button"
+                          onClick={() => {
+                            void handleSelectPrediction(prediction);
+                            setIsLocationDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 hover:bg-accent transition-colors text-left text-sm"
+                        >
+                          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="truncate">{prediction.description}</span>
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Loading indicator */}
+                  {isLoadingPredictions && (
+                    <div className="flex items-center justify-center py-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DrawerFooter>
+            <Button onClick={handleSearchAndClose} className="w-full">
+              <Search className="h-4 w-4 mr-2" />
+              {t('search.mobile.searchButton')}
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline" className="w-full">{t('search.mobile.cancel')}</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop: render inline bar
   return (
     <div className="flex items-center h-12 border rounded-full bg-background shadow-sm px-2">
       {/* Keyword Section */}

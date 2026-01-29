@@ -71,6 +71,14 @@
 		},
 		"button": {
 			"search": "Cerca"
+		},
+		"mobile": {
+			"title": "Cerca eventi",
+			"keywordLabel": "Cosa cerchi?",
+			"locationLabel": "Dove?",
+			"searchButton": "Cerca",
+			"cancel": "Annulla",
+			"at": "a"
 		}
 	},
 	"messages": {
