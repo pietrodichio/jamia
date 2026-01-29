@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 6.3 (Location UX Improvements) - IN PROGRESS
-Plan: 1 of 3
-Status: Plan 01 complete (IP auto-detection)
-Last activity: 2026-01-29 — Completed 06.3-01-PLAN.md
+Plan: 2 of 3
+Status: Plan 02 complete (city search for trip planning)
+Last activity: 2026-01-29 — Completed 06.3-02-PLAN.md
 
-Progress: [██████████] 96% (45/47 plans complete)
+Progress: [██████████] 98% (46/47 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 45
+- Total plans completed: 46
 - Average duration: 4 min
-- Total execution time: 2.7 hours
+- Total execution time: 2.75 hours
 
 **By Phase:**
 
@@ -35,11 +35,11 @@ Progress: [██████████] 96% (45/47 plans complete)
 | 6. UI/UX Refactor | 7/7 | 29 min | 4 min |
 | 6.1. Event Creation Flow Fixes | 6/6 | 24 min | 4 min |
 | 6.2. Dashboard Refactor | 3/3 | 7 min | 2 min |
-| 6.3. Location UX Improvements | 1/3 | 2 min | 2 min |
+| 6.3. Location UX Improvements | 2/3 | 4 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 06.2-01 (2 min), 06.2-02 (3 min), 06.2-03 (2 min), 06.3-01 (2 min)
-- Trend: Phase 6.3 location UX in progress
+- Last 5 plans: 06.2-02 (3 min), 06.2-03 (2 min), 06.3-01 (2 min), 06.3-02 (2 min)
+- Trend: Phase 6.3 location UX in progress, city search complete
 
 *Updated after each plan completion*
 
@@ -214,6 +214,10 @@ Recent decisions affecting current work:
 - IP location fetched via ipapi.co with 5min staleTime (avoids rate limiting)
 - useRef pattern prevents re-auto-apply after user clears location
 - enableHighAccuracy: true for GPS requests (precise location is user-initiated)
+- City-only autocomplete via types: ['(cities)'] in Google Places API request
+- Location type tracking (ip/gps/city) enables appropriate display indicator
+- City search is temporary (URL params only, does not modify user profile)
+- 350ms debounce on city search matches EventTypeStep pattern for consistency
 
 
 ### Roadmap Evolution
@@ -234,6 +238,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 06.3-01-PLAN.md (IP auto-detection)
+Stopped at: Completed 06.3-02-PLAN.md (City search for trip planning)
 Resume file: None
-Next: 06.3-02-PLAN.md (City search for trip planning)
+Next: 06.3-03-PLAN.md (UAT for location UX)
