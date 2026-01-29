@@ -22,12 +22,16 @@ const RADIUS_OPTIONS = [
   { value: '200', label: '200 km' },
 ];
 
+type LocationType = 'ip' | 'gps' | 'city';
+
 export function LocationSearch() {
   const { t } = useTranslation(['common', 'events']);
   const { filters, updateFilter } = useEventFilters();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [isApproximate, setIsApproximate] = useState(false);
+  const [locationType, setLocationType] = useState<LocationType | null>(null);
+  const [cityName, setCityName] = useState<string | null>(null);
+  const [showCitySearch, setShowCitySearch] = useState(false);
   const hasAutoApplied = useRef(false);
 
   // IP location hook with React Query caching
@@ -36,11 +40,13 @@ export function LocationSearch() {
   const applyLocation = (
     latitude: number,
     longitude: number,
-    approximate = false
+    type: LocationType,
+    city?: string
   ) => {
     updateFilter('lat', latitude.toString());
     updateFilter('lng', longitude.toString());
-    setIsApproximate(approximate);
+    setLocationType(type);
+    setCityName(city || null);
   };
 
   // Auto-apply IP location on mount when no location is set
@@ -55,7 +61,7 @@ export function LocationSearch() {
       ipLocation
     ) {
       hasAutoApplied.current = true;
-      applyLocation(ipLocation.lat, ipLocation.lng, true);
+      applyLocation(ipLocation.lat, ipLocation.lng, 'ip', ipLocation.city);
       toast({
         title: 'Posizione rilevata automaticamente',
         description: ipLocation.city
@@ -64,6 +70,16 @@ export function LocationSearch() {
       });
     }
   }, [ipLocationReady, ipLocation, filters.lat, filters.lng]);
+
+  // Handle city selection from CitySearchInput
+  const handleCitySelect = (location: { lat: number; lng: number; city: string }) => {
+    applyLocation(location.lat, location.lng, 'city', location.city);
+    setShowCitySearch(false);
+    toast({
+      title: `Cercando eventi a ${location.city}`,
+      description: 'Filtri aggiornati per la nuova posizione',
+    });
+  };
 
   const requestPreciseLocation = () => {
     if (!navigator.geolocation) {
@@ -81,7 +97,7 @@ export function LocationSearch() {
         applyLocation(
           position.coords.latitude,
           position.coords.longitude,
-          false
+          'gps'
         );
         setLoading(false);
         toast({
@@ -115,7 +131,9 @@ export function LocationSearch() {
   const handleClearLocation = () => {
     updateFilter('lat', '');
     updateFilter('lng', '');
-    setIsApproximate(false);
+    setLocationType(null);
+    setCityName(null);
+    setShowCitySearch(false);
     hasAutoApplied.current = true; // Prevent re-auto-apply after clearing
   };
 
@@ -125,49 +143,89 @@ export function LocationSearch() {
   const getButtonText = () => {
     if (loading) return 'Rilevamento...';
     if (!hasLocation) return 'Posizione';
-    if (isApproximate) return 'Posizione precisa';
+    if (locationType === 'ip') return 'Posizione precisa';
     return '\u2713 Posizione';
   };
 
+  // Get location indicator text
+  const getLocationIndicator = () => {
+    if (!hasLocation) return null;
+    if (locationType === 'city' && cityName) return cityName;
+    if (locationType === 'ip') return '(rilevata automaticamente)';
+    if (locationType === 'gps') return '(precisa)';
+    return null;
+  };
+
+  const locationIndicator = getLocationIndicator();
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-1">
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button
+            onClick={requestPreciseLocation}
+            disabled={loading}
+            size="sm"
+            variant={hasLocation && locationType === 'gps' ? 'default' : 'outline'}
+            className="h-9"
+          >
+            {getButtonText()}
+          </Button>
+          {locationIndicator && (
+            <span className="text-xs text-muted-foreground">{locationIndicator}</span>
+          )}
+        </div>
+
+        {/* City search toggle button */}
         <Button
-          onClick={requestPreciseLocation}
-          disabled={loading}
+          onClick={() => setShowCitySearch(!showCitySearch)}
           size="sm"
-          variant={hasLocation && !isApproximate ? 'default' : 'outline'}
-          className="h-9"
+          variant="outline"
+          className="h-9 gap-1"
         >
-          {getButtonText()}
+          <MapPin className="h-4 w-4" />
+          Cerca citta
+          {showCitySearch ? (
+            <ChevronUp className="h-3 w-3" />
+          ) : (
+            <ChevronDown className="h-3 w-3" />
+          )}
         </Button>
-        {hasLocation && isApproximate && (
-          <span className="text-xs text-muted-foreground">(approssimativa)</span>
+
+        {hasLocation && (
+          <>
+            <Select value={filters.radius} onValueChange={handleRadiusChange}>
+              <SelectTrigger id="radius" className="h-9 w-[100px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RADIUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearLocation}
+              className="h-9 px-2"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </>
         )}
       </div>
-      {hasLocation && (
-        <>
-          <Select value={filters.radius} onValueChange={handleRadiusChange}>
-            <SelectTrigger id="radius" className="h-9 w-[100px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {RADIUS_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearLocation}
-            className="h-9 px-2"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </>
+
+      {/* City search input - collapsible section */}
+      {showCitySearch && (
+        <div className="pt-1">
+          <CitySearchInput
+            onCitySelect={handleCitySelect}
+            placeholder="Cerca una citta..."
+          />
+        </div>
       )}
     </div>
   );
