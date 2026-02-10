@@ -24,7 +24,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6.4: Unified Search Bar (INSERTED)** - Eventbrite-style combined keyword and location search
 - [x] **Phase 7: Email Preferences** - Database, API, and settings UI for user email digest preferences
 - [x] **Phase 8: Event Recap Email Engine** - Scheduled sending, email templates, content curation, and Resend integration
-- [ ] **Phase 9: Email Adoption & Growth UX** - Onboarding flows, nudges, smart defaults to maximize email subscription rates
+- [x] **Phase 9: Email Adoption & Growth UX** - Onboarding flows, nudges, smart defaults to maximize email subscription rates
 
 ## Phase Details
 
@@ -321,7 +321,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 09-01-PLAN.md — Dashboard nudge banner with one-click opt-in and backend has_seen_digest_prompt flag
+- [x] 09-01-PLAN.md — Dashboard nudge banner with one-click opt-in and backend has_seen_digest_prompt flag
 
 **Details:**
 - **New users:** Smart defaults during signup via ProfileSetup auto-save (already implemented in Phase 7)
@@ -349,4 +349,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6.4. Unified Search Bar (INSERTED) | 2/2 | Complete | 2026-01-29 |
 | 7. Email Preferences | 3/3 | Complete | 2026-02-10 |
 | 8. Event Recap Email Engine | 3/3 | Complete | 2026-02-10 |
-| 9. Email Adoption & Growth UX | 0/1 | Not Started | — |
+| 9. Email Adoption & Growth UX | 1/1 | Complete | 2026-02-10 |
