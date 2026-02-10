@@ -300,17 +300,19 @@ Plans:
 
 **Goal:** Scheduled email digests deliver curated upcoming events to subscribed users via Resend
 **Depends on:** Phase 7
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 8 to break down)
+- [ ] 08-01-PLAN.md — Digest module setup with event curation service
+- [ ] 08-02-PLAN.md — React Email templates and rendering
+- [ ] 08-03-PLAN.md — Digest scheduler, batch delivery, and unsubscribe page
 
 **Details:**
-- Scheduled job/cron for weekly (Monday) and monthly (1st) email dispatch
-- Email templates with curated event content (location-based, type-based)
-- Content personalization strategy (nearby events, preferred event types)
-- Integration with existing Resend email infrastructure
-- Unsubscribe link and preference management from email
+- NestJS cron scheduler (@nestjs/schedule) for weekly (Monday 10AM CET) and monthly (1st 10AM CET) digest sends
+- React Email templates matching Jamia branding with two sections: "Prossimi eventi" and "Nuovi eventi"
+- Event curation: conventions, workshops, jams only (no classes), max 3 per type per section, dedup across sections
+- Batch delivery with per-user error isolation, rate limiting, and RFC 8058 compliance headers
+- Frontend unsubscribe confirmation page at /unsubscribe
 
 ### Phase 9: Email Adoption & Growth UX
 
@@ -345,5 +347,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6.3. Location UX Improvements (INSERTED) | 3/3 | Complete | 2026-01-29 |
 | 6.4. Unified Search Bar (INSERTED) | 2/2 | Complete | 2026-01-29 |
 | 7. Email Preferences | 3/3 | Complete | 2026-02-10 |
-| 8. Event Recap Email Engine | 0/0 | Not Started | — |
+| 8. Event Recap Email Engine | 0/3 | Not Started | — |
 | 9. Email Adoption & Growth UX | 0/0 | Not Started | — |
