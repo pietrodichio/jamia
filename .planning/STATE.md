@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 7 (Email Preferences) - COMPLETE
-Plan: 3 of 3 complete
-Status: All email preferences features complete (database, API, UI)
-Last activity: 2026-02-10 — Completed 07-03-PLAN.md (Email Preferences UI)
+Phase: 8 (Event Recap Email Engine) - IN PROGRESS
+Plan: 1 of 3 complete
+Status: Digest module foundation complete, ready for email templates
+Last activity: 2026-02-10 — Completed 08-01-PLAN.md (Digest Module Foundation)
 
-Progress: [███████████] 100% (52/52 plans complete)
+Progress: [███████████░] 98% (53/54 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 52
+- Total plans completed: 53
 - Average duration: 4 min
-- Total execution time: 4.02 hours
+- Total execution time: 4.04 hours
 
 **By Phase:**
 
@@ -38,10 +38,11 @@ Progress: [███████████] 100% (52/52 plans complete)
 | 6.3. Location UX Improvements | 3/3 | 6 min | 2 min |
 | 6.4. Unified Search Bar | 2/2 | 6 min | 3 min |
 | 7. Email Preferences | 3/3 | 10 min | 3 min |
+| 8. Event Recap Email Engine | 1/3 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 06.4-02 (3 min), 07-01 (4 min), 07-02 (4 min), 07-03 (2 min)
-- Trend: Phase 7 complete - email preferences foundation ready for Phase 8 digest engine
+- Last 5 plans: 07-01 (4 min), 07-02 (4 min), 07-03 (2 min), 08-01 (2 min)
+- Trend: Phase 8 started - digest module foundation complete, building email templates next
 
 *Updated after each plan completion*
 
@@ -245,6 +246,11 @@ Recent decisions affecting current work:
 - Opt-out email preference pattern (pre-checked toggle for new users, auto-save on mount)
 - Always send both digest_enabled and digest_frequency together in mutations to prevent race conditions
 - Independent settings cards pattern: separate React Query flows, not part of form submission
+- Group events by type with priority ordering (convention > workshop > jam for digest emails)
+- Deduplicate events across sections (new section excludes upcoming IDs to prevent showing same event twice)
+- Max 3 events per type per section (prevents email from being overwhelming, max 18 events total)
+- Service role client for digest queries (scheduled jobs run server-side, bypass RLS to query all published events)
+- JSX support in backend tsconfig (enables React Email template compilation)
 
 
 ### Roadmap Evolution
@@ -269,6 +275,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 07-03-PLAN.md (Email Preferences UI)
+Stopped at: Completed 08-01-PLAN.md (Digest Module Foundation)
 Resume file: None
-Next: Phase 7 complete - ready for Phase 8 (Event Recap Email Engine)
+Next: Phase 8 Plan 02 (Email Templates with React Email)
