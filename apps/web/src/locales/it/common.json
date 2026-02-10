@@ -43,5 +43,20 @@
     "noResults": "Nessun risultato trovato",
     "tryAgain": "Riprova",
     "unknown": "Sconosciuto"
+  },
+  "emailPreferences": {
+    "title": "Notifiche Email",
+    "description": "Ricevi un riepilogo degli eventi di AcroYoga in Italia",
+    "digestLabel": "Ricezione digest",
+    "digestDescription": "Ricevi un riepilogo periodico degli eventi in programma",
+    "weekly": "Settimanale",
+    "weeklyDescription": "Ogni lunedi mattina",
+    "monthly": "Mensile",
+    "monthlyDescription": "Il primo di ogni mese",
+    "frequencyLabel": "Frequenza",
+    "saved": "Preferenze salvate",
+    "savedDescription": "Le tue preferenze email sono state aggiornate.",
+    "error": "Errore",
+    "errorDescription": "Impossibile salvare le preferenze. Riprova."
   }
 }
