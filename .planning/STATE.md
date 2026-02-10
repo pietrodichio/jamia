@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 6.4 (Unified Search Bar) - COMPLETE
-Plan: 2 of 2 complete
-Status: Phase verified, unified search bar complete
-Last activity: 2026-01-29 — Completed Phase 6.4 (Unified Search Bar)
+Phase: 7 (Email Preferences) - IN PROGRESS
+Plan: 1 of 3 complete
+Status: Database migration complete, API and UI pending
+Last activity: 2026-02-10 — Completed 07-01-PLAN.md (Email Preferences Migration)
 
-Progress: [██████████] 100% (49/49 plans complete)
+Progress: [██████████░] 98% (50/51 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 49
+- Total plans completed: 50
 - Average duration: 4 min
-- Total execution time: 2.88 hours
+- Total execution time: 3.92 hours
 
 **By Phase:**
 
@@ -36,11 +36,12 @@ Progress: [██████████] 100% (49/49 plans complete)
 | 6.1. Event Creation Flow Fixes | 6/6 | 24 min | 4 min |
 | 6.2. Dashboard Refactor | 3/3 | 7 min | 2 min |
 | 6.3. Location UX Improvements | 3/3 | 6 min | 2 min |
-| 6.4. Unified Search Bar | 2/3 | 6 min | 3 min |
+| 6.4. Unified Search Bar | 2/2 | 6 min | 3 min |
+| 7. Email Preferences | 1/3 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 06.3-02 (2 min), 06.3-03 (2 min), 06.4-01 (3 min), 06.4-02 (3 min)
-- Trend: Phase 6.4 unified search bar near completion
+- Last 5 plans: 06.3-03 (2 min), 06.4-01 (3 min), 06.4-02 (3 min), 07-01 (4 min)
+- Trend: Phase 7 email preferences infrastructure underway
 
 *Updated after each plan completion*
 
@@ -233,6 +234,9 @@ Recent decisions affecting current work:
 - Inline location dropdown inside drawer (not overlay)
 - Two-tier filter bar: search row above, filters row below
 - Glass-morphism sticky header: bg-background/95 backdrop-blur
+- Default email preferences to disabled (opt-in approach respects user privacy and complies with email marketing best practices)
+- Unsubscribe token UUID (provides strong uniqueness guarantee and prevents token guessing)
+- Partial index on digest_enabled=true (Phase 8 scheduler only queries enabled users)
 
 
 ### Roadmap Evolution
@@ -242,6 +246,9 @@ Recent decisions affecting current work:
 - Phase 6.2 inserted after Phase 6.1: Dashboard Refactor - Separate dashboard into participations/discovery section and event management section
 - Phase 6.3 inserted after Phase 6.2: Location UX Improvements - Auto-detect location, IP fallback, city search for trip planning (discovered during Phase 6.2 UAT)
 - Phase 6.4 inserted after Phase 6.3: Unified Search Bar - Eventbrite-style combined keyword and location search with mobile modal pattern
+- Phase 7 added: Email Preferences - DB migration, API, and settings UI for email digest preferences (weekly/monthly)
+- Phase 8 added: Event Recap Email Engine - Scheduled sending, email templates, content curation, Resend integration
+- Phase 9 added: Email Adoption & Growth UX - Onboarding flows, nudges, smart defaults to maximize subscriptions
 
 ### Pending Todos
 
@@ -253,7 +260,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-29
-Stopped at: Completed 06.4-02-PLAN.md (Mobile drawer + UnifiedEventView integration)
+Last session: 2026-02-10
+Stopped at: Completed 07-01-PLAN.md (Email Preferences Migration)
 Resume file: None
-Next: Execute 06.4-03-PLAN.md (Cleanup old search components)
+Next: Execute 07-02-PLAN.md (Email Preferences API)
