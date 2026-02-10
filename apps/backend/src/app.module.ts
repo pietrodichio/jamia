@@ -12,6 +12,7 @@ import { ManagersModule } from './managers/managers.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { EventsModule } from './events/events.module';
 import { EventOrganizersModule } from './event-organizers/event-organizers.module';
+import { EmailPreferencesModule } from './email-preferences/email-preferences.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { EventOrganizersModule } from './event-organizers/event-organizers.modul
     TelegramModule,
     EventsModule,
     EventOrganizersModule,
+    EmailPreferencesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
