@@ -318,16 +318,17 @@ Plans:
 
 **Goal:** Maximize email subscription rates through smart defaults, onboarding integration, and nudge patterns for both new and existing users
 **Depends on:** Phase 8
-**Plans:** 0 plans
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 9 to break down)
+- [ ] 09-01-PLAN.md — Dashboard nudge banner with one-click opt-in and backend has_seen_digest_prompt flag
 
 **Details:**
-- **New users:** Smart defaults during signup, onboarding flow integration
-- **Existing users:** Dashboard nudge banners, contextual prompts (e.g., after viewing events)
-- Opt-in UX patterns that drive high subscription rates without being intrusive
-- A/B considerations for default opt-in vs explicit opt-in
+- **New users:** Smart defaults during signup via ProfileSetup auto-save (already implemented in Phase 7)
+- **Existing users:** Dismissible dashboard banner with one-click opt-in to monthly digest
+- Backend sets `has_seen_digest_prompt: true` on any preference update to prevent re-nudging
+- localStorage persistence for banner dismissal state
+- Mobile-first responsive banner design
 
 ## Progress
 
@@ -348,4 +349,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6.4. Unified Search Bar (INSERTED) | 2/2 | Complete | 2026-01-29 |
 | 7. Email Preferences | 3/3 | Complete | 2026-02-10 |
 | 8. Event Recap Email Engine | 3/3 | Complete | 2026-02-10 |
-| 9. Email Adoption & Growth UX | 0/0 | Not Started | — |
+| 9. Email Adoption & Growth UX | 0/1 | Not Started | — |
