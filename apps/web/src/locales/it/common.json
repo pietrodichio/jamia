@@ -59,6 +59,15 @@
     "error": "Errore",
     "errorDescription": "Impossibile salvare le preferenze. Riprova."
   },
+  "digestNudge": {
+    "title": "Rimani aggiornato sugli eventi AcroYoga",
+    "description": "Ricevi un riepilogo mensile degli eventi su Jamia direttamente via email.",
+    "ctaButton": "Attiva",
+    "loading": "Attivazione...",
+    "successTitle": "Digest attivato!",
+    "successMessage": "Riceverai un riepilogo mensile degli eventi su Jamia.",
+    "errorMessage": "Impossibile attivare il digest. Riprova."
+  },
   "unsubscribe": {
     "loading": "Annullamento iscrizione in corso...",
     "success": {

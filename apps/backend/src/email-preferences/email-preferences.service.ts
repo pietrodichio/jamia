@@ -38,7 +38,7 @@ export class EmailPreferencesService {
   async updatePreferences(userId: string, dto: UpdateEmailPreferencesDto) {
     const { data, error } = await this.supabase
       .from('email_preferences')
-      .update(dto)
+      .update({ ...dto, has_seen_digest_prompt: true })
       .eq('user_id', userId)
       .select()
       .single();

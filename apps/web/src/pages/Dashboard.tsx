@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
+import { DigestNudgeBanner } from "@/components/dashboard/DigestNudgeBanner";
 import { DashboardActions } from "@/components/dashboard/DashboardActions";
 import { DashboardTabs } from "@/components/dashboard/DashboardTabs";
 import { ParticipationsTab } from "@/components/dashboard/ParticipationsTab";
@@ -284,6 +285,9 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Digest nudge banner for users who haven't configured email preferences */}
+        <DigestNudgeBanner />
 
         {/* Statistics section - shared overview above tabs */}
         <StatisticsSection userId={currentUser?.id} />
