@@ -15,6 +15,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Upload, X } from "lucide-react";
 import imageCompression from "browser-image-compression";
+import { EmailPreferencesCard } from "@/components/settings/EmailPreferencesCard";
 
 const phoneNumberRegex = /^\+?[0-9\s\-().]{7,20}$/;
 const ROLE_OPTIONS = ["base", "flyer"] as const;
@@ -48,6 +49,8 @@ const ProfileSetup = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+  const [isNewUser, setIsNewUser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,6 +81,9 @@ const ProfileSetup = () => {
         return;
       }
 
+      // Set userId for EmailPreferencesCard
+      setUserId(user.id);
+
       try {
         const identityMetadata = user.identities?.find((identity) => identity.provider === "google")?.identity_data ?? {};
         const userMetadata = user.user_metadata ?? {};
@@ -99,6 +105,11 @@ const ProfileSetup = () => {
         const inferredAvatar = (metadataSource.avatar_url || metadataSource.picture) as string | undefined;
 
         const profile = await profilesApi.getProfile(user.id);
+
+        // Detect new user: phone is required, so null phone = never completed profile
+        if (!profile.phone) {
+          setIsNewUser(true);
+        }
 
         const cleanedProfileFirstName = profile.first_name?.trim() ?? "";
         const cleanedProfileLastName = profile.last_name?.trim() ?? "";
@@ -294,14 +305,15 @@ const ProfileSetup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
-      <Card className="w-full max-w-2xl border-primary/10 shadow-lg">
-        <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl">Completa il tuo profilo</CardTitle>
-          <CardDescription>
-            Raccontaci qualcosa di te per iniziare a partecipare alle tue jam
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="w-full max-w-2xl space-y-6">
+        <Card className="border-primary/10 shadow-lg">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-2xl">Completa il tuo profilo</CardTitle>
+            <CardDescription>
+              Raccontaci qualcosa di te per iniziare a partecipare alle tue jam
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
           <Form {...form}>
             <form onSubmit={onSubmit} className="space-y-6">
               <div className="space-y-2">
@@ -501,6 +513,11 @@ const ProfileSetup = () => {
           </Form>
         </CardContent>
       </Card>
+
+      {userId && (
+        <EmailPreferencesCard userId={userId} isNewUser={isNewUser} />
+      )}
+    </div>
     </div>
   );
 };
