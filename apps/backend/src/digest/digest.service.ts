@@ -1,5 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { render } from '@react-email/render';
 import { SupabaseClient } from '@supabase/supabase-js';
+import * as React from 'react';
 import { SUPABASE_CLIENT } from '../config/supabase.config.js';
 import {
   CuratedEvents,
@@ -7,15 +10,23 @@ import {
   GroupedEvents,
   SubscribedUser,
 } from './dto/curated-events.dto.js';
+import { DigestEmail } from './templates/DigestEmail.js';
 
 @Injectable()
 export class DigestService {
   private readonly logger = new Logger(DigestService.name);
+  private readonly frontendBaseUrl: string;
 
   constructor(
     @Inject(SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.frontendBaseUrl = this.configService.get<string>(
+      'FRONTEND_BASE_URL',
+      'https://jamia.app',
+    );
+  }
 
   /**
    * Get users subscribed to digest emails for a given frequency
@@ -187,5 +198,51 @@ export class DigestService {
       );
       throw error;
     }
+  }
+
+  /**
+   * Render digest email to HTML and plain text
+   */
+  async renderDigest(
+    curated: CuratedEvents,
+    user: SubscribedUser,
+    frequency: 'weekly' | 'monthly',
+  ): Promise<{ html: string; text: string; subject: string }> {
+    this.logger.log('[DigestService] Rendering digest email');
+
+    // Determine subject line
+    const subject =
+      frequency === 'weekly'
+        ? 'I tuoi eventi della settimana su Jamia'
+        : 'I tuoi eventi del mese su Jamia';
+
+    // Create React element
+    const emailElement = React.createElement(DigestEmail, {
+      curated,
+      userName: user.first_name,
+      unsubscribeToken: user.unsubscribe_token,
+      frequency,
+      frontendBaseUrl: this.frontendBaseUrl,
+    });
+
+    // Render to HTML
+    const html = await render(emailElement);
+
+    // Render to plain text
+    const text = await render(emailElement, { plainText: true });
+
+    // Log HTML size for monitoring
+    const htmlSizeBytes = Buffer.byteLength(html, 'utf8');
+    this.logger.log(
+      `[DigestService] Rendered digest HTML: ${htmlSizeBytes} bytes`,
+    );
+
+    if (htmlSizeBytes > 80000) {
+      this.logger.warn(
+        '[DigestService] Digest HTML exceeds 80KB, risk of Gmail clipping',
+      );
+    }
+
+    return { html, text, subject };
   }
 }
