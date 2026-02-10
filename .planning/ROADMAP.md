@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6.2: Dashboard Refactor (INSERTED)** - Separate dashboard into participations/discovery and event management sections
 - [x] **Phase 6.3: Location UX Improvements (INSERTED)** - Smart location detection and city search for event discovery
 - [x] **Phase 6.4: Unified Search Bar (INSERTED)** - Eventbrite-style combined keyword and location search
-- [ ] **Phase 7: Email Preferences** - Database, API, and settings UI for user email digest preferences
+- [x] **Phase 7: Email Preferences** - Database, API, and settings UI for user email digest preferences
 - [ ] **Phase 8: Event Recap Email Engine** - Scheduled sending, email templates, content curation, and Resend integration
 - [ ] **Phase 9: Email Adoption & Growth UX** - Onboarding flows, nudges, smart defaults to maximize email subscription rates
 
@@ -286,9 +286,9 @@ Unified search bar with Eventbrite-style UX:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Database migration for email_preferences table with RLS, triggers, and backfill
-- [ ] 07-02-PLAN.md — Shared types and NestJS backend module with CRUD and unsubscribe endpoints
-- [ ] 07-03-PLAN.md — Frontend API client, EmailPreferencesCard component, and ProfileSetup integration
+- [x] 07-01-PLAN.md — Database migration for email_preferences table with RLS, triggers, and backfill
+- [x] 07-02-PLAN.md — Shared types and NestJS backend module with CRUD and unsubscribe endpoints
+- [x] 07-03-PLAN.md — Frontend API client, EmailPreferencesCard component, and ProfileSetup integration
 
 **Details:**
 - Database migration for email preference storage (frequency: weekly/monthly, opt-in status, location for digest)
@@ -344,6 +344,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6.2. Dashboard Refactor (INSERTED) | 3/3 | Complete | 2026-01-25 |
 | 6.3. Location UX Improvements (INSERTED) | 3/3 | Complete | 2026-01-29 |
 | 6.4. Unified Search Bar (INSERTED) | 2/2 | Complete | 2026-01-29 |
-| 7. Email Preferences | 0/3 | Not Started | — |
+| 7. Email Preferences | 3/3 | Complete | 2026-02-10 |
 | 8. Event Recap Email Engine | 0/0 | Not Started | — |
 | 9. Email Adoption & Growth UX | 0/0 | Not Started | — |
