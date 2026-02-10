@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 8 (Event Recap Email Engine) - IN PROGRESS
-Plan: 2 of 3 complete
-Status: Email templates complete, ready for Resend integration and scheduled sending
-Last activity: 2026-02-10 — Completed 08-02-PLAN.md (Email Templates with React Email)
+Phase: 8 (Event Recap Email Engine) - COMPLETE
+Plan: 3 of 3 complete
+Status: Digest system fully operational with cron scheduler, batch delivery, and unsubscribe flow
+Last activity: 2026-02-10 — Completed 08-03-PLAN.md (Digest Scheduler & Batch Delivery)
 
-Progress: [███████████░] 100% (54/54 plans complete)
+Progress: [████████████] 100% (55/55 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 54
+- Total plans completed: 55
 - Average duration: 4 min
-- Total execution time: 4.09 hours
+- Total execution time: 4.14 hours
 
 **By Phase:**
 
@@ -38,11 +38,11 @@ Progress: [███████████░] 100% (54/54 plans complete)
 | 6.3. Location UX Improvements | 3/3 | 6 min | 2 min |
 | 6.4. Unified Search Bar | 2/2 | 6 min | 3 min |
 | 7. Email Preferences | 3/3 | 10 min | 3 min |
-| 8. Event Recap Email Engine | 2/3 | 5 min | 3 min |
+| 8. Event Recap Email Engine | 3/3 | 8 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-02 (4 min), 07-03 (2 min), 08-01 (2 min), 08-02 (3 min)
-- Trend: Phase 8 progressing - email templates complete, Resend integration next
+- Last 5 plans: 07-03 (2 min), 08-01 (2 min), 08-02 (3 min), 08-03 (3 min)
+- Trend: Phase 8 complete - digest system fully operational with cron scheduler and batch delivery
 
 *Updated after each plan completion*
 
@@ -258,6 +258,11 @@ Recent decisions affecting current work:
 - React Email template pattern: minimal header (logo only), compliant footer (unsubscribe + preferences links)
 - Two-section digest structure: Prossimi eventi (upcoming) and Nuovi eventi (new)
 - Conditional section rendering: only show sections with events (avoids empty sections in email)
+- Direct Resend client in DigestService instead of using EmailService (digests need per-user unsubscribe headers, EmailService batch sends identical content)
+- Cron scheduler with weekly (Monday 10 AM) and monthly (1st 10 AM) jobs in Europe/Rome timezone (automatic CET/CEST transitions)
+- 200ms delay between digest sends for rate limiting (5 req/sec provides margin below Resend's 10 req/sec limit)
+- Per-user error isolation in batch sending (one user's failure doesn't stop entire batch)
+- Standalone unsubscribe page at /unsubscribe?token=xxx with success/error states (no auth required)
 
 
 ### Roadmap Evolution
@@ -282,6 +287,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 08-02-PLAN.md (Email Templates with React Email)
+Stopped at: Completed 08-03-PLAN.md (Digest Scheduler & Batch Delivery)
 Resume file: None
-Next: Phase 8 Plan 03 (Resend Integration & Scheduled Sending)
+Next: Phase 8 complete - ready for Phase 9 (Email Adoption & Growth UX) or other priorities
