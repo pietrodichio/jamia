@@ -13,6 +13,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { EventsModule } from './events/events.module';
 import { EventOrganizersModule } from './event-organizers/event-organizers.module';
 import { EmailPreferencesModule } from './email-preferences/email-preferences.module';
+import { DigestModule } from './digest/digest.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { EmailPreferencesModule } from './email-preferences/email-preferences.mo
     EventsModule,
     EventOrganizersModule,
     EmailPreferencesModule,
+    DigestModule,
   ],
   controllers: [AppController],
   providers: [AppService],
