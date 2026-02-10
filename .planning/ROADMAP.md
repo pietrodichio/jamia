@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6.3: Location UX Improvements (INSERTED)** - Smart location detection and city search for event discovery
 - [x] **Phase 6.4: Unified Search Bar (INSERTED)** - Eventbrite-style combined keyword and location search
 - [x] **Phase 7: Email Preferences** - Database, API, and settings UI for user email digest preferences
-- [ ] **Phase 8: Event Recap Email Engine** - Scheduled sending, email templates, content curation, and Resend integration
+- [x] **Phase 8: Event Recap Email Engine** - Scheduled sending, email templates, content curation, and Resend integration
 - [ ] **Phase 9: Email Adoption & Growth UX** - Onboarding flows, nudges, smart defaults to maximize email subscription rates
 
 ## Phase Details
@@ -303,9 +303,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Digest module setup with event curation service
-- [ ] 08-02-PLAN.md — React Email templates and rendering
-- [ ] 08-03-PLAN.md — Digest scheduler, batch delivery, and unsubscribe page
+- [x] 08-01-PLAN.md — Digest module setup with event curation service
+- [x] 08-02-PLAN.md — React Email templates and rendering
+- [x] 08-03-PLAN.md — Digest scheduler, batch delivery, and unsubscribe page
 
 **Details:**
 - NestJS cron scheduler (@nestjs/schedule) for weekly (Monday 10AM CET) and monthly (1st 10AM CET) digest sends
@@ -347,5 +347,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6.3. Location UX Improvements (INSERTED) | 3/3 | Complete | 2026-01-29 |
 | 6.4. Unified Search Bar (INSERTED) | 2/2 | Complete | 2026-01-29 |
 | 7. Email Preferences | 3/3 | Complete | 2026-02-10 |
-| 8. Event Recap Email Engine | 0/3 | Not Started | — |
+| 8. Event Recap Email Engine | 3/3 | Complete | 2026-02-10 |
 | 9. Email Adoption & Growth UX | 0/0 | Not Started | — |
