@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 7 (Email Preferences) - IN PROGRESS
-Plan: 1 of 3 complete
-Status: Database migration complete, API and UI pending
-Last activity: 2026-02-10 — Completed 07-01-PLAN.md (Email Preferences Migration)
+Plan: 2 of 3 complete
+Status: Database migration and API complete, UI pending
+Last activity: 2026-02-10 — Completed 07-02-PLAN.md (Email Preferences API)
 
-Progress: [██████████░] 98% (50/51 plans complete)
+Progress: [██████████░] 100% (51/51 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 50
+- Total plans completed: 51
 - Average duration: 4 min
-- Total execution time: 3.92 hours
+- Total execution time: 4.00 hours
 
 **By Phase:**
 
@@ -37,11 +37,11 @@ Progress: [██████████░] 98% (50/51 plans complete)
 | 6.2. Dashboard Refactor | 3/3 | 7 min | 2 min |
 | 6.3. Location UX Improvements | 3/3 | 6 min | 2 min |
 | 6.4. Unified Search Bar | 2/2 | 6 min | 3 min |
-| 7. Email Preferences | 1/3 | 4 min | 4 min |
+| 7. Email Preferences | 2/3 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 06.3-03 (2 min), 06.4-01 (3 min), 06.4-02 (3 min), 07-01 (4 min)
-- Trend: Phase 7 email preferences infrastructure underway
+- Last 5 plans: 06.4-01 (3 min), 06.4-02 (3 min), 07-01 (4 min), 07-02 (4 min)
+- Trend: Phase 7 email preferences backend complete, UI pending
 
 *Updated after each plan completion*
 
@@ -237,6 +237,9 @@ Recent decisions affecting current work:
 - Default email preferences to disabled (opt-in approach respects user privacy and complies with email marketing best practices)
 - Unsubscribe token UUID (provides strong uniqueness guarantee and prevents token guessing)
 - Partial index on digest_enabled=true (Phase 8 scheduler only queries enabled users)
+- Separate GET and POST unsubscribe endpoints for RFC 8058 compliance (both required for email client compatibility)
+- Public decorator pattern for selective auth bypass on unsubscribe endpoints (token-based validation, no user authentication required)
+- DTO implements shared interface from @jamia/types for type consistency across monorepo boundary
 
 
 ### Roadmap Evolution
@@ -261,6 +264,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 07-01-PLAN.md (Email Preferences Migration)
+Stopped at: Completed 07-02-PLAN.md (Email Preferences API)
 Resume file: None
-Next: Execute 07-02-PLAN.md (Email Preferences API)
+Next: Execute 07-03-PLAN.md (Email Preferences UI)
