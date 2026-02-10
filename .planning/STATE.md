@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 8 (Event Recap Email Engine) - IN PROGRESS
-Plan: 1 of 3 complete
-Status: Digest module foundation complete, ready for email templates
-Last activity: 2026-02-10 — Completed 08-01-PLAN.md (Digest Module Foundation)
+Plan: 2 of 3 complete
+Status: Email templates complete, ready for Resend integration and scheduled sending
+Last activity: 2026-02-10 — Completed 08-02-PLAN.md (Email Templates with React Email)
 
-Progress: [███████████░] 98% (53/54 plans complete)
+Progress: [███████████░] 100% (54/54 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 53
+- Total plans completed: 54
 - Average duration: 4 min
-- Total execution time: 4.04 hours
+- Total execution time: 4.09 hours
 
 **By Phase:**
 
@@ -38,11 +38,11 @@ Progress: [███████████░] 98% (53/54 plans complete)
 | 6.3. Location UX Improvements | 3/3 | 6 min | 2 min |
 | 6.4. Unified Search Bar | 2/2 | 6 min | 3 min |
 | 7. Email Preferences | 3/3 | 10 min | 3 min |
-| 8. Event Recap Email Engine | 1/3 | 2 min | 2 min |
+| 8. Event Recap Email Engine | 2/3 | 5 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 07-01 (4 min), 07-02 (4 min), 07-03 (2 min), 08-01 (2 min)
-- Trend: Phase 8 started - digest module foundation complete, building email templates next
+- Last 5 plans: 07-02 (4 min), 07-03 (2 min), 08-01 (2 min), 08-02 (3 min)
+- Trend: Phase 8 progressing - email templates complete, Resend integration next
 
 *Updated after each plan completion*
 
@@ -251,6 +251,13 @@ Recent decisions affecting current work:
 - Max 3 events per type per section (prevents email from being overwhelming, max 18 events total)
 - Service role client for digest queries (scheduled jobs run server-side, bypass RLS to query all published events)
 - JSX support in backend tsconfig (enables React Email template compilation)
+- Stacked card layout (image above, text below) for email client compatibility (better than horizontal layout in Outlook)
+- Italian date formatting using Intl.DateTimeFormat with Europe/Rome timezone (server-side rendering makes Intl reliable)
+- HTML size logging with 80KB warning threshold to prevent Gmail clipping (Gmail clips at 102KB)
+- frontendBaseUrl from FRONTEND_BASE_URL env var with https://jamia.app fallback (enables different URLs for environments)
+- React Email template pattern: minimal header (logo only), compliant footer (unsubscribe + preferences links)
+- Two-section digest structure: Prossimi eventi (upcoming) and Nuovi eventi (new)
+- Conditional section rendering: only show sections with events (avoids empty sections in email)
 
 
 ### Roadmap Evolution
@@ -275,6 +282,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 08-01-PLAN.md (Digest Module Foundation)
+Stopped at: Completed 08-02-PLAN.md (Email Templates with React Email)
 Resume file: None
-Next: Phase 8 Plan 02 (Email Templates with React Email)
+Next: Phase 8 Plan 03 (Resend Integration & Scheduled Sending)
