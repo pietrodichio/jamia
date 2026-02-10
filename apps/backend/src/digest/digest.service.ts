@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { render } from '@react-email/render';
 import { SupabaseClient } from '@supabase/supabase-js';
 import * as React from 'react';
+import { Resend } from 'resend';
 import { SUPABASE_CLIENT } from '../config/supabase.config.js';
 import {
   CuratedEvents,
@@ -16,6 +17,10 @@ import { DigestEmail } from './templates/DigestEmail.js';
 export class DigestService {
   private readonly logger = new Logger(DigestService.name);
   private readonly frontendBaseUrl: string;
+  private readonly apiBaseUrl: string;
+  private readonly resend: Resend | null;
+  private readonly fromEmail: string;
+  private readonly enabled: boolean;
 
   constructor(
     @Inject(SUPABASE_CLIENT)
@@ -26,6 +31,33 @@ export class DigestService {
       'FRONTEND_BASE_URL',
       'https://jamia.app',
     );
+    this.apiBaseUrl = this.configService.get<string>(
+      'API_BASE_URL',
+      this.configService.get<string>('BACKEND_URL', 'https://api.jamia.app'),
+    );
+
+    // Initialize Resend for direct email sending
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    const rawFromEmail =
+      this.configService.get<string>('RESEND_FROM_EMAIL') || '';
+    this.fromEmail = this.normalizeFromEmail(rawFromEmail);
+
+    if (!apiKey) {
+      this.logger.warn(
+        '[DigestService] RESEND_API_KEY is not configured. Digest delivery is disabled.',
+      );
+      this.resend = null;
+      this.enabled = false;
+    } else if (!this.fromEmail) {
+      this.logger.warn(
+        '[DigestService] RESEND_FROM_EMAIL is not configured. Digest delivery is disabled.',
+      );
+      this.resend = null;
+      this.enabled = false;
+    } else {
+      this.resend = new Resend(apiKey);
+      this.enabled = true;
+    }
   }
 
   /**
@@ -244,5 +276,140 @@ export class DigestService {
     }
 
     return { html, text, subject };
+  }
+
+  /**
+   * Send digest email to a single user
+   * Returns true if sent, false if skipped (no events)
+   */
+  async sendDigestToUser(
+    user: SubscribedUser,
+    frequency: 'weekly' | 'monthly',
+  ): Promise<boolean> {
+    if (!this.enabled || !this.resend) {
+      this.logger.warn(
+        `[DigestService] Skipping digest for user ${user.user_id} - Resend not configured`,
+      );
+      return false;
+    }
+
+    // Curate events for this user
+    const curated = await this.curateEventsForUser(user.last_digest_sent_at);
+
+    // Check if there are any events
+    if (!this.hasEvents(curated)) {
+      this.logger.log(
+        `[DigestService] Skipping digest for user ${user.user_id} - no events to send`,
+      );
+      return false;
+    }
+
+    // Render digest template
+    const { html, text, subject } = await this.renderDigest(
+      curated,
+      user,
+      frequency,
+    );
+
+    // Send email via Resend with RFC 8058 headers
+    try {
+      await this.resend.emails.send({
+        from: this.fromEmail,
+        to: user.email,
+        subject,
+        html,
+        text,
+        headers: {
+          'List-Unsubscribe': `<${this.apiBaseUrl}/email-preferences/unsubscribe/${user.unsubscribe_token}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
+      });
+
+      this.logger.log(
+        `[DigestService] Sent digest to user ${user.user_id} (${user.email})`,
+      );
+
+      // Update last_digest_sent_at timestamp
+      await this.updateLastDigestSentAt(user.user_id);
+
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `[DigestService] Failed to send digest to user ${user.user_id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Send digests to a batch of users with error isolation
+   * Returns count of sent, skipped, and failed emails
+   */
+  async sendBatchDigests(
+    users: SubscribedUser[],
+    frequency: 'weekly' | 'monthly',
+  ): Promise<{ sent: number; skipped: number; failed: number }> {
+    let sent = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      try {
+        const result = await this.sendDigestToUser(user, frequency);
+        if (result) {
+          sent++;
+        } else {
+          skipped++;
+        }
+
+        // Rate limiting delay (200ms between sends)
+        await this.sleep(200);
+      } catch (error) {
+        this.logger.error(
+          `[DigestService] Error sending digest to user ${user.user_id}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+        failed++;
+        // Continue processing other users despite this failure
+      }
+    }
+
+    this.logger.log(
+      `[DigestService] Digest batch complete: ${sent} sent, ${skipped} skipped (empty), ${failed} failed out of ${users.length} users`,
+    );
+
+    return { sent, skipped, failed };
+  }
+
+  /**
+   * Sleep for a specified number of milliseconds
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Normalizes the configured "from" email
+   * Strips surrounding quotes if present
+   */
+  private normalizeFromEmail(value: string): string {
+    if (!value) {
+      return '';
+    }
+
+    let normalized = value.trim();
+
+    // Strip one level of surrounding single or double quotes, if present
+    if (
+      (normalized.startsWith('"') && normalized.endsWith('"')) ||
+      (normalized.startsWith("'") && normalized.endsWith("'"))
+    ) {
+      normalized = normalized.slice(1, -1).trim();
+    }
+
+    return normalized;
   }
 }
