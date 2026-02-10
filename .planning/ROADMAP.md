@@ -22,6 +22,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6.2: Dashboard Refactor (INSERTED)** - Separate dashboard into participations/discovery and event management sections
 - [x] **Phase 6.3: Location UX Improvements (INSERTED)** - Smart location detection and city search for event discovery
 - [x] **Phase 6.4: Unified Search Bar (INSERTED)** - Eventbrite-style combined keyword and location search
+- [ ] **Phase 7: Email Preferences** - Database, API, and settings UI for user email digest preferences
+- [ ] **Phase 8: Event Recap Email Engine** - Scheduled sending, email templates, content curation, and Resend integration
+- [ ] **Phase 9: Email Adoption & Growth UX** - Onboarding flows, nudges, smart defaults to maximize email subscription rates
 
 ## Phase Details
 
@@ -276,10 +279,58 @@ Unified search bar with Eventbrite-style UX:
 - Stack inputs vertically
 - Modal/sheet pattern for search interface
 
+### Phase 7: Email Preferences
+
+**Goal:** Users can manage their email digest preferences (weekly/monthly) via a settings UI backed by database storage and API
+**Depends on:** Phase 6.4
+**Plans:** 3 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Database migration for email_preferences table with RLS, triggers, and backfill
+- [ ] 07-02-PLAN.md — Shared types and NestJS backend module with CRUD and unsubscribe endpoints
+- [ ] 07-03-PLAN.md — Frontend API client, EmailPreferencesCard component, and ProfileSetup integration
+
+**Details:**
+- Database migration for email preference storage (frequency: weekly/monthly, opt-in status, location for digest)
+- Backend API for preference CRUD operations
+- Frontend settings UI for frequency selection
+- Users can choose: weekly digest (sent Monday) or monthly digest (sent 1st of month)
+
+### Phase 8: Event Recap Email Engine
+
+**Goal:** Scheduled email digests deliver curated upcoming events to subscribed users via Resend
+**Depends on:** Phase 7
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 8 to break down)
+
+**Details:**
+- Scheduled job/cron for weekly (Monday) and monthly (1st) email dispatch
+- Email templates with curated event content (location-based, type-based)
+- Content personalization strategy (nearby events, preferred event types)
+- Integration with existing Resend email infrastructure
+- Unsubscribe link and preference management from email
+
+### Phase 9: Email Adoption & Growth UX
+
+**Goal:** Maximize email subscription rates through smart defaults, onboarding integration, and nudge patterns for both new and existing users
+**Depends on:** Phase 8
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 9 to break down)
+
+**Details:**
+- **New users:** Smart defaults during signup, onboarding flow integration
+- **Existing users:** Dashboard nudge banners, contextual prompts (e.g., after viewing events)
+- Opt-in UX patterns that drive high subscription rates without being intrusive
+- A/B considerations for default opt-in vs explicit opt-in
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2 → 6.3 → 6.4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2 → 6.3 → 6.4 → 7 → 8 → 9
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -293,3 +344,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 6.2. Dashboard Refactor (INSERTED) | 3/3 | Complete | 2026-01-25 |
 | 6.3. Location UX Improvements (INSERTED) | 3/3 | Complete | 2026-01-29 |
 | 6.4. Unified Search Bar (INSERTED) | 2/2 | Complete | 2026-01-29 |
+| 7. Email Preferences | 0/3 | Not Started | — |
+| 8. Event Recap Email Engine | 0/0 | Not Started | — |
+| 9. Email Adoption & Growth UX | 0/0 | Not Started | — |
