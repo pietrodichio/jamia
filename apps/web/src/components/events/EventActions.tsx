@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Share2, Edit, ExternalLink, Download, Instagram } from 'lucide-react';
+import { Calendar, Share2, ExternalLink, Download, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,14 +15,10 @@ import type { EventWithOrganizer } from '@jamia/types';
 
 interface EventActionsProps {
   event: EventWithOrganizer;
-  isOwner: boolean;
-  isSuperAdmin: boolean;
 }
 
 export function EventActions({
   event,
-  isOwner,
-  isSuperAdmin,
 }: EventActionsProps) {
   const navigate = useNavigate();
   const { t } = useTranslation('events');
@@ -97,11 +93,6 @@ export function EventActions({
     }
   };
 
-  // Handle edit
-  const handleEdit = () => {
-    navigate(`/events/${event.id}/edit`);
-  };
-
   // Detect external link type for icon
   const getExternalLinkIcon = () => {
     if (!event.external_link) return <ExternalLink className="h-4 w-4" />;
@@ -163,14 +154,6 @@ export function EventActions({
         <Share2 className="mr-2 h-4 w-4" />
         {t('actions.share')}
       </Button>
-
-      {/* Edit button - only for owner */}
-      {(isOwner || isSuperAdmin) && (
-        <Button variant="outline" onClick={handleEdit} className="rounded-xl">
-          <Edit className="mr-2 h-4 w-4" />
-          {t('actions.editEvent')}
-        </Button>
-      )}
     </div>
   );
 }

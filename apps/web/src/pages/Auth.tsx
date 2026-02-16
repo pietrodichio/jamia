@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutSafely } from "@/integrations/supabase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,7 @@ const Auth = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
 
   // Check if user is already logged in
@@ -63,7 +65,7 @@ const Auth = () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
         // Clear invalid session (e.g., user doesn't exist in DB after reset)
-        await supabase.auth.signOut();
+        await signOutSafely().catch(() => null);
         return null;
       }
       return user ?? null;
@@ -77,6 +79,29 @@ const Auth = () => {
   const isEmailConfirmed = Boolean(
     currentUser?.email_confirmed_at || currentUser?.confirmed_at,
   );
+
+  // Listen for auth state changes to handle redirects after login
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        // Invalidate query cache to refetch user data
+        queryClient.invalidateQueries({ queryKey: ["current-user"] });
+
+        // Check if email is confirmed
+        const emailConfirmed = Boolean(
+          session.user.email_confirmed_at || session.user.confirmed_at
+        );
+
+        if (emailConfirmed) {
+          navigate("/dashboard", { replace: true });
+        } else {
+          navigate("/email-confirmation", { replace: true });
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, queryClient]);
 
   // Redirect to dashboard if already logged in and email confirmed
   useEffect(() => {
@@ -269,12 +294,27 @@ const Auth = () => {
 
       if (error) throw error;
 
+      // Invalidate query cache to refetch user data
+      queryClient.invalidateQueries({ queryKey: ["current-user"] });
+
       toast({
         title: "Accesso effettuato!",
         description: "Bentornato in Jamia.",
       });
 
-      navigate("/dashboard");
+      // Navigation will be handled by auth state change listener
+      // But we can also navigate directly as fallback
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const emailConfirmed = Boolean(
+          session.user.email_confirmed_at || session.user.confirmed_at
+        );
+        if (emailConfirmed) {
+          navigate("/dashboard");
+        } else {
+          navigate("/email-confirmation");
+        }
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Si è verificato un errore";
       toast({

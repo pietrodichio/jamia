@@ -8,6 +8,7 @@ interface WizardNavigationProps {
   onNext: () => void;
   isSubmitting: boolean;
   canGoNext: boolean;
+  onSubmitIntent?: () => void;
 }
 
 export function WizardNavigation({
@@ -17,6 +18,7 @@ export function WizardNavigation({
   onNext,
   isSubmitting,
   canGoNext,
+  onSubmitIntent,
 }: WizardNavigationProps) {
   const { t } = useTranslation('common');
 
@@ -37,7 +39,7 @@ export function WizardNavigation({
 
       {/* Next or Submit button */}
       {isLastStep ? (
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" onClick={onSubmitIntent} disabled={isSubmitting}>
           {isSubmitting ? t('common.loading') : 'Pubblica'}
         </Button>
       ) : (

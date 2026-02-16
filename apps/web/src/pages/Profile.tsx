@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, X, ArrowLeft } from "lucide-react";
 import imageCompression from "browser-image-compression";
+import { EmailPreferencesCard } from "@/components/settings/EmailPreferencesCard";
 
 const ROLE_OPTIONS = ["base", "flyer"] as const;
 type MainRole = (typeof ROLE_OPTIONS)[number];
@@ -100,7 +101,7 @@ const Profile = () => {
         useWebWorker: true,
         fileType: file.type,
       };
-      
+
       const compressedFile = await imageCompression(file, options);
       setPhotoFile(compressedFile);
 
@@ -220,178 +221,182 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/20 to-background p-4">
-      <Card className="w-full max-w-2xl border-primary/10 shadow-lg">
-        <CardHeader className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/dashboard")}
-              className="rounded-xl"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <CardTitle className="text-2xl">Modifica Profilo</CardTitle>
-          </div>
-          <CardDescription>
-            Aggiorna le tue informazioni personali
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Profile Photo Upload */}
-            <div className="space-y-2">
-              <Label>Foto profilo</Label>
-              <div className="flex items-center gap-4">
-                {photoPreview ? (
-                  <div className="relative">
-                    <img
-                      src={photoPreview}
-                      alt="Preview"
-                      className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                      onClick={handleRemovePhoto}
+      <div className="w-full max-w-2xl space-y-6">
+        <Card className="border-primary/10 shadow-lg">
+          <CardHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/dashboard")}
+                className="rounded-xl"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <CardTitle className="text-2xl">Modifica Profilo</CardTitle>
+            </div>
+            <CardDescription>
+              Aggiorna le tue informazioni personali
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Profile Photo Upload */}
+              <div className="space-y-2">
+                <Label>Foto profilo</Label>
+                <div className="flex items-center gap-4">
+                  {photoPreview ? (
+                    <div className="relative">
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={handleRemovePhoto}
+                        disabled={isLoading || isUploadingPhoto}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-primary/20">
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <Input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      onChange={handlePhotoChange}
                       disabled={isLoading || isUploadingPhoto}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+                      className="rounded-xl"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      JPG o PNG, max 2MB
+                    </p>
                   </div>
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-primary/20">
-                    <Upload className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="flex-1">
-                  <Input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    onChange={handlePhotoChange}
-                    disabled={isLoading || isUploadingPhoto}
-                    className="rounded-xl"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    JPG o PNG, max 2MB
-                  </p>
                 </div>
               </div>
-            </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Nome *</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Mario"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="rounded-xl"
-                />
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">Nome *</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="Mario"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Cognome</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Rossi"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    disabled={isLoading}
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefono *</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    required
+                    placeholder="+39 123 456 7890"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={isLoading}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">Città</Label>
+                  <Input
+                    id="city"
+                    type="text"
+                    placeholder="Milano, Roma, Torino..."
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    disabled={isLoading}
+                    className="rounded-xl"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lastName">Cognome</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Rossi"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                <Label htmlFor="mainRole">Ruolo principale *</Label>
+                <Select
+                  value={mainRole}
+                  onValueChange={(value) => setMainRole(value as MainRole)}
                   disabled={isLoading}
-                  className="rounded-xl"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefono *</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  required
-                  placeholder="+39 123 456 7890"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={isLoading}
-                  className="rounded-xl"
-                />
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="base">Base</SelectItem>
+                    <SelectItem value="flyer">Flyer</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="city">Città</Label>
-                <Input
-                  id="city"
-                  type="text"
-                  placeholder="Milano, Roma, Torino..."
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  placeholder="Raccontaci qualcosa di te, la tua esperienza con l'AcroYoga..."
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
                   disabled={isLoading}
-                  className="rounded-xl"
+                  rows={4}
+                  className="rounded-xl resize-none"
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="mainRole">Ruolo principale *</Label>
-              <Select
-                value={mainRole}
-                onValueChange={(value) => setMainRole(value as MainRole)}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="base">Base</SelectItem>
-                  <SelectItem value="flyer">Flyer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => navigate("/dashboard")}
+                  disabled={isLoading || isUploadingPhoto}
+                >
+                  Annulla
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 rounded-xl"
+                  disabled={isLoading || isUploadingPhoto}
+                >
+                  {(isLoading || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isUploadingPhoto ? "Caricamento foto..." : "Salva modifiche"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                placeholder="Raccontaci qualcosa di te, la tua esperienza con l'AcroYoga..."
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                disabled={isLoading}
-                rows={4}
-                className="rounded-xl resize-none"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 rounded-xl"
-                onClick={() => navigate("/dashboard")}
-                disabled={isLoading || isUploadingPhoto}
-              >
-                Annulla
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 rounded-xl"
-                disabled={isLoading || isUploadingPhoto}
-              >
-                {(isLoading || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isUploadingPhoto ? "Caricamento foto..." : "Salva modifiche"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+        <EmailPreferencesCard />
+      </div>
     </div>
   );
 };

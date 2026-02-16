@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEventOccurrences } from '@/hooks/useEventOccurrences';
 import { EventHero } from '@/components/events/EventHero';
 import { EventActions } from '@/components/events/EventActions';
+import { EventAdminActions } from '@/components/events/EventAdminActions';
 import { EventOrganizerInfo } from '@/components/events/EventOrganizerInfo';
 import { TeachersList } from '@/components/events/TeachersList';
 import { RecurrenceDisplay } from '@/components/events/RecurrenceDisplay';
@@ -19,10 +20,10 @@ import { OccurrenceEditor } from '@/components/events/OccurrenceEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { EVENT_TAG_LABELS, EVENT_TAG_OPTIONS } from '@/lib/event-tags';
+import { EVENT_TAG_LABELS, type EVENT_TAG_OPTIONS } from '@/lib/event-tags';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { MapPin, DollarSign, ArrowLeft, Clock, Tag } from 'lucide-react';
-import { type Profile } from '@/api/profiles.api';
+import type { Profile } from '@/api/profiles.api';
 
 export default function EventDetail() {
   const { eventId } = useParams<{ eventId: string }>();
@@ -189,16 +190,26 @@ export default function EventDetail() {
           </Button>
         </div>
 
+        {/* Admin Actions Section - Only visible to authorized users */}
+        {(isOwner || isCoOrganizer || isCurrentUserSuperAdmin) && (
+          <div className="mb-6">
+            <EventAdminActions
+              event={event}
+              teachers={teachers}
+              isOwner={isOwner}
+              isCoOrganizer={isCoOrganizer}
+              isSuperAdmin={isCurrentUserSuperAdmin}
+              canEditOccurrences={canEditOccurrences}
+            />
+          </div>
+        )}
+
         {/* Two-column layout: Main content + Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content - Left Column (2/3) */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Action Buttons */}
-            <EventActions
-              event={event}
-              isOwner={isOwner}
-              isSuperAdmin={isCurrentUserSuperAdmin}
-            />
+            {/* Public Action Buttons */}
+            <EventActions event={event} />
 
             {/* Description Section */}
             {event.description && (
@@ -309,7 +320,7 @@ export default function EventDetail() {
 
             {/* Upcoming Occurrences (for recurring events) */}
             {event.recurrence_rule && occurrencesWithTime.length > 0 && (
-              <Card className="border-primary/10 rounded-2xl">
+              <Card id="event-occurrences" className="border-primary/10 rounded-2xl">
                 <CardHeader>
                   <CardTitle>Prossime occorrenze</CardTitle>
                 </CardHeader>

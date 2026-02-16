@@ -9,4 +9,8 @@ export class UpdateEmailPreferencesDto implements IUpdateEmailPreferencesDto {
   @IsIn(['weekly', 'monthly'])
   @IsOptional()
   digest_frequency?: 'weekly' | 'monthly';
+
+  @IsBoolean()
+  @IsOptional()
+  product_updates_enabled?: boolean;
 }

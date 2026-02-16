@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Mail, X } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { emailPreferencesApi } from '@/api/email-preferences.api';
@@ -37,7 +37,7 @@ export const DigestNudgeBanner = () => {
       queryClient.invalidateQueries({ queryKey: ['email-preferences'] });
       try {
         localStorage.setItem(STORAGE_KEY, 'true');
-      } catch {}
+      } catch { }
       setIsDismissed(true);
       toast({
         title: t('digestNudge.successTitle'),
@@ -55,7 +55,7 @@ export const DigestNudgeBanner = () => {
   const handleDismiss = () => {
     try {
       localStorage.setItem(STORAGE_KEY, 'true');
-    } catch {}
+    } catch { }
     setIsDismissed(true);
   };
 
@@ -64,34 +64,44 @@ export const DigestNudgeBanner = () => {
   if (preferences.digest_enabled || preferences.has_seen_digest_prompt) return null;
 
   return (
-    <Alert className="relative mb-6 border-primary/20 bg-primary/5">
-      <Mail className="h-4 w-4" />
-      <AlertTitle className="pr-8">{t('digestNudge.title')}</AlertTitle>
-      <AlertDescription>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <p className="flex-1 text-muted-foreground">
-            {t('digestNudge.description')}
-          </p>
-          <Button
-            size="sm"
-            className="flex-1 sm:flex-initial"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending
-              ? t('digestNudge.loading')
-              : t('digestNudge.ctaButton')}
-          </Button>
-        </div>
-      </AlertDescription>
+
+    <div className="relative mb-6 rounded-xl border border-primary/20 bg-muted/50 p-4 shadow-sm">
       <Button
         variant="ghost"
-        size="sm"
-        className="absolute top-2 right-2 h-6 w-6 p-0"
+        size="icon"
+        className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-foreground md:top-4 md:right-4"
         onClick={handleDismiss}
       >
         <X className="h-4 w-4" />
+        <span className="sr-only">Dismiss</span>
       </Button>
-    </Alert>
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:pr-12">
+        <div className="flex items-start gap-4">
+          <div className="shrink-0 rounded-full bg-primary p-2 text-primary-foreground shadow-sm">
+            <Mail className="h-5 w-5" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="font-semibold leading-none tracking-tight">
+              {t('digestNudge.title')}
+            </h4>
+            <p className="text-sm text-muted-foreground max-w-[600px] text-pretty">
+              {t('digestNudge.description')}
+            </p>
+          </div>
+        </div>
+
+        <Button
+          size="sm"
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          className="w-full sm:w-auto whitespace-nowrap shadow-sm"
+        >
+          {mutation.isPending
+            ? t('digestNudge.loading')
+            : t('digestNudge.ctaButton')}
+        </Button>
+      </div>
+    </div>
   );
 };

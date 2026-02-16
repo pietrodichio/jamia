@@ -12,7 +12,7 @@ export interface MultiSelectOption {
 }
 
 interface MultiSelectProps {
-    options: MultiSelectOption[];
+    options: readonly MultiSelectOption[];
     selected: string[];
     onChange: (selected: string[]) => void;
     placeholder?: string;
@@ -76,7 +76,7 @@ export function MultiSelect({
                     <CommandInput placeholder="Cerca..." />
                     <CommandList>
                         <CommandEmpty>Nessun risultato trovato.</CommandEmpty>
-                        <CommandGroup className="w-fit">
+                        <CommandGroup className="min-w-fit w-full">
                             {options.map((option) => {
                                 const isSelected = selected.includes(option.value);
                                 return (

@@ -54,7 +54,7 @@ INSERT INTO auth.users (
   deleted_at
 ) VALUES
   (
-    '11111111-1111-1111-1111-111111111111',
+    '11111111-1111-4111-8111-111111111111',
     '00000000-0000-0000-0000-000000000000',
     'alice@example.com',
     crypt('password123', gen_salt('bf')),
@@ -87,7 +87,7 @@ INSERT INTO auth.users (
     NULL
   ),
   (
-    '22222222-2222-2222-2222-222222222222',
+    '22222222-2222-4222-8222-222222222222',
     '00000000-0000-0000-0000-000000000000',
     'bob@example.com',
     crypt('password123', gen_salt('bf')),
@@ -120,7 +120,7 @@ INSERT INTO auth.users (
     NULL
   ),
   (
-    '33333333-3333-3333-3333-333333333333',
+    '33333333-3333-4333-8333-333333333333',
     '00000000-0000-0000-0000-000000000000',
     'charlie@example.com',
     crypt('password123', gen_salt('bf')),
@@ -153,7 +153,7 @@ INSERT INTO auth.users (
     NULL
   ),
   (
-    '44444444-4444-4444-4444-444444444444',
+    '44444444-4444-4444-8444-444444444444',
     '00000000-0000-0000-0000-000000000000',
     'diana@example.com',
     crypt('password123', gen_salt('bf')),
@@ -197,7 +197,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO profiles (id, email, first_name, last_name, phone, bio, city, main_role, is_super_admin)
 VALUES
   (
-    '11111111-1111-1111-1111-111111111111',
+    '11111111-1111-4111-8111-111111111111',
     'alice@example.com',
     'Alice',
     'Anderson',
@@ -208,7 +208,7 @@ VALUES
     false
   ),
   (
-    '22222222-2222-2222-2222-222222222222',
+    '22222222-2222-4222-8222-222222222222',
     'bob@example.com',
     'Bob',
     'Builder',
@@ -219,7 +219,7 @@ VALUES
     false
   ),
   (
-    '33333333-3333-3333-3333-333333333333',
+    '33333333-3333-4333-8333-333333333333',
     'charlie@example.com',
     'Charlie',
     'Chen',
@@ -230,7 +230,7 @@ VALUES
     true  -- Super admin
   ),
   (
-    '44444444-4444-4444-4444-444444444444',
+    '44444444-4444-4444-8444-444444444444',
     'diana@example.com',
     'Diana',
     'Davis',
@@ -277,7 +277,7 @@ INSERT INTO jams (
 ) VALUES
   (
     '10000000-0000-0000-0000-000000000001',
-    '33333333-3333-3333-3333-333333333333',  -- Charlie (owner)
+    '33333333-3333-4333-8333-333333333333',  -- Charlie (owner)
     'Sunday Morning Flow',
     'Relaxed Sunday morning acro session. Perfect for all levels. We''ll start with a warm-up, then move into washing machine flows and therapeutic flying.',
     '{"description": "Parco Sempione, Milan", "place_id": "ChIJd9BlNqbGhkcRmvJMNYBKQRs", "latitude": 45.4742, "longitude": 9.1757, "google_maps_url": "https://maps.google.com/?q=Parco+Sempione,+Milan"}',
@@ -299,7 +299,7 @@ INSERT INTO jams (
   ),
   (
     '10000000-0000-0000-0000-000000000002',
-    '11111111-1111-1111-1111-111111111111',  -- Alice (owner)
+    '11111111-1111-4111-8111-111111111111',  -- Alice (owner)
     'Advanced L-basing Workshop',
     'Focus on advanced L-basing techniques including pops, pitches, and dynamic transitions. Prerequisites: comfortable with foot-to-hand.',
     '{"description": "AcroYoga Rome Studio, Via del Corso 100", "latitude": 41.9028, "longitude": 12.4964}',
@@ -321,7 +321,7 @@ INSERT INTO jams (
   ),
   (
     '10000000-0000-0000-0000-000000000003',
-    '33333333-3333-3333-3333-333333333333',  -- Charlie (owner)
+    '33333333-3333-4333-8333-333333333333',  -- Charlie (owner)
     'Beginners Welcome Jam',
     'New to AcroYoga? This is the perfect jam for you! We''ll teach basic positions and safety. Experienced acrobats welcome to help spot and teach.',
     '{"description": "Giardino Bardini, Florence", "place_id": "ChIJZ0Z0Z0Z0KhMRQZ0Z0Z0Z0Z0", "latitude": 43.7626, "longitude": 11.2606}',
@@ -343,7 +343,7 @@ INSERT INTO jams (
   ),
   (
     '10000000-0000-0000-0000-000000000004',
-    '22222222-2222-2222-2222-222222222222',  -- Bob (owner)
+    '22222222-2222-4222-8222-222222222222',  -- Bob (owner)
     'Evening Beach Acro',
     'Sunset acro session on the beach! Bring water and sun protection. We''ll practice on the sand (softer landings!).',
     '{"description": "Lido di Camaiore Beach, Tuscany"}',
@@ -365,7 +365,7 @@ INSERT INTO jams (
   ),
   (
     '10000000-0000-0000-0000-000000000005',
-    '11111111-1111-1111-1111-111111111111',  -- Alice (owner)
+    '11111111-1111-4111-8111-111111111111',  -- Alice (owner)
     'Monthly Acro Meetup - DRAFT',
     'Monthly recurring jam for the local community. Location TBD.',
     NULL,
@@ -393,22 +393,22 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO jam_participants (jam_id, user_id, state, role, joined_at) VALUES
   -- Sunday Morning Flow (15 capacity)
-  ('10000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 'participant', 'both', NOW() - INTERVAL '2 days'),  -- Owner/organizer
-  ('10000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'participant', 'base', NOW() - INTERVAL '1 day'),
-  ('10000000-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 'participant', 'flyer', NOW() - INTERVAL '1 day'),
-  ('10000000-0000-0000-0000-000000000001', '44444444-4444-4444-4444-444444444444', 'participant', 'both', NOW() - INTERVAL '12 hours'),
+  ('10000000-0000-0000-0000-000000000001', '33333333-3333-4333-8333-333333333333', 'participant', 'both', NOW() - INTERVAL '2 days'),  -- Owner/organizer
+  ('10000000-0000-0000-0000-000000000001', '11111111-1111-4111-8111-111111111111', 'participant', 'base', NOW() - INTERVAL '1 day'),
+  ('10000000-0000-0000-0000-000000000001', '22222222-2222-4222-8222-222222222222', 'participant', 'flyer', NOW() - INTERVAL '1 day'),
+  ('10000000-0000-0000-0000-000000000001', '44444444-4444-4444-8444-444444444444', 'participant', 'both', NOW() - INTERVAL '12 hours'),
   
   -- Advanced L-basing Workshop (10 capacity, no auto-promote)
-  ('10000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'participant', 'base', NOW() - INTERVAL '3 days'),  -- Owner
-  ('10000000-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333', 'participant', 'both', NOW() - INTERVAL '2 days'),
-  ('10000000-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'waiting', 'flyer', NOW() - INTERVAL '1 day'),  -- On waiting list
+  ('10000000-0000-0000-0000-000000000002', '11111111-1111-4111-8111-111111111111', 'participant', 'base', NOW() - INTERVAL '3 days'),  -- Owner
+  ('10000000-0000-0000-0000-000000000002', '33333333-3333-4333-8333-333333333333', 'participant', 'both', NOW() - INTERVAL '2 days'),
+  ('10000000-0000-0000-0000-000000000002', '22222222-2222-4222-8222-222222222222', 'waiting', 'flyer', NOW() - INTERVAL '1 day'),  -- On waiting list
   
   -- Beginners Welcome Jam (20 capacity)
-  ('10000000-0000-0000-0000-000000000003', '33333333-3333-3333-3333-333333333333', 'participant', 'both', NOW() - INTERVAL '5 days'),  -- Owner
-  ('10000000-0000-0000-0000-000000000003', '44444444-4444-4444-4444-444444444444', 'participant', 'both', NOW() - INTERVAL '4 days'),
+  ('10000000-0000-0000-0000-000000000003', '33333333-3333-4333-8333-333333333333', 'participant', 'both', NOW() - INTERVAL '5 days'),  -- Owner
+  ('10000000-0000-0000-0000-000000000003', '44444444-4444-4444-8444-444444444444', 'participant', 'both', NOW() - INTERVAL '4 days'),
   
   -- Evening Beach Acro (12 capacity)
-  ('10000000-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 'participant', 'flyer', NOW() - INTERVAL '1 day')  -- Owner
+  ('10000000-0000-0000-0000-000000000004', '22222222-2222-4222-8222-222222222222', 'participant', 'flyer', NOW() - INTERVAL '1 day')  -- Owner
 ON CONFLICT (jam_id, user_id) DO NOTHING;
 
 -- ============================================
@@ -417,7 +417,7 @@ ON CONFLICT (jam_id, user_id) DO NOTHING;
 
 -- Add Alice as a co-manager for Charlie's "Sunday Morning Flow"
 INSERT INTO jam_managers (jam_id, manager_id, created_at) VALUES
-  ('10000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', NOW() - INTERVAL '2 days')  -- Alice co-managing Charlie's jam
+  ('10000000-0000-0000-0000-000000000001', '11111111-1111-4111-8111-111111111111', NOW() - INTERVAL '2 days')  -- Alice co-managing Charlie's jam
 ON CONFLICT (jam_id, manager_id) DO NOTHING;
 
 -- ============================================
@@ -425,11 +425,11 @@ ON CONFLICT (jam_id, manager_id) DO NOTHING;
 -- ============================================
 
 INSERT INTO audit_log (jam_id, user_id, action, metadata) VALUES
-  ('10000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 'created', '{"jam_name": "Sunday Morning Flow"}'),
-  ('10000000-0000-0000-0000-000000000001', '33333333-3333-3333-3333-333333333333', 'published', NULL),
-  ('10000000-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'joined', '{"state": "participant"}'),
-  ('10000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'created', '{"jam_name": "Advanced L-basing Workshop"}'),
-  ('10000000-0000-0000-0000-000000000002', '11111111-1111-1111-1111-111111111111', 'published', NULL)
+  ('10000000-0000-0000-0000-000000000001', '33333333-3333-4333-8333-333333333333', 'created', '{"jam_name": "Sunday Morning Flow"}'),
+  ('10000000-0000-0000-0000-000000000001', '33333333-3333-4333-8333-333333333333', 'published', NULL),
+  ('10000000-0000-0000-0000-000000000001', '11111111-1111-4111-8111-111111111111', 'joined', '{"state": "participant"}'),
+  ('10000000-0000-0000-0000-000000000002', '11111111-1111-4111-8111-111111111111', 'created', '{"jam_name": "Advanced L-basing Workshop"}'),
+  ('10000000-0000-0000-0000-000000000002', '11111111-1111-4111-8111-111111111111', 'published', NULL)
 ON CONFLICT DO NOTHING;
 
 -- ============================================

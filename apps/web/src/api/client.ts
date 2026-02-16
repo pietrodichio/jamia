@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { supabase } from '@/integrations/supabase/client';
+import { signOutSafely } from '@/integrations/supabase/auth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8088';
 
@@ -40,10 +41,9 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid, clear session and redirect to auth
-      await supabase.auth.signOut();
+      await signOutSafely().catch(() => null);
       window.location.href = '/auth';
     }
     return Promise.reject(error);
   }
 );
-

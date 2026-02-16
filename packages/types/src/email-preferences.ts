@@ -2,6 +2,7 @@ export interface EmailPreferencesResponse {
   user_id: string;
   digest_enabled: boolean;
   digest_frequency: 'weekly' | 'monthly';
+  product_updates_enabled: boolean;
   unsubscribe_token: string;
   last_digest_sent_at: string | null;
   has_seen_digest_prompt: boolean;
@@ -12,4 +13,5 @@ export interface EmailPreferencesResponse {
 export interface UpdateEmailPreferencesDto {
   digest_enabled?: boolean;
   digest_frequency?: 'weekly' | 'monthly';
+  product_updates_enabled?: boolean;
 }

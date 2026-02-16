@@ -145,7 +145,11 @@ export function UnifiedSearchBar() {
 
   // City search with debounce
   useEffect(() => {
-    if (!placesLibraryLoaded || !citySearchText || citySearchText.length < 2) {
+    if (!placesLibraryLoaded) {
+      console.log('[UnifiedSearchBar] Places library not loaded yet');
+      return;
+    }
+    if (!citySearchText || citySearchText.length < 2) {
       setPredictions([]);
       return;
     }
@@ -160,6 +164,11 @@ export function UnifiedSearchBar() {
 
       const maps = (window as any).google?.maps;
       if (!maps?.places?.AutocompleteSuggestion) {
+        console.log('[UnifiedSearchBar] AutocompleteSuggestion not available', {
+          maps: !!maps,
+          places: !!maps?.places,
+          AutocompleteSuggestion: !!maps?.places?.AutocompleteSuggestion,
+        });
         setIsLoadingPredictions(false);
         return;
       }
@@ -299,37 +308,72 @@ export function UnifiedSearchBar() {
     }
 
     setIsLoadingGps(true);
+
+    const onSuccess = (position: GeolocationPosition) => {
+      setPendingLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        city: '', // Will show "Posizione precisa" in display
+        type: 'gps',
+      });
+      setLocationType('gps');
+      setCityName(null);
+      setIsLoadingGps(false);
+      setIsLocationDropdownOpen(false);
+      toast({
+        title: 'Posizione precisa rilevata',
+        description: 'Clicca "Cerca" per cercare eventi vicino a te',
+      });
+    };
+
+    const onError = (err: GeolocationPositionError) => {
+      setIsLoadingGps(false);
+
+      let errorMessage: string;
+      // GeolocationPositionError codes: 1 = PERMISSION_DENIED, 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT
+      switch (err.code) {
+        case 1: // PERMISSION_DENIED
+          errorMessage = 'Permesso di geolocalizzazione negato. Controlla le impostazioni del browser.';
+          break;
+        case 2: // POSITION_UNAVAILABLE
+          errorMessage = 'Posizione non disponibile. Riprova più tardi.';
+          break;
+        case 3: // TIMEOUT
+          errorMessage = 'Richiesta scaduta. Riprova.';
+          break;
+        default:
+          errorMessage = err.message || 'Errore sconosciuto';
+      }
+
+      toast({
+        title: 'Errore di localizzazione',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    };
+
+    // First try with high accuracy, fallback to low accuracy on timeout
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setPendingLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          city: '', // Will show "Posizione precisa" in display
-          type: 'gps',
-        });
-        setLocationType('gps');
-        setCityName(null);
-        setIsLoadingGps(false);
-        setIsLocationDropdownOpen(false);
-        toast({
-          title: 'Posizione precisa rilevata',
-          description: 'Clicca "Cerca" per cercare eventi vicino a te',
-        });
-      },
+      onSuccess,
       (err) => {
-        toast({
-          title: 'Errore di localizzazione',
-          description:
-            err.code === err.PERMISSION_DENIED
-              ? 'Permesso di geolocalizzazione negato'
-              : err.message,
-          variant: 'destructive',
-        });
-        setIsLoadingGps(false);
+        // If high accuracy times out, try without it
+        if (err.code === 3) {
+          navigator.geolocation.getCurrentPosition(
+            onSuccess,
+            onError,
+            {
+              enableHighAccuracy: false,
+              timeout: 10000,
+              maximumAge: 60000,
+            }
+          );
+        } else {
+          onError(err);
+        }
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 5000,
         maximumAge: 60000,
       }
     );
@@ -420,7 +464,7 @@ export function UnifiedSearchBar() {
   const getLocationDisplayText = () => {
     if (pendingLocation) {
       if (pendingLocation.type === 'ip' && pendingLocation.city) {
-        return `${pendingLocation.city} ${t('search.location.approximate')}`;
+        return `${pendingLocation.city}`;
       }
       if (pendingLocation.type === 'gps') {
         return pendingLocation.city || t('search.location.preciseFallback');
@@ -432,7 +476,7 @@ export function UnifiedSearchBar() {
     // Check URL location
     if (filters.lat && filters.lng) {
       if (locationType === 'ip' && cityName) {
-        return `${cityName} ${t('search.location.approximate')}`;
+        return `${cityName}`;
       }
       if (locationType === 'gps') {
         return cityName || t('search.location.preciseFallback');
@@ -470,13 +514,13 @@ export function UnifiedSearchBar() {
     const location = locationDisplayText;
 
     if (keyword && location) {
-      return `${keyword} ${t('search.mobile.at')} ${location.replace(` ${t('search.location.approximate')}`, '')}`;
+      return `${keyword} ${t('search.mobile.at')} ${location.replace(` `, '')}`;
     }
     if (keyword) {
       return keyword;
     }
     if (location) {
-      return `${t('search.mobile.at')} ${location.replace(` ${t('search.location.approximate')}`, '')}`;
+      return `${t('search.mobile.at')} ${location.replace(` `, '')}`;
     }
     return t('search.mobile.title');
   };
@@ -658,143 +702,144 @@ export function UnifiedSearchBar() {
       {/* Vertical Separator */}
       <Separator orientation="vertical" className="h-6" />
 
-      {/* Location Section */}
-      <div
-        ref={locationInputRef}
-        className={cn(
-          'flex items-center flex-1 min-w-0 gap-2 px-2 cursor-pointer relative',
-          hasPendingChanges && 'ring-2 ring-primary/20 rounded-full'
-        )}
-        onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setIsLocationDropdownOpen(!isLocationDropdownOpen);
-          }
-        }}
-        role="combobox"
-        aria-expanded={isLocationDropdownOpen}
-        aria-haspopup="listbox"
-        aria-controls={dropdownId}
-        aria-labelledby={locationLabelId}
-        tabIndex={0}
-      >
-        <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-        <span
-          id={locationLabelId}
-          className={cn(
-            'flex-1 min-w-0 truncate text-sm',
-            locationDisplayText ? 'text-foreground' : 'text-muted-foreground'
-          )}
-        >
-          {locationDisplayText || t('search.location.placeholder')}
-        </span>
-        {/* Pending change indicator */}
-        {hasPendingChanges && (
-          <span className="h-2 w-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
-        )}
-        {hasLocation && (
-          <button
-            type="button"
-            onClick={handleClearLocation}
-            className="p-1 hover:bg-accent rounded-full shrink-0"
-            aria-label="Clear location"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-
-      {/* Location Dropdown */}
-      {isLocationDropdownOpen && (
+      {/* Location Section - relative container for dropdown */}
+      <div className="relative flex-1 min-w-0">
         <div
-          ref={dropdownRef}
-          id={dropdownId}
-          className="absolute top-full left-0 right-0 mt-2 mx-2 rounded-lg border bg-popover shadow-lg z-50"
-          style={{ width: 'calc(100% - 16px)', maxWidth: '400px', left: '50%', transform: 'translateX(-50%)' }}
-          role="listbox"
-          aria-label={t('search.location.placeholder')}
-          onKeyDown={handleDropdownKeyDown}
+          ref={locationInputRef}
+          className={cn(
+            'flex items-center gap-2 px-2 cursor-pointer h-full',
+            hasPendingChanges && 'rounded-full'
+          )}
+          onClick={() => setIsLocationDropdownOpen(!isLocationDropdownOpen)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setIsLocationDropdownOpen(!isLocationDropdownOpen);
+            }
+          }}
+          role="combobox"
+          aria-expanded={isLocationDropdownOpen}
+          aria-haspopup="listbox"
+          aria-controls={dropdownId}
+          aria-labelledby={locationLabelId}
+          tabIndex={0}
         >
-          {/* City search input */}
-          <div className="p-3 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                ref={cityInputRef}
-                type="text"
-                value={citySearchText}
-                onChange={(e) => setCitySearchText(e.target.value)}
-                onKeyDown={handleDropdownKeyDown}
-                placeholder={t('search.location.searchCity')}
-                className="w-full pl-9 pr-9 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring"
-              />
-              {isLoadingPredictions && (
-                <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-              )}
-            </div>
-          </div>
-
-          {/* GPS Option */}
-          <div
-            role="option"
-            aria-selected={highlightedIndex === 0}
-            tabIndex={highlightedIndex === 0 ? 0 : -1}
-            onClick={requestPreciseLocation}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                requestPreciseLocation();
-              }
-            }}
+          <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span
+            id={locationLabelId}
             className={cn(
-              'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
-              highlightedIndex === 0 ? 'bg-accent' : 'hover:bg-accent'
+              'flex-1 min-w-0 truncate text-sm',
+              locationDisplayText ? 'text-foreground' : 'text-muted-foreground'
             )}
           >
-            {isLoadingGps ? (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            ) : (
-              <Crosshair className="h-4 w-4 text-muted-foreground" />
-            )}
-            <span className="text-sm">{t('search.location.useCurrentLocation')}</span>
-          </div>
-
-          {/* City Predictions */}
-          {predictions.length > 0 && (
-            <>
-              <Separator />
-              <ul className="py-1">
-                {predictions.map((prediction, index) => (
-                  <li
-                    key={prediction.place_id}
-                    role="option"
-                    aria-selected={highlightedIndex === index + 1}
-                    tabIndex={highlightedIndex === index + 1 ? 0 : -1}
-                    onClick={() => void handleSelectPrediction(prediction)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        void handleSelectPrediction(prediction);
-                      }
-                    }}
-                    onMouseEnter={() => setHighlightedIndex(index + 1)}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-2 cursor-pointer text-sm',
-                      highlightedIndex === index + 1
-                        ? 'bg-accent text-accent-foreground'
-                        : 'hover:bg-accent hover:text-accent-foreground'
-                    )}
-                  >
-                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="truncate">{prediction.description}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
+            {locationDisplayText || t('search.location.placeholder')}
+          </span>
+          {/* Pending change indicator */}
+          {hasPendingChanges && (
+            <span className="h-2 w-2 rounded-full bg-primary shrink-0" aria-hidden="true" />
+          )}
+          {hasLocation && (
+            <button
+              type="button"
+              onClick={handleClearLocation}
+              className="p-1 hover:bg-accent rounded-full shrink-0"
+              aria-label="Clear location"
+            >
+              <X className="h-3 w-3" />
+            </button>
           )}
         </div>
-      )}
+
+        {/* Location Dropdown - positioned relative to location section */}
+        {isLocationDropdownOpen && (
+          <div
+            ref={dropdownRef}
+            id={dropdownId}
+            className="absolute top-full right-0 left-1 mt-3 w-80 rounded-lg border bg-popover shadow-lg z-50"
+            role="listbox"
+            aria-label={t('search.location.placeholder')}
+            onKeyDown={handleDropdownKeyDown}
+          >
+            {/* City search input */}
+            <div className="p-3 border-b">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  ref={cityInputRef}
+                  type="text"
+                  value={citySearchText}
+                  onChange={(e) => setCitySearchText(e.target.value)}
+                  onKeyDown={handleDropdownKeyDown}
+                  placeholder={t('search.location.searchCity')}
+                  className="w-full pl-9 pr-9 py-2 text-sm border rounded-md bg-background outline-none focus:ring-2 focus:ring-ring"
+                />
+                {isLoadingPredictions && (
+                  <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                )}
+              </div>
+            </div>
+
+            {/* GPS Option */}
+            <div
+              role="option"
+              aria-selected={highlightedIndex === 0}
+              tabIndex={highlightedIndex === 0 ? 0 : -1}
+              onClick={requestPreciseLocation}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  requestPreciseLocation();
+                }
+              }}
+              className={cn(
+                'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
+                highlightedIndex === 0 ? 'bg-accent' : 'hover:bg-accent'
+              )}
+            >
+              {isLoadingGps ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : (
+                <Crosshair className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span className="text-sm">{t('search.location.useCurrentLocation')}</span>
+            </div>
+
+            {/* City Predictions */}
+            {predictions.length > 0 && (
+              <>
+                <Separator />
+                <ul className="py-1">
+                  {predictions.map((prediction, index) => (
+                    <li
+                      key={prediction.place_id}
+                      role="option"
+                      aria-selected={highlightedIndex === index + 1}
+                      tabIndex={highlightedIndex === index + 1 ? 0 : -1}
+                      onClick={() => void handleSelectPrediction(prediction)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          void handleSelectPrediction(prediction);
+                        }
+                      }}
+                      onMouseEnter={() => setHighlightedIndex(index + 1)}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-2 cursor-pointer text-sm',
+                        highlightedIndex === index + 1
+                          ? 'bg-accent text-accent-foreground'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      )}
+                    >
+                      <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="truncate">{prediction.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Search Button */}
       <Button

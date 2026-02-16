@@ -10,11 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 import type { UpdateEmailPreferencesDto } from '@jamia/types/email-preferences';
 
 interface EmailPreferencesCardProps {
-  userId: string;
   isNewUser?: boolean;
 }
 
-export function EmailPreferencesCard({ userId, isNewUser = false }: EmailPreferencesCardProps) {
+export function EmailPreferencesCard({ isNewUser = false }: EmailPreferencesCardProps) {
   const { t } = useTranslation('common');
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -22,12 +21,13 @@ export function EmailPreferencesCard({ userId, isNewUser = false }: EmailPrefere
   // Local state to handle the optimistic new user default
   const [localDigestEnabled, setLocalDigestEnabled] = useState(isNewUser);
   const [localDigestFrequency, setLocalDigestFrequency] = useState<'weekly' | 'monthly'>('monthly');
+  const [localProductUpdatesEnabled, setLocalProductUpdatesEnabled] = useState(true);
 
   // Fetch current preferences
   const { data: preferences, isLoading } = useQuery({
     queryKey: ['email-preferences'],
     queryFn: emailPreferencesApi.getPreferences,
-    enabled: !!userId,
+    enabled: true,
   });
 
   // Update local state when data is fetched
@@ -35,12 +35,13 @@ export function EmailPreferencesCard({ userId, isNewUser = false }: EmailPrefere
     if (preferences) {
       setLocalDigestEnabled(preferences.digest_enabled);
       setLocalDigestFrequency(preferences.digest_frequency);
+      setLocalProductUpdatesEnabled(preferences.product_updates_enabled);
     }
   }, [preferences]);
 
   // Auto-save for new users on mount
   useEffect(() => {
-    if (isNewUser && userId && !preferences) {
+    if (isNewUser && !preferences) {
       // Auto-save default preference for new users
       updateMutation.mutate({
         digest_enabled: true,
@@ -48,7 +49,7 @@ export function EmailPreferencesCard({ userId, isNewUser = false }: EmailPrefere
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNewUser, userId]); // Only run once on mount
+  }, [isNewUser]); // Only run once on mount
 
   // Update mutation
   const updateMutation = useMutation({
@@ -85,6 +86,11 @@ export function EmailPreferencesCard({ userId, isNewUser = false }: EmailPrefere
     });
   };
 
+  const handleProductUpdatesToggle = (checked: boolean) => {
+    setLocalProductUpdatesEnabled(checked);
+    updateMutation.mutate({ product_updates_enabled: checked });
+  };
+
   const isDisabled = isLoading || updateMutation.isPending;
 
   return (
@@ -114,9 +120,8 @@ export function EmailPreferencesCard({ userId, isNewUser = false }: EmailPrefere
 
         {/* Frequency selector - shown only when digest is enabled */}
         <div
-          className={`overflow-hidden transition-all duration-200 ${
-            localDigestEnabled ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-          }`}
+          className={`overflow-hidden transition-all duration-200 ${localDigestEnabled ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            }`}
         >
           <div className="space-y-3 pt-2">
             <Label className="text-sm font-medium">{t('emailPreferences.frequencyLabel')}</Label>
@@ -150,6 +155,27 @@ export function EmailPreferencesCard({ userId, isNewUser = false }: EmailPrefere
               </div>
             </RadioGroup>
           </div>
+        </div>
+
+        {/* Separator */}
+        <div className="border-t border-border" />
+
+        {/* Product updates toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col space-y-1">
+            <Label htmlFor="product-updates-toggle" className="text-base font-medium">
+              {t('emailPreferences.productUpdatesLabel')}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {t('emailPreferences.productUpdatesDescription')}
+            </p>
+          </div>
+          <Switch
+            id="product-updates-toggle"
+            checked={localProductUpdatesEnabled}
+            onCheckedChange={handleProductUpdatesToggle}
+            disabled={isDisabled}
+          />
         </div>
       </CardContent>
     </Card>

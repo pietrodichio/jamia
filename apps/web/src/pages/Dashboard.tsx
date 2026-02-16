@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutSafely } from "@/integrations/supabase/auth";
 import { profilesApi, type Profile } from "@/api/profiles.api";
 import { jamsApi, type Jam } from "@/api/jams.api";
 import { managersApi, type JamManager } from "@/api/managers.api";
@@ -10,7 +11,7 @@ import { LogOut, Loader2, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { DigestNudgeBanner } from "@/components/dashboard/DigestNudgeBanner";
-import { DashboardActions } from "@/components/dashboard/DashboardActions";
+import { DashboardActions, DashboardMobileMenu } from "@/components/dashboard/DashboardActions";
 import { DashboardTabs } from "@/components/dashboard/DashboardTabs";
 import { ParticipationsTab } from "@/components/dashboard/ParticipationsTab";
 import { EventManagementTab } from "@/components/dashboard/EventManagementTab";
@@ -42,7 +43,7 @@ const Dashboard = () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error || !user) {
         // Clear invalid session and redirect to auth
-        await supabase.auth.signOut();
+        await signOutSafely().catch(() => null);
         navigate("/auth");
         return null;
       }
@@ -154,12 +155,20 @@ const Dashboard = () => {
   const managersByJam = managersQuery.data ?? {};
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    queryClient.clear();
-    toast({
-      title: "Disconnesso",
-      description: "Alla prossima!",
-    });
+    try {
+      await signOutSafely();
+      queryClient.clear();
+      toast({
+        title: "Disconnesso",
+        description: "Alla prossima!",
+      });
+    } catch {
+      toast({
+        title: "Errore logout",
+        description: "Impossibile disconnettersi ora. Riprova tra poco.",
+        variant: "destructive",
+      });
+    }
   };
 
   const isOwnerOrManager = (jam: Jam) => {
@@ -259,17 +268,27 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8 space-y-8 max-w-7xl">
         {/* Header with compact actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">Ciao, {profile.first_name}! 👋</p>
+          <div className="w-full sm:w-auto">
+            <div className="flex items-start justify-between gap-3 sm:block">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+                <p className="text-muted-foreground">Ciao, {profile.first_name}! 👋</p>
+              </div>
+              <div className="sm:hidden">
+                <DashboardMobileMenu
+                  onProfileClick={() => navigate("/profile")}
+                  onSignOut={handleSignOut}
+                />
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2 justify-between w-full md:justify-end md:w-auto flex-wrap">
+          <div className="flex w-full items-center gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <DashboardActions />
             <Button
               onClick={() => navigate("/profile")}
               variant="secondary"
               size="sm"
-              className="rounded-xl"
+              className="hidden rounded-xl sm:inline-flex"
             >
               <User className="mr-2 h-4 w-4" />
               Profilo
@@ -278,7 +297,7 @@ const Dashboard = () => {
               onClick={handleSignOut}
               variant="destructive"
               size="sm"
-              className="rounded-xl"
+              className="hidden rounded-xl sm:inline-flex"
             >
               <LogOut className="mr-2 h-4 w-4" />
               Esci

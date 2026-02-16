@@ -30,20 +30,20 @@ export function UnifiedFilters() {
         tags.length > 0;
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-nowrap items-center gap-x-2 w-full">
             <MultiSelect
                 options={EVENT_TYPES.map(t => ({ value: t.value, label: t.label }))}
                 selected={filters.types}
                 onChange={handleTypesChange}
                 placeholder="Tipo di evento"
-                className="min-w-[160px]"
+                className="flex-1 min-w-0 sm:min-w-[160px] sm:flex-none"
             />
             <MultiSelect
                 options={EVENT_TAG_OPTIONS}
                 selected={tags}
                 onChange={setTags}
                 placeholder="Tag"
-                className="min-w-[160px] w-fit"
+                className="flex-1 min-w-0 sm:min-w-[160px] sm:w-fit sm:flex-none"
             />
             {hasActiveFilters && (
                 <Button

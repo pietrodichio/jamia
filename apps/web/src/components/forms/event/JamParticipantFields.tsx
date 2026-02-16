@@ -1,17 +1,16 @@
+import { useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { CapacitySettings } from '@/components/jams/CapacitySettings';
+import { FormSwitch } from '@/components/jams/FormSwitch';
 
 interface JamParticipantFieldsProps {
   form: UseFormReturn<any>;
@@ -22,6 +21,51 @@ export function JamParticipantFields({ form }: JamParticipantFieldsProps) {
 
   const eventType = form.watch('type');
   const manageParticipants = form.watch('manageParticipants');
+  const capacity = form.watch('capacity');
+  const basesMin = form.watch('desired_bases_min');
+  const basesMax = form.watch('desired_bases_max');
+  const flyersMin = form.watch('desired_flyers_min');
+  const flyersMax = form.watch('desired_flyers_max');
+  const autoPromote = form.watch('auto_promote');
+  const publicParticipants = form.watch('public_participants');
+
+  useEffect(() => {
+    if (!capacity || capacity <= 0) {
+      return;
+    }
+
+    if (
+      basesMin !== undefined ||
+      basesMax !== undefined ||
+      flyersMin !== undefined ||
+      flyersMax !== undefined
+    ) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const totalCapacity = Number(capacity);
+      const idealBases = Math.floor(totalCapacity / 3);
+      const idealFlyers = totalCapacity - idealBases;
+
+      const nextBasesMin = Math.max(0, idealBases - 1);
+      const nextBasesMax = idealBases + 1;
+
+      let nextFlyersMin = Math.max(0, idealFlyers - 2);
+      const nextFlyersMax = idealFlyers + 2;
+
+      if (nextBasesMax + nextFlyersMin < totalCapacity) {
+        nextFlyersMin = totalCapacity - nextBasesMax;
+      }
+
+      form.setValue('desired_bases_min', nextBasesMin);
+      form.setValue('desired_bases_max', nextBasesMax);
+      form.setValue('desired_flyers_min', nextFlyersMin);
+      form.setValue('desired_flyers_max', nextFlyersMax);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [capacity, basesMin, basesMax, flyersMin, flyersMax, form]);
 
   // Only render if type is 'jam' AND manageParticipants is true
   if (eventType !== 'jam' || !manageParticipants) {
@@ -30,28 +74,43 @@ export function JamParticipantFields({ form }: JamParticipantFieldsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Capacity */}
-      <FormField
-        control={form.control}
-        name="capacity"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{t('events:fields.capacity')}</FormLabel>
-            <FormControl>
-              <Input
-                type="number"
-                min={1}
-                placeholder="es. 20"
-                {...field}
-                onChange={(e) => field.onChange(e.target.valueAsNumber)}
-              />
-            </FormControl>
-            <FormDescription>
-              Numero massimo di partecipanti che possono registrarsi
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
+      <CapacitySettings
+        capacity={capacity}
+        basesMin={basesMin}
+        basesMax={basesMax}
+        flyersMin={flyersMin}
+        flyersMax={flyersMax}
+        onCapacityChange={(value) => form.setValue('capacity', value, { shouldDirty: true })}
+        onBasesMinChange={(value) => form.setValue('desired_bases_min', value, { shouldDirty: true })}
+        onBasesMaxChange={(value) => form.setValue('desired_bases_max', value, { shouldDirty: true })}
+        onFlyersMinChange={(value) => form.setValue('desired_flyers_min', value, { shouldDirty: true })}
+        onFlyersMaxChange={(value) => form.setValue('desired_flyers_max', value, { shouldDirty: true })}
+        errors={{
+          capacity: form.formState.errors?.capacity,
+          desired_bases_min: form.formState.errors?.desired_bases_min,
+          desired_bases_max: form.formState.errors?.desired_bases_max,
+          desired_flyers_min: form.formState.errors?.desired_flyers_min,
+          desired_flyers_max: form.formState.errors?.desired_flyers_max,
+        }}
+        disabled={form.formState.isSubmitting}
+      />
+
+      <FormSwitch
+        id="jam-auto-promote"
+        label="Promozione automatica"
+        description="Promuovi automaticamente dalla lista d'attesa quando si libera un posto"
+        checked={autoPromote}
+        onChange={(checked) => form.setValue('auto_promote', checked, { shouldDirty: true })}
+        disabled={form.formState.isSubmitting}
+      />
+
+      <FormSwitch
+        id="jam-public-participants"
+        label="Mostra partecipanti pubblicamente"
+        description="Consenti a chiunque di vedere la lista dei partecipanti"
+        checked={publicParticipants}
+        onChange={(checked) => form.setValue('public_participants', checked, { shouldDirty: true })}
+        disabled={form.formState.isSubmitting}
       />
 
       {/* Visibility */}
@@ -60,73 +119,26 @@ export function JamParticipantFields({ form }: JamParticipantFieldsProps) {
         name="visibility"
         render={({ field }) => (
           <FormItem className="space-y-3">
-            <FormLabel>{t('events:fields.visibility')}</FormLabel>
             <FormControl>
-              <RadioGroup
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                className="flex flex-col space-y-2"
-              >
-                <div className="flex items-start space-x-3">
-                  <RadioGroupItem value="public" id="public" className="mt-1" />
-                  <div className="flex-1">
-                    <Label htmlFor="public" className="font-medium cursor-pointer">
-                      {t('events:visibilityOptions.public')}
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Il jam apparirà nella directory degli eventi pubblici
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <RadioGroupItem value="private" id="private" className="mt-1" />
-                  <div className="flex-1">
-                    <Label htmlFor="private" className="font-medium cursor-pointer">
-                      {t('events:visibilityOptions.private')}
-                    </Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Solo chi ha il link può vedere e registrarsi
-                    </p>
-                  </div>
-                </div>
-              </RadioGroup>
+              <FormSwitch
+                id="jam-visibility"
+                label={t('events:fields.visibility')}
+                description={
+                  field.value === 'public'
+                    ? 'La jam apparirà nella directory degli eventi pubblici'
+                    : 'Solo chi ha il link può vedere e registrarsi'
+                }
+                checked={field.value === 'public'}
+                onChange={(checked) => field.onChange(checked ? 'public' : 'private')}
+                disabled={form.formState.isSubmitting}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
 
-      {/* Roles (optional) */}
-      <div className="space-y-3">
-        <Label className="text-base font-medium">Ruoli richiesti (opzionale)</Label>
-        <FormDescription className="text-sm">
-          Seleziona i ruoli acroyoga disponibili per questo jam
-        </FormDescription>
-        <div className="space-y-2">
-          {['base', 'flyer', 'spotter'].map((role) => (
-            <FormField
-              key={role}
-              control={form.control}
-              name={`roles.${role}`}
-              render={({ field }) => (
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={role}
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                  <label
-                    htmlFor={role}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
-                  </label>
-                </div>
-              )}
-            />
-          ))}
-        </div>
-      </div>
+
     </div>
   );
 }

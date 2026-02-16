@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import { useRef, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,7 @@ export default function CreateEvent() {
   const { t } = useTranslation(['common', 'events', 'forms']);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const submitIntentRef = useRef(false);
 
   // Initialize wizard
   const { currentStep, nextStep, prevStep, goToStep, form } = useEventWizard();
@@ -190,6 +191,11 @@ export default function CreateEvent() {
       void nextStep();
       return;
     }
+    if (!submitIntentRef.current) {
+      event.preventDefault();
+      return;
+    }
+    submitIntentRef.current = false;
     handleSubmit(event);
   };
 
@@ -279,6 +285,9 @@ export default function CreateEvent() {
                 onNext={nextStep}
                 isSubmitting={createMutation.isPending || updateMutation.isPending || addTeachersMutation.isPending}
                 canGoNext={true}
+                onSubmitIntent={() => {
+                  submitIntentRef.current = true;
+                }}
               />
             </form>
           </Form>

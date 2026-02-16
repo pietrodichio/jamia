@@ -82,25 +82,13 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
 
   // Fetch autocomplete predictions
   useEffect(() => {
-    console.log('[EventTypeStep] Predictions effect triggered', {
-      placesLibraryLoaded,
-      locationDescription,
-      locationDescriptionLength: locationDescription?.length,
-      suppressNextPredictions: suppressNextPredictions.current,
-      suppressUntilTimestamp: suppressUntilTimestamp.current,
-      currentTime: Date.now(),
-      hasCoordinates: !!(locationLatitude && locationLongitude),
-    });
-
     if (!placesLibraryLoaded || !locationDescription || locationDescription.length < 3) {
-      console.log('[EventTypeStep] Skipping predictions - conditions not met');
       setPlacePredictions([]);
       return;
     }
 
     // Don't show predictions if location already has coordinates (already selected)
     if (locationLatitude !== undefined && locationLongitude !== undefined) {
-      console.log('[EventTypeStep] Skipping predictions - location already has coordinates');
       setPlacePredictions([]);
       return;
     }
@@ -108,12 +96,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
     // Check if we're still in suppression window (2 seconds after selection)
     const now = Date.now();
     if (suppressNextPredictions.current || (suppressUntilTimestamp.current && now < suppressUntilTimestamp.current)) {
-      console.log('[EventTypeStep] Suppressing predictions', {
-        suppressNextPredictions: suppressNextPredictions.current,
-        suppressUntilTimestamp: suppressUntilTimestamp.current,
-        now,
-        timeRemaining: suppressUntilTimestamp.current ? suppressUntilTimestamp.current - now : null,
-      });
       // Don't reset the flag immediately - let it persist through multiple form updates
       setPlacePredictions([]);
       return;
@@ -121,26 +103,21 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
 
     // Clear suppression flags if we're past the suppression window
     if (suppressUntilTimestamp.current && now >= suppressUntilTimestamp.current) {
-      console.log('[EventTypeStep] Suppression window expired, clearing flags');
       suppressNextPredictions.current = false;
       suppressUntilTimestamp.current = null;
     }
 
     if (predictionsTimeout.current) {
-      console.log('[EventTypeStep] Clearing existing timeout');
       clearTimeout(predictionsTimeout.current);
     }
 
-    console.log('[EventTypeStep] Setting up new prediction request timeout');
     predictionsTimeout.current = setTimeout(async () => {
       const requestId = ++lastPredictionRequestId.current;
-      console.log('[EventTypeStep] Prediction request started', { requestId, locationDescription });
       setIsLoadingPlaces(true);
 
       // Access googleMaps from window to avoid dependency issues
       const maps = (window as any).google?.maps;
       if (!maps?.places?.AutocompleteSuggestion) {
-        console.log('[EventTypeStep] Google Maps API not available');
         setIsLoadingPlaces(false);
         return;
       }
@@ -153,11 +130,9 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
           sessionToken: sessionToken,
         };
 
-        console.log('[EventTypeStep] Fetching autocomplete suggestions', { input: locationDescription });
         const { suggestions } = await maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
 
         if (requestId !== lastPredictionRequestId.current) {
-          console.log('[EventTypeStep] Request outdated, ignoring', { requestId, currentId: lastPredictionRequestId.current });
           return;
         }
 
@@ -179,18 +154,14 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
               placePrediction: placePrediction,
             };
           });
-          console.log('[EventTypeStep] Predictions fetched and set', { count: mappedPredictions.length });
           setPlacePredictions(mappedPredictions);
         } else {
-          console.log('[EventTypeStep] No suggestions returned');
           setPlacePredictions([]);
         }
       } catch (error) {
         if (requestId !== lastPredictionRequestId.current) {
-          console.log('[EventTypeStep] Request outdated after error, ignoring', { requestId, currentId: lastPredictionRequestId.current });
           return;
         }
-        console.error('[EventTypeStep] Error fetching predictions', error);
         setIsLoadingPlaces(false);
         setPlacePredictions([]);
       }
@@ -198,7 +169,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
 
     return () => {
       if (predictionsTimeout.current) {
-        console.log('[EventTypeStep] Cleaning up timeout');
         clearTimeout(predictionsTimeout.current);
       }
     };
@@ -220,18 +190,11 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
     };
   }) => {
     if (!prediction) {
-      console.log('[EventTypeStep] handleSelectPrediction called with no prediction');
       return;
     }
 
-    console.log('[EventTypeStep] handleSelectPrediction called', {
-      description: prediction.description,
-      place_id: prediction.place_id,
-    });
-
     // Clear any pending prediction requests
     if (predictionsTimeout.current) {
-      console.log('[EventTypeStep] Clearing pending timeout on prediction select');
       clearTimeout(predictionsTimeout.current);
       predictionsTimeout.current = null;
     }
@@ -243,10 +206,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
     // Set suppression flag and timestamp (suppress for 2 seconds)
     suppressNextPredictions.current = true;
     suppressUntilTimestamp.current = Date.now() + 2000;
-    console.log('[EventTypeStep] Suppression flags set', {
-      suppressNextPredictions: suppressNextPredictions.current,
-      suppressUntilTimestamp: suppressUntilTimestamp.current,
-    });
 
     const description = prediction.description ||
       (typeof prediction.placePrediction?.text === 'object'
@@ -256,7 +215,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
     const placeId = prediction.place_id || prediction.placePrediction?.placeId;
 
     // Optimistic update - clear coordinates until we fetch them
-    console.log('[EventTypeStep] Setting initial location value', { description });
     form.setValue('location', {
       description: description || '',
       latitude: undefined,
@@ -268,7 +226,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
     // Access googleMaps from window to avoid dependency issues
     const maps = (window as any).google?.maps;
     if (!maps?.places || !placeId) {
-      console.log('[EventTypeStep] No maps API or placeId, setting basic location');
       const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
       form.setValue('location', {
         description: description || '',
@@ -281,7 +238,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
 
     try {
       if (prediction.placePrediction?.toPlace) {
-        console.log('[EventTypeStep] Fetching place details');
         const place = prediction.placePrediction.toPlace() as any;
         await place.fetchFields({
           fields: ["displayName", "formattedAddress", "location", "id", "googleMapsURI", "addressComponents"],
@@ -315,12 +271,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
         // If we have a specific place name (displayName), we prefer that as the main text
         // The city will be stored separately
 
-        console.log('[EventTypeStep] Setting final location value', {
-          finalDescription,
-          city,
-          latitude: location?.lat(),
-          longitude: location?.lng(),
-        });
         form.setValue('location', {
           description: finalDescription,
           city: city,
@@ -329,7 +279,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
           longitude: location?.lng(),
         }, { shouldDirty: true });
       } else {
-        console.log('[EventTypeStep] No toPlace method, setting basic location');
         const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
         form.setValue('location', {
           description: description || '',
@@ -339,7 +288,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
         }, { shouldDirty: true });
       }
     } catch (error) {
-      console.error('[EventTypeStep] Error fetching place details', error);
       const url = `https://www.google.com/maps/place/?q=place_id:${placeId}`;
       form.setValue('location', {
         description: description || '',
@@ -427,7 +375,6 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
               <LocationInput
                 value={field.value?.description || ''}
                 onChange={(value) => {
-                  console.log('[EventTypeStep] LocationInput onChange', { value });
                   field.onChange({
                     ...field.value,
                     description: value,

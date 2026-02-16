@@ -4,6 +4,8 @@ import { it } from 'date-fns/locale/it';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getOptimizedImageUrl, getResponsiveSrcSet } from '@/lib/image-utils';
+import { generateEventGradient } from '@/lib/event-gradient';
+import { getEventTypeBadgeColorClasses } from '@/lib/event-badges';
 import type { Event } from '@jamia/types/event';
 import { MapPin, CalendarDays } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,19 +31,12 @@ export function EventCard({ event }: EventCardProps) {
     navigate(`/events/${event.id}`);
   };
 
-  const getEventTypeBadgeVariant = (
-    type: string
-  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
-    const variants: Record<
-      string,
-      'default' | 'secondary' | 'destructive' | 'outline'
-    > = {
-      jam: 'default',
-      class: 'secondary',
-      workshop: 'outline',
-      convention: 'destructive',
-    };
-    return variants[type] || 'default';
+  // Use outline variant as base for all custom badge styles
+  const badgeVariant: 'outline' = 'outline';
+
+  const getEventTypeBadgeClassName = (type: string): string => {
+    const baseClasses = 'absolute top-2 right-2 shadow-sm font-semibold';
+    return `${baseClasses} ${getEventTypeBadgeColorClasses(type)}`;
   };
 
   const getEventTypeLabel = (type: string): string => {
@@ -71,25 +66,23 @@ export function EventCard({ event }: EventCardProps) {
     }
   };
 
-  // Placeholder image URL if no image provided
-  const placeholderImage = '/placeholder-event.jpg';
-  const imagePath = event.image_url || placeholderImage;
+  const hasImage = !!event.image_url;
+  const gradientStyle = generateEventGradient(event.id, event.title);
 
-  // For now, we'll assume image_url contains just the filename
-  // If it's a full URL from Supabase, we use it directly
-  const isFullUrl = imagePath.startsWith('http');
+  // Image URL handling (only if image exists)
+  const thumbnailUrl = hasImage
+    ? (event.image_url.startsWith('http')
+      ? event.image_url
+      : getOptimizedImageUrl('event-images', event.image_url, {
+        width: 400,
+        quality: 80,
+        resize: 'cover',
+      }))
+    : undefined;
 
-  const thumbnailUrl = isFullUrl
-    ? imagePath
-    : getOptimizedImageUrl('event-images', imagePath, {
-      width: 400,
-      quality: 80,
-      resize: 'cover',
-    });
-
-  const srcSet = isFullUrl
-    ? undefined
-    : getResponsiveSrcSet('event-images', imagePath, [400, 800], 80);
+  const srcSet = hasImage && !event.image_url.startsWith('http')
+    ? getResponsiveSrcSet('event-images', event.image_url, [400, 800], 80)
+    : undefined;
 
 
   return (
@@ -99,17 +92,24 @@ export function EventCard({ event }: EventCardProps) {
     >
       {/* Hero image container */}
       <div className="relative h-48 w-full overflow-hidden bg-muted">
-        <img
-          src={thumbnailUrl}
-          srcSet={srcSet}
-          sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-          alt={event.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        {hasImage ? (
+          <img
+            src={thumbnailUrl}
+            srcSet={srcSet}
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+            alt={event.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+            style={{ background: gradientStyle }}
+          />
+        )}
         {/* Event type badge - positioned in top-right corner */}
         <Badge
-          variant={getEventTypeBadgeVariant(event.type)}
-          className="absolute top-2 right-2 shadow-sm"
+          variant={badgeVariant}
+          className={getEventTypeBadgeClassName(event.type)}
         >
           {getEventTypeLabel(event.type)}
         </Badge>

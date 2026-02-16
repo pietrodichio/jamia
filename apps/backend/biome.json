@@ -1,5 +1,10 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    }
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",

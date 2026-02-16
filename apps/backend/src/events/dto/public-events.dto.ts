@@ -28,6 +28,12 @@ export class PublicEventsDto {
   @IsArray()
   @IsString({ each: true })
   @IsIn(['jam', 'class', 'workshop', 'convention'], { each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map(v => v.trim()).filter(Boolean);
+    }
+    return value;
+  })
   types?: EventType[];
 
   // Optional: Date range filters

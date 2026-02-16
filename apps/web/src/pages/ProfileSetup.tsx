@@ -49,7 +49,6 @@ const ProfileSetup = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [userId, setUserId] = useState<string>("");
   const [isNewUser, setIsNewUser] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -80,9 +79,6 @@ const ProfileSetup = () => {
         navigate("/email-confirmation");
         return;
       }
-
-      // Set userId for EmailPreferencesCard
-      setUserId(user.id);
 
       try {
         const identityMetadata = user.identities?.find((identity) => identity.provider === "google")?.identity_data ?? {};
@@ -314,210 +310,208 @@ const ProfileSetup = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-          <Form {...form}>
-            <form onSubmit={onSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label>Foto profilo</Label>
-                <div className="flex items-center gap-4">
-                  {photoPreview ? (
-                    <div className="relative">
-                      <img
-                        src={photoPreview}
-                        alt="Preview"
-                        className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
-                      />
-                      <Button
+            <Form {...form}>
+              <form onSubmit={onSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Foto profilo</Label>
+                  <div className="flex items-center gap-4">
+                    {photoPreview ? (
+                      <div className="relative">
+                        <img
+                          src={photoPreview}
+                          alt="Preview"
+                          className="w-24 h-24 rounded-full object-cover border-2 border-primary/20"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                          onClick={handleRemovePhoto}
+                          disabled={isLoading || isUploadingPhoto}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
                         type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                        onClick={handleRemovePhoto}
+                        onClick={triggerFilePicker}
+                        className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-primary/20 transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                         disabled={isLoading || isUploadingPhoto}
                       >
-                        <X className="h-3 w-3" />
-                      </Button>
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                      </button>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png"
+                        onChange={handlePhotoChange}
+                        disabled={isLoading || isUploadingPhoto}
+                        className="rounded-xl"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        JPG o PNG, max 2MB
+                      </p>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={triggerFilePicker}
-                      className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-primary/20 transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                      disabled={isLoading || isUploadingPhoto}
-                    >
-                      <Upload className="h-8 w-8 text-muted-foreground" />
-                    </button>
-                  )}
-                  <div className="flex-1">
-                    <Input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png"
-                      onChange={handlePhotoChange}
-                      disabled={isLoading || isUploadingPhoto}
-                      className="rounded-xl"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      JPG o PNG, max 2MB
-                    </p>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="firstName">Nome *</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="firstName"
+                            type="text"
+                            placeholder="Mario"
+                            disabled={isLoading}
+                            className="rounded-xl"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="lastName">Cognome</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="lastName"
+                            type="text"
+                            placeholder="Rossi"
+                            disabled={isLoading}
+                            className="rounded-xl"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <FormField
+                    control={control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="phone">Telefono *</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            placeholder="+39 123 456 7890"
+                            disabled={isLoading}
+                            className="rounded-xl"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel htmlFor="city">Città</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="city"
+                            type="text"
+                            placeholder="Milano, Roma, Torino..."
+                            disabled={isLoading}
+                            className="rounded-xl"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={control}
-                  name="firstName"
+                  name="mainRole"
                   render={({ field }) => (
                     <FormItem className="space-y-2">
-                      <FormLabel htmlFor="firstName">Nome *</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="firstName"
-                          type="text"
-                          placeholder="Mario"
-                          disabled={isLoading}
-                          className="rounded-xl"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel htmlFor="lastName">Cognome</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="lastName"
-                          type="text"
-                          placeholder="Rossi"
-                          disabled={isLoading}
-                          className="rounded-xl"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <FormField
-                  control={control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel htmlFor="phone">Telefono *</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="+39 123 456 7890"
-                          disabled={isLoading}
-                          className="rounded-xl"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel htmlFor="city">Città</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="city"
-                          type="text"
-                          placeholder="Milano, Roma, Torino..."
-                          disabled={isLoading}
-                          className="rounded-xl"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={control}
-                name="mainRole"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel htmlFor="mainRole">Ruolo principale *</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger id="mainRole" className="rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="base">Base</SelectItem>
-                        <SelectItem value="flyer">Flyer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={control}
-                name="bio"
-                render={({ field }) => (
-                  <FormItem className="space-y-2">
-                    <FormLabel htmlFor="bio">Bio</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        id="bio"
-                        placeholder="Raccontaci qualcosa di te, la tua esperienza con l'AcroYoga..."
+                      <FormLabel htmlFor="mainRole">Ruolo principale *</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
                         disabled={isLoading}
-                        rows={4}
-                        className="rounded-xl resize-none"
-                        {...field}
-                        value={field.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      >
+                        <SelectTrigger id="mainRole" className="rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="base">Base</SelectItem>
+                          <SelectItem value="flyer">Flyer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button
-                type="submit"
-                className="w-full rounded-xl"
-                disabled={isLoading || isUploadingPhoto}
-              >
-                {(isLoading || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isUploadingPhoto ? "Caricamento foto..." : "Salva profilo"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <FormField
+                  control={control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel htmlFor="bio">Bio</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          id="bio"
+                          placeholder="Raccontaci qualcosa di te, la tua esperienza con l'AcroYoga..."
+                          disabled={isLoading}
+                          rows={4}
+                          className="rounded-xl resize-none"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-      {userId && (
-        <EmailPreferencesCard userId={userId} isNewUser={isNewUser} />
-      )}
-    </div>
+                <Button
+                  type="submit"
+                  className="w-full rounded-xl"
+                  disabled={isLoading || isUploadingPhoto}
+                >
+                  {(isLoading || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isUploadingPhoto ? "Caricamento foto..." : "Salva profilo"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        <EmailPreferencesCard isNewUser={isNewUser} />
+      </div>
     </div>
   );
 };

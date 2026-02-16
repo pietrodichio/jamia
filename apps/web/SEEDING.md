@@ -3,15 +3,9 @@
 ## Quick Start
 
 ```bash
-# 1. Reset database (applies migrations)
+# Reset database (applies migrations + seed.sql)
 cd apps/web
 npx supabase db reset --yes
-
-# 2. Create test users
-npx tsx supabase/seed-users.ts
-
-# 3. Create test events
-npx tsx supabase/seed-events.ts
 ```
 
 ## Test Credentials
@@ -23,25 +17,20 @@ After seeding, you can log in with:
 - **charlie@example.com** / password123 (Both, Super Admin)
 - **diana@example.com** / password123 (Both)
 
-## Why Two Steps?
+## Why One Step Now?
 
-Supabase GoTrue (authentication service) cannot verify passwords hashed with PostgreSQL's `crypt()` function, even when using the correct bcrypt cost factor.
+We moved all seeding into `supabase/seed.sql`, including:
+- auth users (via `auth.users` + `auth.identities`)
+- profiles
+- events
 
-**Root cause**: Subtle differences in bcrypt library implementations between PostgreSQL and GoTrue.
-
-**Solution**: Use Supabase's Admin API (`auth.admin.createUser()`) to ensure passwords are hashed in a GoTrue-compatible format.
+This removes the manual TS scripts and keeps seeding consistent across resets.
 
 ## What Gets Seeded
 
 ### Step 1: Database Reset
 - Applies all migrations (schema, RLS policies, indexes)
-- Creates empty tables ready for data
-
-### Step 2: User Creation Script
-- Creates 4 test users via Admin API
-- Auto-creates profiles via database trigger
-- Updates profiles with additional data (bio, city, role, etc.)
-- Tests authentication to verify everything works
+- Runs `supabase/seed.sql` to insert users, profiles, and events
 
 ## Troubleshooting
 
@@ -93,22 +82,12 @@ If you see different ports, check your `config.toml` file.
 ## Adding More Test Data
 
 To add events, participants, or other test data:
-
-1. **Option A**: Create users first, then add SQL seed data
-   - Update `supabase/seed.sql` with INSERT statements
-   - Use actual user IDs from profiles table
-   - Run `npx supabase db reset --yes`
-   - Run `npx tsx supabase/seed-users.ts`
-
-2. **Option B**: Create a separate seeding script
-   - Similar to `seed-users.ts`
-   - Uses Supabase client for type-safe inserts
-   - Run after user seeding
+- Update `supabase/seed.sql` with additional INSERT statements
+- Re-run `npx supabase db reset --yes`
 
 ## Files
 
-- `supabase/seed.sql` - Run automatically during `db reset` (currently minimal)
-- `supabase/seed-users.ts` - Creates test users via Admin API
+- `supabase/seed.sql` - Run automatically during `db reset` (users, profiles, events)
 - `SEEDING.md` - This file
 
 ## Complete Fresh Start
@@ -126,9 +105,6 @@ npx supabase start
 
 # Reset database
 npx supabase db reset --yes
-
-# Create users
-npx tsx supabase/seed-users.ts
 
 # Verify
 npx supabase status

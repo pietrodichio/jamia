@@ -57,6 +57,7 @@ export default function EditEvent() {
     [coOrganizers]
   );
   const hasInitializedForm = useRef(false);
+  const submitIntentRef = useRef(false);
 
   // Watch event type to conditionally show teachers step
   const eventType = form.watch('type');
@@ -249,6 +250,11 @@ export default function EditEvent() {
       void nextStep();
       return;
     }
+    if (!submitIntentRef.current) {
+      event.preventDefault();
+      return;
+    }
+    submitIntentRef.current = false;
     handleSubmit(event);
   };
 
@@ -329,6 +335,9 @@ export default function EditEvent() {
                 onNext={nextStep}
                 isSubmitting={updateMutation.isPending}
                 canGoNext={true}
+                onSubmitIntent={() => {
+                  submitIntentRef.current = true;
+                }}
               />
             </form>
           </Form>

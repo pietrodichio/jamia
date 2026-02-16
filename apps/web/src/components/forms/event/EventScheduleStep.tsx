@@ -238,7 +238,7 @@ export function EventScheduleStep({ form }: EventScheduleStepProps) {
                 />
               </FormControl>
               <FormDescription>
-                Lascia vuoto o 0 per eventi gratuiti
+                Lascia vuoto o 0 per eventi gratuiti o di cui non vuoi mostrare il prezzo
               </FormDescription>
               <FormMessage />
             </FormItem>

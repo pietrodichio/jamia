@@ -26,12 +26,14 @@ export const parseGoogleMapsUrl = (value: string) => {
 
 export const loadGoogleMaps = (apiKey?: string, loaderRef?: MutableRefObject<Promise<void> | null>) => {
   if (!apiKey) return Promise.resolve();
-  if ((window as any).google?.maps?.places) return Promise.resolve();
+  // Check if Google Maps core is already loaded
+  if ((window as any).google?.maps) return Promise.resolve();
   if (loaderRef?.current) return loaderRef.current;
 
   loaderRef!.current = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    // Use loading=async for proper async loading pattern (required for importLibrary)
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&loading=async`;
     script.async = true;
     script.onerror = reject;
     script.onload = () => resolve();

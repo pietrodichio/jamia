@@ -72,28 +72,12 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 export function UnifiedEventView() {
   const { t } = useTranslation(['common', 'events']);
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const {
     filters,
     tags,
     updateFilter,
     clearFilters,
   } = useEventFilters();
-
-  // Read view from URL, default to grid
-  const view = (searchParams.get('view') || 'grid') as 'grid' | 'calendar';
-
-  // Set view in URL
-  const setView = (newView: 'grid' | 'calendar') => {
-    setSearchParams(
-      (params) => {
-        const newParams = new URLSearchParams(params);
-        newParams.set('view', newView);
-        return newParams;
-      },
-      { replace: true }
-    );
-  };
 
   // Determine if location is set
   const hasLocation = !!filters.lat && !!filters.lng;
@@ -202,17 +186,14 @@ export function UnifiedEventView() {
         {/* Filter Bar - Sticky at top */}
         <div className="sticky top-0 z-10 mb-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 -mx-4 px-4 py-3 border-b">
           {/* Main search bar row */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 max-w-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="w-full sm:flex-1 sm:max-w-2xl">
               <UnifiedSearchBar />
             </div>
-            <ViewToggle currentView={view} onViewChange={setView} />
-          </div>
-
-          {/* Filters row - below search bar */}
-          <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
             <UnifiedFilters />
           </div>
+
+
         </div>
 
         {/* Results Area */}
@@ -222,20 +203,7 @@ export function UnifiedEventView() {
           ) : error ? (
             <ErrorState onRetry={() => refetch()} />
           ) : (
-            <>
-              {view === 'grid' ? (
-                <EventCardGrid events={events || []} emptyStateContext={emptyStateContext} />
-              ) : (
-                <div className="border rounded-lg p-4">
-                  <CalendarView
-                    events={events || []}
-                    onSelectEvent={(event) => {
-                      window.location.href = `/events/${event.id}`;
-                    }}
-                  />
-                </div>
-              )}
-            </>
+            <EventCardGrid events={events || []} emptyStateContext={emptyStateContext} />
           )}
         </main>
       </div>

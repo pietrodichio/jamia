@@ -54,6 +54,8 @@
     "monthly": "Mensile",
     "monthlyDescription": "Il primo di ogni mese",
     "frequencyLabel": "Frequenza",
+    "productUpdatesLabel": "Aggiornamenti prodotto",
+    "productUpdatesDescription": "Ricevi email sulle novit\u00e0 e gli aggiornamenti di Jamia",
     "saved": "Preferenze salvate",
     "savedDescription": "Le tue preferenze email sono state aggiornate.",
     "error": "Errore",

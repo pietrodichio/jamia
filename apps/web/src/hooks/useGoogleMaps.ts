@@ -16,24 +16,37 @@ export function useGoogleMaps(apiKey?: string) {
         return null;
       }
 
-      // Check if already loaded
-      if ((window as any).google?.maps?.places) {
+      // Check if places library with AutocompleteSuggestion is already loaded
+      const existingMaps = (window as any).google?.maps;
+      if (existingMaps?.places?.AutocompleteSuggestion) {
         return true;
       }
 
-      // Load the script
-      await loadGoogleMaps(apiKey, mapsLoader);
+      // Load the base script if not loaded
+      if (!existingMaps) {
+        await loadGoogleMaps(apiKey, mapsLoader);
+      }
 
-      // Import the places library
+      // Import the places library using the new API
       const googleMaps = (window as any).google?.maps;
-      if (!googleMaps?.places) {
+      if (!googleMaps) {
+        console.error('[useGoogleMaps] Google Maps not available after loading');
         return false;
       }
 
       try {
+        // Use importLibrary to load the places library (new API)
         await googleMaps.importLibrary('places');
+
+        // Verify AutocompleteSuggestion is available
+        if (!googleMaps.places?.AutocompleteSuggestion) {
+          console.error('[useGoogleMaps] AutocompleteSuggestion not available after import');
+          return false;
+        }
+
         return true;
-      } catch {
+      } catch (err) {
+        console.error('[useGoogleMaps] Failed to import places library:', err);
         // Fallback to manual input if library import fails
         return false;
       }

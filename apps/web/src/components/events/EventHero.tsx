@@ -4,6 +4,8 @@ import { it } from 'date-fns/locale/it';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { getOptimizedImageUrl, extractPathFromUrl } from '@/lib/image-utils';
+import { generateEventGradient } from '@/lib/event-gradient';
+import { getEventTypeBadgeColorClasses } from '@/lib/event-badges';
 import type { EventWithOrganizer } from '@jamia/types';
 
 interface EventHeroProps {
@@ -13,13 +15,6 @@ interface EventHeroProps {
 export function EventHero({ event }: EventHeroProps) {
   const { t } = useTranslation('events');
   const [imageError, setImageError] = useState(false);
-
-  const eventTypeBadgeVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-    jam: 'default',
-    class: 'secondary',
-    workshop: 'outline',
-    convention: 'destructive',
-  };
 
   // Generate optimized hero image URL if image exists
   // Handle both full URLs and paths
@@ -43,9 +38,10 @@ export function EventHero({ event }: EventHeroProps) {
 
   // Fallback to direct public URL if optimized URL fails to load
   const displayImageUrl = imageError && event.image_url ? event.image_url : heroImageUrl;
+  const gradientStyle = generateEventGradient(event.id, event.title);
 
   return (
-    <div className="relative h-96 w-full overflow-hidden rounded-2xl">
+    <div className="relative h-96 w-full overflow-hidden rounded-b-2xl">
       {/* Hero Image */}
       {displayImageUrl ? (
         <img
@@ -61,7 +57,10 @@ export function EventHero({ event }: EventHeroProps) {
         />
       ) : (
         // Gradient placeholder if no image
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5" />
+        <div
+          className="absolute inset-0"
+          style={{ background: gradientStyle }}
+        />
       )}
 
       {/* Dark overlay for text readability */}
@@ -70,8 +69,8 @@ export function EventHero({ event }: EventHeroProps) {
       {/* Event type badge - top right */}
       <div className="absolute top-4 right-4">
         <Badge
-          variant={eventTypeBadgeVariant[event.type] || 'default'}
-          className="text-sm font-medium capitalize"
+          variant="outline"
+          className={`text-sm font-semibold capitalize shadow-sm ${getEventTypeBadgeColorClasses(event.type)}`}
         >
           {t(`types.${event.type}`)}
         </Badge>
