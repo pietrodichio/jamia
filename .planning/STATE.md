@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 10 (Frontend Testing Infrastructure) - In Progress
-Plan: 1 of 2 completed
-Status: Plan 01 complete, Plan 02 ready
-Last activity: 2026-02-18 — Completed 10-01-PLAN.md (Frontend Testing Infrastructure Setup)
+Phase: 10 (Frontend Testing Infrastructure) - Complete
+Plan: 2 of 2 completed
+Status: Phase complete — all plans done
+Last activity: 2026-02-18 — Completed 10-02-PLAN.md (Critical Component and Hook Tests)
 
-Progress: [████████████░] 94% (57/61 plans estimated)
+Progress: [█████████████] 97% (58/61 plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 56
+- Total plans completed: 58
 - Average duration: 4 min
-- Total execution time: 4.14 hours
+- Total execution time: 4.21 hours
 
 **By Phase:**
 
@@ -42,10 +42,10 @@ Progress: [████████████░] 94% (57/61 plans estimated)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 08-02 (3 min), 08-03 (3 min), 09-01 (2 min), 10-01 (2 min)
-- Trend: Testing infrastructure added — Phase 10 active
+- Last 5 plans: 08-03 (3 min), 09-01 (2 min), 10-01 (2 min), 10-02 (4 min)
+- Trend: Phase 10 complete — testing infrastructure and initial test suite done
 
-| 10. Frontend Testing Infrastructure | 1/2 | 2 min | 2 min |
+| 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
 
 *Updated after each plan completion*
 
@@ -271,6 +271,12 @@ Recent decisions affecting current work:
 - retry:false + staleTime:Infinity on test QueryClient prevents 30s+ timeouts from React Query retries
 - MSW 2.x uses http/HttpResponse (not legacy rest/ctx from 1.x)
 - Biome domains.test:recommended enables Vitest globals without lint errors
+- Mock image-utils, event-gradient, event-badges at module level - prevents Supabase storage calls in component tests
+- Mock useNavigate via vi.mock react-router-dom spread - enables navigation assertion without full route setup
+- MemoryRouter wrapper (no QueryClient) for useEventFilters - hook only uses useSearchParams, not React Query
+- Separate createTestQueryClient() wrapper per useIpLocation test - fresh client avoids query cache pollution
+- server.use() per-test MSW override for error scenarios - afterEach resets handlers so override is test-scoped
+- vi.useFakeTimers() in beforeEach with vi.useRealTimers() in afterEach - prevents timer leaks between tests
 
 
 ### Roadmap Evolution
@@ -298,6 +304,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 10-01-PLAN.md (Frontend Testing Infrastructure Setup)
+Stopped at: Completed 10-02-PLAN.md (Critical Component and Hook Tests)
 Resume file: None
-Next: Phase 10 Plan 02 - Critical Component and Hook Tests
+Next: Phase 11 - Backend Integration Tests (controller tests via supertest, DTO validation)
