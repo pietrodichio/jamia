@@ -309,6 +309,7 @@ describe('ParticipantsService', () => {
 
     const supabase = createSupabaseMock({
       jam_participants: [
+        // cancelParticipation: fetch participation
         {
           response: {
             data: {
@@ -320,6 +321,7 @@ describe('ParticipantsService', () => {
             error: null,
           },
         },
+        // cancelParticipation: update to cancelled
         {
           response: {
             data: {
@@ -355,14 +357,8 @@ describe('ParticipantsService', () => {
             error: null,
           },
         },
-        // cancelParticipation: getJamParticipantCount (count query)
-        {
-          response: {
-            count: 1,
-            error: null,
-          },
-        },
         // promoteFromWaitingList: update wait-flyer to participant
+        // (wait-base skipped because bases at max: desired_bases_max=1, base-1 already active)
         {
           response: {
             data: {
@@ -382,31 +378,17 @@ describe('ParticipantsService', () => {
         },
       ],
       jams: [
+        // cancelParticipation: getJamOwnerTelegramChatId (owner_id + telegram_notifications_enabled)
         {
           response: {
             data: {
-              id: 'jam-promote',
-              capacity: 3,
-              auto_promote: true,
-              desired_bases_max: 1,
-              desired_flyers_max: 2,
-            },
-            error: null,
-          },
-        },
-        // cancelParticipation: Telegram notification jam query
-        {
-          response: {
-            data: {
-              name: 'Test Jam',
-              capacity: 3,
               owner_id: 'owner-1',
               telegram_notifications_enabled: true,
             },
             error: null,
           },
         },
-        // promoteFromWaitingList: jam details query
+        // promoteFromWaitingList: jam details query (auto_promote etc.)
         {
           response: {
             data: {
@@ -426,9 +408,8 @@ describe('ParticipantsService', () => {
         },
       ],
       profiles: [
+        // getJamOwnerTelegramChatId: owner telegram_chat_id (null → skip telegram notification)
         { response: { data: { telegram_chat_id: null }, error: null } },
-        { response: { data: { first_name: 'John', last_name: 'Doe' }, error: null } },
-        { response: { data: { first_name: 'Jane', last_name: 'Smith' }, error: null } },
       ],
     });
 

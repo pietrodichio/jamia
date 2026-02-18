@@ -195,6 +195,14 @@ describe('EventsService', () => {
             onUpdate: (payload) => updatePayloads.push(payload),
           },
         ],
+        profiles: [
+          {
+            response: {
+              data: { id: 'user-1', first_name: 'Alice', last_name: 'Smith' },
+              error: null,
+            },
+          },
+        ],
       });
       (supabase.client as any).rpc = jest
         .fn()
@@ -225,6 +233,7 @@ describe('EventsService', () => {
                 id: 'event-123',
                 owner_id: 'user-1', // Owner is different
                 type: 'class',
+                status: 'published',
               },
               error: null,
             },
@@ -232,6 +241,14 @@ describe('EventsService', () => {
           {
             updateResponse: {
               data: { id: 'event-123' },
+              error: null,
+            },
+          },
+        ],
+        profiles: [
+          {
+            response: {
+              data: { id: 'user-1', first_name: 'Alice', last_name: 'Smith' },
               error: null,
             },
           },
@@ -261,6 +278,7 @@ describe('EventsService', () => {
               data: {
                 id: 'event-123',
                 owner_id: 'user-1',
+                status: 'draft',
               },
               error: null,
             },
@@ -268,6 +286,14 @@ describe('EventsService', () => {
           {
             updateResponse: {
               data: { id: 'event-123' },
+              error: null,
+            },
+          },
+        ],
+        profiles: [
+          {
+            response: {
+              data: { id: 'user-1', first_name: 'Alice', last_name: 'Smith' },
               error: null,
             },
           },
@@ -354,6 +380,14 @@ describe('EventsService', () => {
             response: { data: null, error: null },
           },
         ],
+        profiles: [
+          {
+            response: {
+              data: { id: 'user-1', first_name: 'Alice', last_name: 'Smith' },
+              error: null,
+            },
+          },
+        ],
       });
 
       const service = new EventsService(supabase.client, auditService as any);
@@ -386,6 +420,14 @@ describe('EventsService', () => {
             response: { data: null, error: null },
           },
         ],
+        profiles: [
+          {
+            response: {
+              data: { id: 'user-1', first_name: 'Alice', last_name: 'Smith' },
+              error: null,
+            },
+          },
+        ],
       });
 
       const service = new EventsService(supabase.client, auditService as any);
@@ -410,6 +452,14 @@ describe('EventsService', () => {
                 owner_id: 'user-1',
                 status: 'published',
               },
+              error: null,
+            },
+          },
+        ],
+        profiles: [
+          {
+            response: {
+              data: { id: 'user-1', first_name: 'Alice', last_name: 'Smith' },
               error: null,
             },
           },
@@ -468,6 +518,7 @@ describe('EventsService', () => {
               data: {
                 id: 'event-123',
                 owner_id: 'user-1',
+                status: 'draft',
               },
               error: null,
             },
@@ -475,6 +526,14 @@ describe('EventsService', () => {
           {
             updateResponse: {
               data: { id: 'event-123' },
+              error: null,
+            },
+          },
+        ],
+        profiles: [
+          {
+            response: {
+              data: { id: 'user-1', first_name: 'Alice', last_name: 'Smith' },
               error: null,
             },
           },

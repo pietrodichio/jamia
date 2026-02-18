@@ -9,10 +9,18 @@ import {
 describe('JamsService', () => {
   const auditService = { log: jest.fn() };
   const emailService = { sendCustomEmail: jest.fn() };
+  const eventsService = {
+    createEventFromJam: jest.fn(),
+    syncJamUpdate: jest.fn(),
+    deleteEventFromJam: jest.fn(),
+  };
 
   beforeEach(() => {
     auditService.log = jest.fn().mockResolvedValue(undefined);
     emailService.sendCustomEmail = jest.fn().mockResolvedValue(undefined);
+    eventsService.createEventFromJam = jest.fn().mockResolvedValue(undefined);
+    eventsService.syncJamUpdate = jest.fn().mockResolvedValue(undefined);
+    eventsService.deleteEventFromJam = jest.fn().mockResolvedValue(undefined);
   });
 
   it('enrols the owner as participant when creating a jam', async () => {
@@ -60,6 +68,7 @@ describe('JamsService', () => {
       supabase.client,
       auditService as any,
       emailService as any,
+      eventsService as any,
     );
 
     await service.createJam('owner-1', {
@@ -140,6 +149,7 @@ describe('JamsService', () => {
       supabase.client,
       auditService as any,
       emailService as any,
+      eventsService as any,
     );
 
     await service.publishJam('jam-publish', 'owner-2');
@@ -190,6 +200,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getPublishedJams();
@@ -219,6 +230,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getPublishedJams();
@@ -242,6 +254,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(service.getPublishedJams()).rejects.toThrow(
@@ -273,6 +286,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getPublishedJams();
@@ -319,6 +333,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getMyJams('user-1');
@@ -369,6 +384,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getMyJams('manager-1');
@@ -425,6 +441,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getMyJams('user-1');
@@ -458,6 +475,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getMyJams('user-1');
@@ -504,6 +522,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getMyJams('user-1');
@@ -541,6 +560,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getJamById('jam-1');
@@ -575,6 +595,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getJamById('jam-1', 'owner-1');
@@ -608,6 +629,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getJamById('jam-1', 'manager-1');
@@ -631,6 +653,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(service.getJamById('non-existent')).rejects.toBeInstanceOf(
@@ -663,6 +686,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(
@@ -692,6 +716,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getJamById('jam-1', 'admin', true);
@@ -765,6 +790,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getPublicJamParticipants('jam-1');
@@ -792,6 +818,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(
@@ -819,6 +846,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(
@@ -846,6 +874,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(
@@ -881,6 +910,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getPublicJamParticipants('jam-1');
@@ -943,6 +973,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.updateJam('jam-1', 'owner-1', {
@@ -985,6 +1016,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(
@@ -1019,6 +1051,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(
@@ -1079,6 +1112,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.updateJam(
@@ -1130,6 +1164,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.deleteJam('jam-1', 'owner-1');
@@ -1174,6 +1209,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(
@@ -1215,6 +1251,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.deleteJam('jam-1', 'admin', true);
@@ -1253,6 +1290,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(service.deleteJam('jam-1', 'owner-1')).rejects.toThrow(
@@ -1309,6 +1347,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getJamsUserParticipatesIn('user-1');
@@ -1337,6 +1376,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getJamsUserParticipatesIn('user-1');
@@ -1376,6 +1416,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.getJamsUserParticipatesIn('user-1');
@@ -1470,6 +1511,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.cloneJam('jam-1', 'owner-1');
@@ -1512,6 +1554,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       await expect(
@@ -1574,6 +1617,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.cloneJam('jam-1', 'admin', true);
@@ -1590,6 +1634,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.isManagerOrOwner('jam-1', 'admin', true);
@@ -1607,6 +1652,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.isManagerOrOwner('jam-1', 'user-1', false);
@@ -1624,6 +1670,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.isManagerOrOwner('jam-1', 'user-1', false);
@@ -1642,6 +1689,7 @@ describe('JamsService', () => {
         supabase.client,
         auditService as any,
         emailService as any,
+        eventsService as any,
       );
 
       const result = await service.isManagerOrOwner('jam-1', 'user-1', false);
