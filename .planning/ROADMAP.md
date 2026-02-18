@@ -25,6 +25,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Email Preferences** - Database, API, and settings UI for user email digest preferences
 - [x] **Phase 8: Event Recap Email Engine** - Scheduled sending, email templates, content curation, and Resend integration
 - [x] **Phase 9: Email Adoption & Growth UX** - Onboarding flows, nudges, smart defaults to maximize email subscription rates
+- [ ] **Phase 10: Frontend Testing Infrastructure** - Set up Vitest + React Testing Library, test critical components and custom hooks
+- [ ] **Phase 11: Backend Integration Tests** - Controller tests via supertest, API endpoint validation, DTO validation testing
+- [ ] **Phase 12: E2E Testing** - Playwright setup with tests for event creation, discovery, jam participation, and auth flows
 
 ## Phase Details
 
@@ -330,10 +333,58 @@ Plans:
 - localStorage persistence for banner dismissal state
 - Mobile-first responsive banner design
 
+### Phase 10: Frontend Testing Infrastructure
+
+**Goal:** Establish comprehensive frontend testing with Vitest and React Testing Library, covering critical components and custom hooks
+**Depends on:** Phase 9
+**Plans:** 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Install Vitest 3.2.4 + RTL + MSW, create test infrastructure (config, setup, utilities)
+- [ ] 10-02-PLAN.md — Write EventCard component test and hook tests (useEventFilters, useIpLocation, useDebounce)
+
+**Details:**
+- Set up Vitest + React Testing Library testing infrastructure
+- Test critical components (forms, search, event cards)
+- Test custom hooks with React Query integration
+- Establish testing patterns and utilities for future development
+
+### Phase 11: Backend Integration Tests
+
+**Goal:** Add controller-level and API endpoint testing to complement existing service unit tests
+**Depends on:** Phase 10
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 11 to break down)
+
+**Details:**
+- Controller tests using supertest for HTTP request/response validation
+- API endpoint testing with authentication and authorization scenarios
+- DTO validation testing (class-validator decorators)
+- Expand e2e test coverage beyond current "hello world" boilerplate
+
+### Phase 12: E2E Testing
+
+**Goal:** Implement end-to-end tests for critical user flows using Playwright
+**Depends on:** Phase 11
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 12 to break down)
+
+**Details:**
+- Set up Playwright testing framework with test database
+- Event creation flow (wizard steps, form validation, submission)
+- Event discovery/search flow (location, filters, results)
+- Jam participation flow (join, cancel, waitlist)
+- Authentication flows (sign up, sign in, profile setup)
+- Cross-browser testing configuration
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2 → 6.3 → 6.4 → 7 → 8 → 9
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2 → 6.3 → 6.4 → 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -350,3 +401,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 7. Email Preferences | 3/3 | Complete | 2026-02-10 |
 | 8. Event Recap Email Engine | 3/3 | Complete | 2026-02-10 |
 | 9. Email Adoption & Growth UX | 1/1 | Complete | 2026-02-10 |
+| 10. Frontend Testing Infrastructure | 0/2 | Not Started | — |
+| 11. Backend Integration Tests | 0/0 | Not Started | — |
+| 12. E2E Testing | 0/0 | Not Started | — |
