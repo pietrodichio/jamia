@@ -353,10 +353,12 @@ Plans:
 
 **Goal:** Add controller-level and API endpoint testing to complement existing service unit tests
 **Depends on:** Phase 10
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — Infrastructure fixes (Biome test domain, jest-e2e moduleNameMapper) + EventsController tests
+- [ ] 11-02-PLAN.md — EmailPreferencesController and ProfilesController tests
+- [ ] 11-03-PLAN.md — EventOrganizersController tests + e2e test expansion
 
 **Details:**
 - Controller tests using supertest for HTTP request/response validation
@@ -402,5 +404,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 8. Event Recap Email Engine | 3/3 | Complete | 2026-02-10 |
 | 9. Email Adoption & Growth UX | 1/1 | Complete | 2026-02-10 |
 | 10. Frontend Testing Infrastructure | 2/2 | Complete | 2026-02-18 |
-| 11. Backend Integration Tests | 0/0 | Not Started | — |
+| 11. Backend Integration Tests | 0/3 | Not Started | — |
 | 12. E2E Testing | 0/0 | Not Started | — |
