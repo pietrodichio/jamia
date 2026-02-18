@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 11 (Backend Integration Tests) - In Progress
-Plan: 2 of 3 completed
-Status: In progress — plan 11-02 done
-Last activity: 2026-02-18 — Completed 11-02-PLAN.md (EmailPreferencesController + ProfilesController Tests)
+Phase: 11 (Backend Integration Tests) - Complete
+Plan: 3 of 3 completed
+Status: Phase complete — all 3 plans done
+Last activity: 2026-02-18 — Completed 11-03-PLAN.md (EventOrganizersController Tests + E2E Expansion + pre-existing bug fixes)
 
-Progress: [█████████████] 98% (60/62 plans estimated)
+Progress: [█████████████] 99% (61/62 plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 59
+- Total plans completed: 60
 - Average duration: 4 min
-- Total execution time: 4.26 hours
+- Total execution time: 4.37 hours
 
 **By Phase:**
 
@@ -42,11 +42,11 @@ Progress: [█████████████] 98% (60/62 plans estimated)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 09-01 (2 min), 10-01 (2 min), 10-02 (4 min), 11-01 (2 min), 11-02 (3 min)
-- Trend: Phase 11 in progress — two controller test suites done, one remaining
+- Last 5 plans: 10-01 (2 min), 10-02 (4 min), 11-01 (2 min), 11-02 (3 min), 11-03 (7 min)
+- Trend: Phase 11 complete — all backend controller tests done, full suite passes (216 tests)
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
-| 11. Backend Integration Tests | 2/3 | 5 min | 3 min |
+| 11. Backend Integration Tests | 3/3 | 12 min | 4 min |
 
 *Updated after each plan completion*
 
@@ -285,6 +285,10 @@ Recent decisions affecting current work:
 - Biome domains.test:recommended placed inside linter block alongside rules (correct Biome 2.2.4 schema position)
 - @Public() routes blocked when test guard override uses canActivate:()=>false — mock guard ignores IS_PUBLIC_KEY metadata; document this in tests so future tests understand
 - transform: true in ValidationPipe coerces @Query() number? params — limit "5" → 5; assertions must use numeric types
+- Nested route controller tests: all supertest paths must mirror @Controller decorator prefix exactly (/events/:eventId/organizers)
+- 204 No Content test: verify empty response body ({}) not just status — supertest parses empty body as empty object
+- E2e test must include afterEach app.close() to prevent Jest from hanging on open handles
+- profiles mock required in events.service.spec when getEventById is called internally (it queries profiles for organizer details)
 
 
 ### Roadmap Evolution
@@ -312,6 +316,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 11-02-PLAN.md (EmailPreferencesController + ProfilesController Tests)
+Stopped at: Completed 11-03-PLAN.md (EventOrganizersController Tests + E2E Expansion) — Phase 11 complete
 Resume file: None
-Next: Phase 11 Plan 03 - EventOrganizersController Tests (follow same createTestApp pattern)
+Next: Phase 12 - E2E Testing with Playwright for critical user flows (event creation, discovery, jam participation, auth)
