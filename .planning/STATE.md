@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 10 (Frontend Testing Infrastructure) - Complete
-Plan: 2 of 2 completed
-Status: Phase complete — all plans done
-Last activity: 2026-02-18 — Completed 10-02-PLAN.md (Critical Component and Hook Tests)
+Phase: 11 (Backend Integration Tests) - In Progress
+Plan: 1 of 3 completed
+Status: In progress — plan 11-01 done
+Last activity: 2026-02-18 — Completed 11-01-PLAN.md (Controller Test Infrastructure + EventsController Tests)
 
-Progress: [█████████████] 97% (58/61 plans estimated)
+Progress: [█████████████] 98% (59/62 plans estimated)
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [█████████████] 97% (58/61 plans estimated)
 - Trend: Phase 10 complete — testing infrastructure and initial test suite done
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
+| 11. Backend Integration Tests | 1/3 | 2 min | 2 min |
 
 *Updated after each plan completion*
 
@@ -277,6 +278,11 @@ Recent decisions affecting current work:
 - Separate createTestQueryClient() wrapper per useIpLocation test - fresh client avoids query cache pollution
 - server.use() per-test MSW override for error scenarios - afterEach resets handlers so override is test-scoped
 - vi.useFakeTimers() in beforeEach with vi.useRealTimers() in afterEach - prevents timer leaks between tests
+- overrideGuard(SupabaseAuthGuard) class reference (no parentheses) matches @UseGuards class reference — parentheses create instance and override fails silently
+- canActivate mock sets request.user directly so @User() decorator reads test user without production code changes
+- Replicate main.ts exceptionFactory in test app ValidationPipe — test app doesn't inherit global pipes from main.ts
+- canActivate: () => false returns 403 (not 401) — NestJS intercepts false-returning guards and returns 403 Forbidden
+- Biome domains.test:recommended placed inside linter block alongside rules (correct Biome 2.2.4 schema position)
 
 
 ### Roadmap Evolution
@@ -304,6 +310,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 10-02-PLAN.md (Critical Component and Hook Tests)
+Stopped at: Completed 11-01-PLAN.md (Controller Test Infrastructure + EventsController Tests)
 Resume file: None
-Next: Phase 11 - Backend Integration Tests (controller tests via supertest, DTO validation)
+Next: Phase 11 Plan 02 - EmailPreferencesController Tests (follow same createTestApp pattern)
