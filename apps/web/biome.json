@@ -19,7 +19,8 @@
       "security": {
         "noDangerouslySetInnerHtml": "warn"
       }
-    }
+    },
+    "domains": { "test": "recommended" }
   },
   "files": {
     "includes": ["src/**/*.{ts,tsx,js,jsx}", "supabase/**/*.sql", "!src/components/ui"]
