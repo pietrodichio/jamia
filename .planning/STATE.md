@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 9 (Email Adoption & Growth UX) - COMPLETE
-Plan: 1 of 1 complete
-Status: DigestNudgeBanner on Dashboard with one-click opt-in and backend flag management
-Last activity: 2026-02-10 — Completed 09-01-PLAN.md (DigestNudgeBanner & backend flag)
+Phase: 10 (Frontend Testing Infrastructure) - In Progress
+Plan: 1 of 2 completed
+Status: Plan 01 complete, Plan 02 ready
+Last activity: 2026-02-18 — Completed 10-01-PLAN.md (Frontend Testing Infrastructure Setup)
 
-Progress: [████████████] 100% (56/56 plans complete)
+Progress: [████████████░] 94% (57/61 plans estimated)
 
 ## Performance Metrics
 
@@ -42,8 +42,10 @@ Progress: [████████████] 100% (56/56 plans complete)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 08-01 (2 min), 08-02 (3 min), 08-03 (3 min), 09-01 (2 min)
-- Trend: MILESTONE COMPLETE — All 13 phases of Jamia v1 finished (56 plans, ~4.2 hours total)
+- Last 5 plans: 08-02 (3 min), 08-03 (3 min), 09-01 (2 min), 10-01 (2 min)
+- Trend: Testing infrastructure added — Phase 10 active
+
+| 10. Frontend Testing Infrastructure | 1/2 | 2 min | 2 min |
 
 *Updated after each plan completion*
 
@@ -264,6 +266,11 @@ Recent decisions affecting current work:
 - 200ms delay between digest sends for rate limiting (5 req/sec provides margin below Resend's 10 req/sec limit)
 - Per-user error isolation in batch sending (one user's failure doesn't stop entire batch)
 - Standalone unsubscribe page at /unsubscribe?token=xxx with success/error states (no auth required)
+- Pin vitest to 3.2.4 (not v4) - Vitest 4.x requires Vite 6+, project uses Vite 5.4.x
+- Standalone vitest.config.ts (not mergeConfig) - vite.config.ts exports a function, mergeConfig expects an object
+- retry:false + staleTime:Infinity on test QueryClient prevents 30s+ timeouts from React Query retries
+- MSW 2.x uses http/HttpResponse (not legacy rest/ctx from 1.x)
+- Biome domains.test:recommended enables Vitest globals without lint errors
 
 
 ### Roadmap Evolution
@@ -276,6 +283,9 @@ Recent decisions affecting current work:
 - Phase 7 added: Email Preferences - DB migration, API, and settings UI for email digest preferences (weekly/monthly)
 - Phase 8 added: Event Recap Email Engine - Scheduled sending, email templates, content curation, Resend integration
 - Phase 9 added: Email Adoption & Growth UX - Onboarding flows, nudges, smart defaults to maximize subscriptions
+- Phase 10 added: Frontend Testing Infrastructure - Vitest + React Testing Library setup, critical component and hook tests
+- Phase 11 added: Backend Integration Tests - Controller tests via supertest, API endpoint validation, DTO testing
+- Phase 12 added: E2E Testing - Playwright setup for critical user flows (event creation, discovery, jam participation, auth)
 
 ### Pending Todos
 
@@ -287,7 +297,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-10
-Stopped at: Completed 08-03-PLAN.md (Digest Scheduler & Batch Delivery)
+Last session: 2026-02-18
+Stopped at: Completed 10-01-PLAN.md (Frontend Testing Infrastructure Setup)
 Resume file: None
-Next: Phase 8 complete - ready for Phase 9 (Email Adoption & Growth UX) or other priorities
+Next: Phase 10 Plan 02 - Critical Component and Hook Tests
