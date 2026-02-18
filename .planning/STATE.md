@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 11 (Backend Integration Tests) - In Progress
-Plan: 1 of 3 completed
-Status: In progress — plan 11-01 done
-Last activity: 2026-02-18 — Completed 11-01-PLAN.md (Controller Test Infrastructure + EventsController Tests)
+Plan: 2 of 3 completed
+Status: In progress — plan 11-02 done
+Last activity: 2026-02-18 — Completed 11-02-PLAN.md (EmailPreferencesController + ProfilesController Tests)
 
-Progress: [█████████████] 98% (59/62 plans estimated)
+Progress: [█████████████] 98% (60/62 plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 58
+- Total plans completed: 59
 - Average duration: 4 min
-- Total execution time: 4.21 hours
+- Total execution time: 4.26 hours
 
 **By Phase:**
 
@@ -42,11 +42,11 @@ Progress: [█████████████] 98% (59/62 plans estimated)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 08-03 (3 min), 09-01 (2 min), 10-01 (2 min), 10-02 (4 min)
-- Trend: Phase 10 complete — testing infrastructure and initial test suite done
+- Last 5 plans: 09-01 (2 min), 10-01 (2 min), 10-02 (4 min), 11-01 (2 min), 11-02 (3 min)
+- Trend: Phase 11 in progress — two controller test suites done, one remaining
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
-| 11. Backend Integration Tests | 1/3 | 2 min | 2 min |
+| 11. Backend Integration Tests | 2/3 | 5 min | 3 min |
 
 *Updated after each plan completion*
 
@@ -283,6 +283,8 @@ Recent decisions affecting current work:
 - Replicate main.ts exceptionFactory in test app ValidationPipe — test app doesn't inherit global pipes from main.ts
 - canActivate: () => false returns 403 (not 401) — NestJS intercepts false-returning guards and returns 403 Forbidden
 - Biome domains.test:recommended placed inside linter block alongside rules (correct Biome 2.2.4 schema position)
+- @Public() routes blocked when test guard override uses canActivate:()=>false — mock guard ignores IS_PUBLIC_KEY metadata; document this in tests so future tests understand
+- transform: true in ValidationPipe coerces @Query() number? params — limit "5" → 5; assertions must use numeric types
 
 
 ### Roadmap Evolution
@@ -310,6 +312,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-18
-Stopped at: Completed 11-01-PLAN.md (Controller Test Infrastructure + EventsController Tests)
+Stopped at: Completed 11-02-PLAN.md (EmailPreferencesController + ProfilesController Tests)
 Resume file: None
-Next: Phase 11 Plan 02 - EmailPreferencesController Tests (follow same createTestApp pattern)
+Next: Phase 11 Plan 03 - EventOrganizersController Tests (follow same createTestApp pattern)
