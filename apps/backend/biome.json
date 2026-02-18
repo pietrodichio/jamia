@@ -15,11 +15,12 @@
     "enabled": true,
     "rules": {
       "recommended": true
+    },
+    "domains": {
+      "test": "recommended"
     }
   },
   "files": {
     "includes": ["src/**/*.{ts,tsx,js,jsx}", "test/**/*.ts"]
   }
 }
-
-
