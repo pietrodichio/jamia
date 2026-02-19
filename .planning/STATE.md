@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 12 (E2E Testing)
-Plan: 1 of 4 completed
+Plan: 2 of 4 completed
 Status: In progress
-Last activity: 2026-02-19 — Completed 12-01-PLAN.md (Playwright Infrastructure)
+Last activity: 2026-02-19 — Completed 12-03-PLAN.md (Event Creation E2E Tests)
 
-Progress: [█████████████] 100% (62/62 plans estimated)
+Progress: [█████████████] 100% (63/62 plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 62
+- Total plans completed: 63
 - Average duration: 4 min
-- Total execution time: 4.44 hours
+- Total execution time: 4.71 hours
 
 **By Phase:**
 
@@ -42,12 +42,12 @@ Progress: [█████████████] 100% (62/62 plans estimated)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 10-02 (4 min), 11-01 (2 min), 11-02 (3 min), 11-03 (7 min), 12-01 (4 min)
-- Trend: Phase 12 started — Playwright E2E infrastructure in place
+- Last 5 plans: 11-01 (2 min), 11-02 (3 min), 11-03 (7 min), 12-01 (4 min), 12-03 (16 min)
+- Trend: Event creation E2E tests complete with infrastructure improvements
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
 | 11. Backend Integration Tests | 3/3 | 12 min | 4 min |
-| 12. E2E Testing | 1/4 | 4 min | 4 min |
+| 12. E2E Testing | 2/4 | 20 min | 10 min |
 
 *Updated after each plan completion*
 
@@ -291,6 +291,9 @@ Recent decisions affecting current work:
 - E2e test must include afterEach app.close() to prevent Jest from hanging on open handles
 - profiles mock required in events.service.spec when getEventById is called internally (it queries profiles for organizer details)
 - ESM __dirname polyfill via fileURLToPath(import.meta.url) — required for Playwright config and setup files in ESM projects
+- Auth setup retry logic with 5 attempts and 2s delay for Supabase service startup after db reset
+- DB setup ignores storage bucket health check errors when migrations and seeding complete
+- Constants.ts for auth state paths avoids circular import from test files in Playwright
 
 
 ### Roadmap Evolution
@@ -318,6 +321,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 12-01-PLAN.md (Playwright Infrastructure)
+Stopped at: Completed 12-03-PLAN.md (Event Creation E2E Tests)
 Resume file: None
-Next: 12-02 Auth flow tests, 12-03 Event discovery tests, 12-04 Event creation tests
+Next: 12-02 Auth flow tests, 12-04 Event discovery tests
