@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 12 (E2E Testing)
-Plan: 3 of 4 completed
-Status: In progress
-Last activity: 2026-02-19 — Completed 12-02-PLAN.md (Authentication E2E Tests)
+Plan: 4 of 4 completed
+Status: Phase complete
+Last activity: 2026-02-19 — Completed 12-04-PLAN.md (Discovery and Jam E2E Tests)
 
-Progress: [█████████████] 100% (64/62 plans estimated)
+Progress: [█████████████] 100% (65/62 plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 64
+- Total plans completed: 65
 - Average duration: 4 min
-- Total execution time: 4.91 hours
+- Total execution time: 5.33 hours
 
 **By Phase:**
 
@@ -42,12 +42,12 @@ Progress: [█████████████] 100% (64/62 plans estimated)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 11-02 (3 min), 11-03 (7 min), 12-01 (4 min), 12-03 (16 min), 12-02 (12 min)
-- Trend: Auth E2E tests complete with 6 test cases
+- Last 5 plans: 11-03 (7 min), 12-01 (4 min), 12-03 (16 min), 12-02 (12 min), 12-04 (25 min)
+- Trend: E2E testing phase complete with discovery and CI workflow
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
 | 11. Backend Integration Tests | 3/3 | 12 min | 4 min |
-| 12. E2E Testing | 3/4 | 32 min | 11 min |
+| 12. E2E Testing | 4/4 | 57 min | 14 min |
 
 *Updated after each plan completion*
 
@@ -298,6 +298,11 @@ Recent decisions affecting current work:
 - Toast error locators use exact match with .first() to avoid strict mode violations from duplicate elements
 - Flexible protected route check (dashboard|profile-setup|email-confirmation) accommodates user state variations
 - Vite strictPort: true prevents port auto-increment for consistent Playwright config
+- Use URL params for location in discover tests (bypasses IP location fetch which doesn't work in test environment)
+- Bob's auth state for jam participation tests (avoids ownership conflicts since Bob is not owner of seeded jams)
+- Port 3000 in playwright config matches vite.config.ts server port setting
+- curl loop for backend health check in CI (more reliable than wait-on)
+- CI workflow triggers only on push to main (not PRs) to stay within GitHub Actions free tier
 
 
 ### Roadmap Evolution
@@ -325,6 +330,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Completed 12-02-PLAN.md (Authentication E2E Tests)
+Stopped at: Completed 12-04-PLAN.md (Discovery and Jam E2E Tests)
 Resume file: None
-Next: 12-04 (GitHub Actions E2E workflow - already complete)
+Next: Phase 12 complete. All testing phases finished.
