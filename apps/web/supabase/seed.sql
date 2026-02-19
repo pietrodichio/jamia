@@ -545,3 +545,79 @@ ON CONFLICT (id) DO UPDATE SET
   external_link = EXCLUDED.external_link,
   tags = EXCLUDED.tags,
   status = EXCLUDED.status;
+
+-- ============================================
+-- Seed Legacy Jams (for jam participation E2E tests)
+-- ============================================
+
+INSERT INTO public.jams (
+  id,
+  owner_id,
+  name,
+  location_text,
+  gmaps_link,
+  starts_at,
+  ends_at,
+  description,
+  capacity,
+  desired_bases_min,
+  desired_bases_max,
+  desired_flyers_min,
+  desired_flyers_max,
+  status,
+  auto_promote,
+  public_participants
+)
+VALUES
+  (
+    '30000000-0000-0000-0000-000000000001',
+    '11111111-1111-4111-8111-111111111111',
+    'Jam Test Milano',
+    'Centro Sportivo XXV Aprile, Milano',
+    'https://goo.gl/maps/example1',
+    date_trunc('day', now()) + interval '5 days' + interval '10 hours',
+    date_trunc('day', now()) + interval '5 days' + interval '13 hours',
+    'Jam di test per E2E. Alice è owner, Bob può partecipare.',
+    20,
+    4,
+    8,
+    4,
+    8,
+    'published',
+    true,
+    true
+  ),
+  (
+    '30000000-0000-0000-0000-000000000002',
+    '33333333-3333-4333-8333-333333333333',
+    'Jam Test Firenze',
+    'Parco delle Cascine, Firenze',
+    'https://goo.gl/maps/example2',
+    date_trunc('day', now()) + interval '7 days' + interval '15 hours',
+    date_trunc('day', now()) + interval '7 days' + interval '18 hours',
+    'Jam di test organizzata da Charlie.',
+    15,
+    3,
+    6,
+    3,
+    6,
+    'published',
+    false,
+    true
+  )
+ON CONFLICT (id) DO UPDATE SET
+  owner_id = EXCLUDED.owner_id,
+  name = EXCLUDED.name,
+  location_text = EXCLUDED.location_text,
+  gmaps_link = EXCLUDED.gmaps_link,
+  starts_at = EXCLUDED.starts_at,
+  ends_at = EXCLUDED.ends_at,
+  description = EXCLUDED.description,
+  capacity = EXCLUDED.capacity,
+  desired_bases_min = EXCLUDED.desired_bases_min,
+  desired_bases_max = EXCLUDED.desired_bases_max,
+  desired_flyers_min = EXCLUDED.desired_flyers_min,
+  desired_flyers_max = EXCLUDED.desired_flyers_max,
+  status = EXCLUDED.status,
+  auto_promote = EXCLUDED.auto_promote,
+  public_participants = EXCLUDED.public_participants;
