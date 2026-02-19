@@ -1,10 +1,6 @@
 import { test as setup, expect } from '@playwright/test';
 import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { AUTH_DIR, ALICE_AUTH_STATE, BOB_AUTH_STATE } from '../constants';
 
 /**
  * Auth setup project.
@@ -14,10 +10,6 @@ const __dirname = path.dirname(__filename);
 const SUPABASE_URL = 'http://127.0.0.1:54421';
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-
-const AUTH_DIR = path.resolve(__dirname, '../../.auth');
-export const ALICE_AUTH_STATE = path.join(AUTH_DIR, 'alice.json');
-export const BOB_AUTH_STATE = path.join(AUTH_DIR, 'bob.json');
 
 interface SupabaseSession {
   access_token: string;
@@ -34,6 +26,7 @@ interface SupabaseSession {
 
 /**
  * Authenticate a user via Supabase REST API and save storageState.
+ * Includes retry logic for handling auth service startup delays.
  */
 async function authenticateUser(
   page: import('@playwright/test').Page,
@@ -48,19 +41,35 @@ async function authenticateUser(
 
   console.log(`[auth.setup] Authenticating ${email}...`);
 
-  // POST to Supabase auth endpoint
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_ANON_KEY,
-    },
-    body: JSON.stringify({ email, password }),
-  });
+  // Retry logic for auth service startup delays after db reset
+  const maxRetries = 5;
+  const retryDelay = 2000; // 2 seconds
+  let response: Response | null = null;
 
-  expect(response.ok, `Authentication failed for ${email}: ${response.status}`).toBeTruthy();
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // POST to Supabase auth endpoint
+    response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-  const session: SupabaseSession = await response.json();
+    if (response.ok) {
+      break;
+    }
+
+    if (response.status === 500 && attempt < maxRetries) {
+      console.log(`[auth.setup] Auth service not ready, retrying in ${retryDelay / 1000}s (attempt ${attempt}/${maxRetries})...`);
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+  }
+
+  expect(response?.ok, `Authentication failed for ${email}: ${response?.status}`).toBeTruthy();
+
+  const session: SupabaseSession = await response!.json();
 
   // Navigate to app origin (required to set localStorage on correct origin)
   await page.goto('/');
