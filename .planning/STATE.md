@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 11 (Backend Integration Tests) - Complete
-Plan: 3 of 3 completed
-Status: Phase verified — 18/18 must-haves passed
-Last activity: 2026-02-18 — Completed 11-03-PLAN.md (EventOrganizersController Tests + E2E Expansion + pre-existing bug fixes)
+Phase: 12 (E2E Testing)
+Plan: 1 of 4 completed
+Status: In progress
+Last activity: 2026-02-19 — Completed 12-01-PLAN.md (Playwright Infrastructure)
 
-Progress: [█████████████] 99% (61/62 plans estimated)
+Progress: [█████████████] 100% (62/62 plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 61
+- Total plans completed: 62
 - Average duration: 4 min
-- Total execution time: 4.37 hours
+- Total execution time: 4.44 hours
 
 **By Phase:**
 
@@ -42,11 +42,12 @@ Progress: [█████████████] 99% (61/62 plans estimated)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 10-01 (2 min), 10-02 (4 min), 11-01 (2 min), 11-02 (3 min), 11-03 (7 min)
-- Trend: Phase 11 complete — all backend controller tests done, full suite passes (216 tests)
+- Last 5 plans: 10-02 (4 min), 11-01 (2 min), 11-02 (3 min), 11-03 (7 min), 12-01 (4 min)
+- Trend: Phase 12 started — Playwright E2E infrastructure in place
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
 | 11. Backend Integration Tests | 3/3 | 12 min | 4 min |
+| 12. E2E Testing | 1/4 | 4 min | 4 min |
 
 *Updated after each plan completion*
 
@@ -289,6 +290,7 @@ Recent decisions affecting current work:
 - 204 No Content test: verify empty response body ({}) not just status — supertest parses empty body as empty object
 - E2e test must include afterEach app.close() to prevent Jest from hanging on open handles
 - profiles mock required in events.service.spec when getEventById is called internally (it queries profiles for organizer details)
+- ESM __dirname polyfill via fileURLToPath(import.meta.url) — required for Playwright config and setup files in ESM projects
 
 
 ### Roadmap Evolution
@@ -315,7 +317,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-18
-Stopped at: Completed 11-03-PLAN.md (EventOrganizersController Tests + E2E Expansion) — Phase 11 complete
+Last session: 2026-02-19
+Stopped at: Completed 12-01-PLAN.md (Playwright Infrastructure)
 Resume file: None
-Next: Phase 12 - E2E Testing with Playwright for critical user flows (event creation, discovery, jam participation, auth)
+Next: 12-02 Auth flow tests, 12-03 Event discovery tests, 12-04 Event creation tests
