@@ -27,7 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Email Adoption & Growth UX** - Onboarding flows, nudges, smart defaults to maximize email subscription rates
 - [x] **Phase 10: Frontend Testing Infrastructure** - Set up Vitest + React Testing Library, test critical components and custom hooks
 - [x] **Phase 11: Backend Integration Tests** - Controller tests via supertest, API endpoint validation, DTO validation testing
-- [ ] **Phase 12: E2E Testing** - Playwright setup with tests for event creation, discovery, jam participation, and auth flows
+- [x] **Phase 12: E2E Testing** - Playwright setup with tests for event creation, discovery, jam participation, and auth flows
 
 ## Phase Details
 
@@ -373,10 +373,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — Playwright infrastructure (config, DB reset, auth setup, fixtures, Google Maps mock)
-- [ ] 12-02-PLAN.md — Authentication flow E2E tests (sign-in, sign-up, errors, route guards)
-- [ ] 12-03-PLAN.md — Event creation wizard E2E tests (jam, class, validation)
-- [ ] 12-04-PLAN.md — Discovery and jam participation E2E tests + GitHub Actions CI workflow
+- [x] 12-01-PLAN.md — Playwright infrastructure (config, DB reset, auth setup, fixtures, Google Maps mock)
+- [x] 12-02-PLAN.md — Authentication flow E2E tests (sign-in, sign-up, errors, route guards)
+- [x] 12-03-PLAN.md — Event creation wizard E2E tests (jam, class, validation)
+- [x] 12-04-PLAN.md — Discovery and jam participation E2E tests + GitHub Actions CI workflow
 
 **Details:**
 - Playwright 1.58.2 with Chromium-only, iPhone 14 viewport as primary
@@ -409,4 +409,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 9. Email Adoption & Growth UX | 1/1 | Complete | 2026-02-10 |
 | 10. Frontend Testing Infrastructure | 2/2 | Complete | 2026-02-18 |
 | 11. Backend Integration Tests | 3/3 | Complete | 2026-02-18 |
-| 12. E2E Testing | 0/4 | Not Started | — |
+| 12. E2E Testing | 4/4 | Complete | 2026-02-19 |
