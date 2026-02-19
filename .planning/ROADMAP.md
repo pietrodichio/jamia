@@ -368,20 +368,24 @@ Plans:
 
 ### Phase 12: E2E Testing
 
-**Goal:** Implement end-to-end tests for critical user flows using Playwright
+**Goal:** Implement end-to-end tests for critical user flows using Playwright against real local Supabase
 **Depends on:** Phase 11
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 12 to break down)
+- [ ] 12-01-PLAN.md — Playwright infrastructure (config, DB reset, auth setup, fixtures, Google Maps mock)
+- [ ] 12-02-PLAN.md — Authentication flow E2E tests (sign-in, sign-up, errors, route guards)
+- [ ] 12-03-PLAN.md — Event creation wizard E2E tests (jam, class, validation)
+- [ ] 12-04-PLAN.md — Discovery and jam participation E2E tests + GitHub Actions CI workflow
 
 **Details:**
-- Set up Playwright testing framework with test database
-- Event creation flow (wizard steps, form validation, submission)
-- Event discovery/search flow (location, filters, results)
-- Jam participation flow (join, cancel, waitlist)
-- Authentication flows (sign up, sign in, profile setup)
-- Cross-browser testing configuration
+- Playwright 1.58.2 with Chromium-only, iPhone 14 viewport as primary
+- Auth via Supabase REST API + storageState (not UI login)
+- DB reset per-run via setup project dependency chain
+- Google Maps mocked globally to prevent third-party failures
+- Sequential execution (workers: 1) for DB state consistency
+- GitHub Actions CI on main branch push with deploy blocking
+- Page Object Model pattern for maintainable test code
 
 ## Progress
 
@@ -405,4 +409,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 6.1 → 6.2
 | 9. Email Adoption & Growth UX | 1/1 | Complete | 2026-02-10 |
 | 10. Frontend Testing Infrastructure | 2/2 | Complete | 2026-02-18 |
 | 11. Backend Integration Tests | 3/3 | Complete | 2026-02-18 |
-| 12. E2E Testing | 0/0 | Not Started | — |
+| 12. E2E Testing | 0/4 | Not Started | — |
