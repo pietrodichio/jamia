@@ -35,3 +35,8 @@ dist-ssr
 .next/types
 .next/types/
 .next/types/
+
+# Playwright
+.auth/
+playwright-report/
+test-results/
