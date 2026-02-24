@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Share2, ExternalLink, Download, Instagram } from 'lucide-react';
+import { Calendar, Share2, ExternalLink, Download, Instagram, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,22 +15,49 @@ import type { EventWithOrganizer } from '@jamia/types';
 
 interface EventActionsProps {
   event: EventWithOrganizer;
+  /** Whether the current user is the owner of this event */
+  isOwner?: boolean;
+}
+
+/**
+ * Helper to get jam management URL for managed jam events.
+ * - For events with source_jam_id (created via legacy jam flow), use that ID
+ * - For events with manage_participants (created via event flow), use event ID
+ *   (JamsService lookup unification handles the resolution)
+ */
+function getJamManageUrl(event: EventWithOrganizer): string | null {
+  if (event.source_jam_id) {
+    return `/jam/${event.source_jam_id}`;
+  }
+  if (event.type === 'jam' && event.manage_participants) {
+    return `/jam/${event.id}`;
+  }
+  return null;
 }
 
 export function EventActions({
   event,
+  isOwner = false,
 }: EventActionsProps) {
   const navigate = useNavigate();
   const { t } = useTranslation('events');
   const { toast } = useToast();
   const [isSharing, setIsSharing] = useState(false);
 
-  // Handle managed jam registration
+  // Get jam management URL (if this is a managed jam event)
+  const jamManageUrl = getJamManageUrl(event);
+
+  // Handle managed jam registration (for non-owners viewing the event)
   const handleRegister = () => {
-    // TODO: Implement jam registration flow
-    // For now, navigate to jam detail if source_jam_id exists
-    if (event.source_jam_id) {
-      navigate(`/jams/${event.source_jam_id}`);
+    if (jamManageUrl) {
+      navigate(jamManageUrl);
+    }
+  };
+
+  // Handle manage participants (for owners)
+  const handleManageParticipants = () => {
+    if (jamManageUrl) {
+      navigate(jamManageUrl);
     }
   };
 
@@ -109,8 +136,16 @@ export function EventActions({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Register button - only for managed jams */}
-      {event.type === 'jam' && event.source_jam_id && (
+      {/* Manage participants button - only for owners of managed jams */}
+      {isOwner && jamManageUrl && (
+        <Button onClick={handleManageParticipants} className="rounded-xl">
+          <Users className="mr-2 h-4 w-4" />
+          {t('fields.manageParticipants')}
+        </Button>
+      )}
+
+      {/* Register button - only for non-owners viewing managed jams */}
+      {!isOwner && jamManageUrl && (
         <Button onClick={handleRegister} className="rounded-xl">
           {t('actions.register')}
         </Button>
