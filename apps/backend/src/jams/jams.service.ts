@@ -179,8 +179,9 @@ export class JamsService {
     }));
   }
 
-  async getJamById(jamId: string, userId?: string, isSuperAdmin = false) {
-    const { data, error } = await this.supabase
+  async getJamById(idParam: string, userId?: string, isSuperAdmin = false) {
+    // First, try direct lookup by jam ID
+    let { data, error } = await this.supabase
       .from('jams')
       .select(
         `
@@ -191,12 +192,36 @@ export class JamsService {
         )
       `,
       )
-      .eq('id', jamId)
-      .single();
+      .eq('id', idParam)
+      .maybeSingle();
 
-    if (error || !data) {
+    // If not found by jam ID, try lookup by source_event_id
+    // This enables /jam/:eventId routes to work for event-based jams
+    if (!data && (!error || error.code === 'PGRST116')) {
+      const result = await this.supabase
+        .from('jams')
+        .select(
+          `
+          *,
+          jam_participants (
+            id,
+            state
+          )
+        `,
+        )
+        .eq('source_event_id', idParam)
+        .maybeSingle();
+
+      data = result.data;
+      error = result.error;
+    }
+
+    if (!data) {
       throw new NotFoundException('Jam not found');
     }
+
+    // Use the actual jam ID for subsequent operations
+    const jamId = data.id;
 
     // Check if user has permission to view this jam
     if (
