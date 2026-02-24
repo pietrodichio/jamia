@@ -143,6 +143,11 @@ export class EventsService {
       throw new Error(`Failed to create event: ${error.message}`);
     }
 
+    // REVERSE SYNC: Create corresponding jam for managed jams
+    if (createEventDto.type === 'jam' && createEventDto.manage_participants) {
+      await this.createJamFromEvent(data, createEventDto, ownerId);
+    }
+
     // Log creation
     await this.auditService.log(data.id, ownerId, 'event_created', {
       event_title: createEventDto.title,
@@ -339,6 +344,52 @@ export class EventsService {
 
     if (error) {
       throw new Error(`Failed to save draft: ${error.message}`);
+    }
+
+    // REVERSE SYNC: Create/update corresponding jam for managed jam drafts
+    if (restDto.type === 'jam' && restDto.manage_participants) {
+      // Check if linked jam exists
+      const { data: existingJam } = await this.supabase
+        .from('jams')
+        .select('id')
+        .eq('source_event_id', data.id)
+        .maybeSingle();
+
+      if (existingJam) {
+        // Update existing jam
+        await this.supabase
+          .from('jams')
+          .update({
+            name: data.title,
+            location_text: data.location_text,
+            location_lat: data.location_lat,
+            location_lng: data.location_lng,
+            gmaps_link: data.gmaps_link,
+            starts_at: data.starts_at,
+            ends_at: data.ends_at,
+            description: data.description,
+            capacity: restDto.capacity ?? null,
+            desired_bases_min: restDto.desired_bases_min ?? null,
+            desired_bases_max: restDto.desired_bases_max ?? null,
+            desired_flyers_min: restDto.desired_flyers_min ?? null,
+            desired_flyers_max: restDto.desired_flyers_max ?? null,
+            auto_promote: restDto.auto_promote ?? true,
+            public_participants: restDto.public_participants ?? true,
+            location:
+              data.location_lat && data.location_lng
+                ? {
+                    description: data.location_text,
+                    latitude: data.location_lat,
+                    longitude: data.location_lng,
+                    google_maps_url: data.gmaps_link,
+                  }
+                : null,
+          })
+          .eq('id', existingJam.id);
+      } else {
+        // Create new jam - need to cast restDto to CreateEventDto for the method
+        await this.createJamFromEvent(data, restDto as CreateEventDto, userId);
+      }
     }
 
     const { data: organizer, error: organizerError } = await this.supabase
