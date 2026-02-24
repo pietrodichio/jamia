@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 12.1 (Jam Management Regression Fix)
-Plan: 03 of 03 - Complete
+Plan: 04 of 04 - Complete
 Status: Phase complete
-Last activity: 2026-02-24 — Completed 12.1-03-PLAN.md (JamsService Unified Lookup)
+Last activity: 2026-02-24 — Completed 12.1-04-PLAN.md (Frontend Form Integration)
 
-Progress: [████████████] 100% (68/68 plans)
+Progress: [████████████] 100% (69/69 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 68
+- Total plans completed: 69
 - Average duration: 4 min
-- Total execution time: 5.56 hours
+- Total execution time: 5.6 hours
 
 **By Phase:**
 
@@ -42,13 +42,13 @@ Progress: [████████████] 100% (68/68 plans)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 12-02 (12 min), 12-04 (25 min), 12.1-01 (5 min), 12.1-02 (6 min), 12.1-03 (3 min)
+- Last 5 plans: 12-04 (25 min), 12.1-01 (5 min), 12.1-02 (6 min), 12.1-03 (3 min), 12.1-04 (3 min)
 - Trend: Jam management regression fix phase complete
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
 | 11. Backend Integration Tests | 3/3 | 12 min | 4 min |
 | 12. E2E Testing | 4/4 | 57 min | 14 min |
-| 12.1. Jam Management Regression Fix | 3/3 | 14 min | 5 min |
+| 12.1. Jam Management Regression Fix | 4/4 | 17 min | 4 min |
 
 *Updated after each plan completion*
 
@@ -312,6 +312,9 @@ Recent decisions affecting current work:
 - Dual lookup pattern: JamsService methods accept either jam ID or event ID with source_event_id fallback
 - maybeSingle() for jam lookups to avoid errors on no match (enables fallback queries)
 - Resolved ID extraction: Always use jam.id from getJamById for subsequent operations
+- Form field name mapping (manageParticipants -> manage_participants) for backend DTO compatibility
+- Default auto_promote and public_participants to true for managed jams
+- Navigate to /jam/:id after managed jam creation for immediate participant management
 
 
 ### Roadmap Evolution
@@ -340,6 +343,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 12.1-03-PLAN.md (JamsService Unified Lookup) - Phase 12.1 complete
+Stopped at: Completed 12.1-04-PLAN.md (Frontend Form Integration) - Phase 12.1 complete
 Resume file: None
 Next: All plans complete - project at 100%
