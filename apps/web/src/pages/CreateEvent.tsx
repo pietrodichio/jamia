@@ -90,7 +90,16 @@ export default function CreateEvent() {
       await addCoOrganizers(event.id);
 
       toast({ title: t('events:messages.eventCreated') });
-      navigate(`/events/${event.id}`);
+
+      // For managed jams, navigate to jam management page
+      // The jam ID lookup by event ID works thanks to JamsService unified lookup (Plan 03)
+      const currentType = form.getValues('type');
+      const isManaged = form.getValues('manageParticipants');
+      if (currentType === 'jam' && isManaged) {
+        navigate(`/jam/${event.id}`);
+      } else {
+        navigate(`/events/${event.id}`);
+      }
     },
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { message?: string } } };
@@ -118,7 +127,16 @@ export default function CreateEvent() {
       await addCoOrganizers(event.id);
 
       toast({ title: t('events:messages.eventCreated') });
-      navigate(`/events/${event.id}`);
+
+      // For managed jams, navigate to jam management page
+      // The jam ID lookup by event ID works thanks to JamsService unified lookup (Plan 03)
+      const currentType = form.getValues('type');
+      const isManaged = form.getValues('manageParticipants');
+      if (currentType === 'jam' && isManaged) {
+        navigate(`/jam/${event.id}`);
+      } else {
+        navigate(`/events/${event.id}`);
+      }
     },
     onError: (error: unknown) => {
       const err = error as { response?: { data?: { message?: string } } };
