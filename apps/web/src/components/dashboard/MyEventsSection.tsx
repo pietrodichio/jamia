@@ -5,8 +5,61 @@ import { eventsApi } from '@/api/events.api';
 import { EventCard } from '@/components/events/EventCard';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Loader2, FileText, CalendarCheck, History } from 'lucide-react';
+import { Calendar, Plus, Loader2, FileText, CalendarCheck, History, Users } from 'lucide-react';
 import type { Event } from '@jamia/types/event';
+
+/**
+ * Helper to determine if an event is a managed jam (has participant management).
+ * Returns the jam management URL or null.
+ */
+function getJamManageUrl(event: Event): string | null {
+  if (event.source_jam_id) {
+    return `/jam/${event.source_jam_id}`;
+  }
+  if (event.type === 'jam' && event.manage_participants) {
+    return `/jam/${event.id}`;
+  }
+  return null;
+}
+
+interface EventCardWithActionsProps {
+  event: Event;
+}
+
+/**
+ * EventCard wrapper that adds management actions for managed jam events.
+ * Shows a "Gestisci" button overlay for jams with participant management.
+ */
+function EventCardWithActions({ event }: EventCardWithActionsProps) {
+  const navigate = useNavigate();
+  const jamManageUrl = getJamManageUrl(event);
+
+  const handleManageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (jamManageUrl) {
+      navigate(jamManageUrl);
+    }
+  };
+
+  return (
+    <div className="relative group/card">
+      <EventCard event={event} />
+      {/* Management overlay for managed jams */}
+      {jamManageUrl && (
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/card:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+          <Button
+            onClick={handleManageClick}
+            variant="secondary"
+            className="rounded-xl"
+          >
+            <Users className="mr-2 h-4 w-4" />
+            Gestisci
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface MyEventsSectionProps {
   userId?: string;
@@ -106,7 +159,7 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {draftEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
+                    <EventCardWithActions key={event.id} event={event} />
                   ))}
                 </div>
               </div>
@@ -121,7 +174,7 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
+                    <EventCardWithActions key={event.id} event={event} />
                   ))}
                 </div>
               </div>
@@ -136,7 +189,7 @@ export function MyEventsSection({ userId }: MyEventsSectionProps) {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {pastEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
+                    <EventCardWithActions key={event.id} event={event} />
                   ))}
                 </div>
               </div>
