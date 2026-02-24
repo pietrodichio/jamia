@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 
 ## Current Position
 
-Phase: 12 (E2E Testing)
-Plan: 4 of 4 completed
-Status: Phase verified — 12/12 must-haves passed
-Last activity: 2026-02-19 — Completed 12-04-PLAN.md (Discovery and Jam E2E Tests)
+Phase: 12.1 (Jam Management Regression Fix)
+Plan: 01 of 03 - Complete
+Status: In progress
+Last activity: 2026-02-24 — Completed 12.1-01-PLAN.md (Database Schema)
 
-Progress: [█████████████] 100% (65/62 plans estimated)
+Progress: [████████████░] 98% (66/68 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 65
+- Total plans completed: 66
 - Average duration: 4 min
-- Total execution time: 5.33 hours
+- Total execution time: 5.41 hours
 
 **By Phase:**
 
@@ -42,12 +42,13 @@ Progress: [█████████████] 100% (65/62 plans estimated)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 11-03 (7 min), 12-01 (4 min), 12-03 (16 min), 12-02 (12 min), 12-04 (25 min)
-- Trend: E2E testing phase complete with discovery and CI workflow
+- Last 5 plans: 12-01 (4 min), 12-03 (16 min), 12-02 (12 min), 12-04 (25 min), 12.1-01 (5 min)
+- Trend: Starting jam management regression fix phase
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
 | 11. Backend Integration Tests | 3/3 | 12 min | 4 min |
 | 12. E2E Testing | 4/4 | 57 min | 14 min |
+| 12.1. Jam Management Regression Fix | 1/3 | 5 min | 5 min |
 
 *Updated after each plan completion*
 
@@ -303,6 +304,8 @@ Recent decisions affecting current work:
 - Port 3000 in playwright config matches vite.config.ts server port setting
 - curl loop for backend health check in CI (more reliable than wait-on)
 - CI workflow triggers only on push to main (not PRs) to stay within GitHub Actions free tier
+- Bidirectional FK pattern: source_jam_id (events->jams) + source_event_id (jams->events) for jam management sync
+- Jam management columns on events table (not JSONB) for better queryability and sync simplicity
 
 
 ### Roadmap Evolution
@@ -318,6 +321,7 @@ Recent decisions affecting current work:
 - Phase 10 added: Frontend Testing Infrastructure - Vitest + React Testing Library setup, critical component and hook tests
 - Phase 11 added: Backend Integration Tests - Controller tests via supertest, API endpoint validation, DTO testing
 - Phase 12 added: E2E Testing - Playwright setup for critical user flows (event creation, discovery, jam participation, auth)
+- Phase 12.1 inserted after Phase 12: Jam Management Regression Fix (URGENT) - Managed jam functionality broken by event system refactor; `/jam/:id` routes fail, clone/duplicate missing, participant management unavailable for event-based jams
 
 ### Pending Todos
 
@@ -329,7 +333,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-19
-Stopped at: Completed Phase 12 (E2E Testing) — verified 12/12 must-haves
+Last session: 2026-02-24
+Stopped at: Completed 12.1-01-PLAN.md (Database Schema)
 Resume file: None
-Next: v1 Milestone complete. All 12 phases finished. Ready for /gsd:audit-milestone
+Next: Execute 12.1-02-PLAN.md (EventsService reverse sync implementation)
