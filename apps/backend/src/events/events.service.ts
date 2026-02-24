@@ -587,6 +587,18 @@ export class EventsService {
       throw new Error(`Failed to publish event: ${error.message}`);
     }
 
+    // Sync status to linked jam (if exists)
+    if (data.source_jam_id) {
+      // Event was created from jam - jam sync is handled by JamsService
+      // No action needed here
+    } else if (data.manage_participants && data.type === 'jam') {
+      // Event was created via /create-event - sync status to linked jam
+      await this.supabase
+        .from('jams')
+        .update({ status: 'published' })
+        .eq('source_event_id', eventId);
+    }
+
     // Log publication
     await this.auditService.log(eventId, userId, 'event_published');
 
