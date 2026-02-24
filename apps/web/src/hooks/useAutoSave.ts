@@ -38,6 +38,15 @@ interface AutoSaveFormData {
     until?: string;
   };
   status?: string;
+  // Jam management fields (form uses camelCase, will be mapped to snake_case for DTO)
+  manageParticipants?: boolean;
+  capacity?: number;
+  desired_bases_min?: number;
+  desired_bases_max?: number;
+  desired_flyers_min?: number;
+  desired_flyers_max?: number;
+  auto_promote?: boolean;
+  public_participants?: boolean;
   // Allow other fields
   [key: string]: unknown;
 }
@@ -112,6 +121,18 @@ function mapFormToDto(formData: AutoSaveFormData): Partial<CreateEventDto> {
     dto.recurrence_rule = formData.recurrence.rule || undefined;
     dto.recurrence_dtstart = formData.recurrence.dtstart || undefined;
     dto.recurrence_until = formData.recurrence.until || undefined;
+  }
+
+  // Map jam management fields - only include if type='jam' AND manageParticipants=true
+  if (formData.type === 'jam' && formData.manageParticipants) {
+    dto.manage_participants = true;
+    dto.capacity = formData.capacity;
+    dto.desired_bases_min = formData.desired_bases_min;
+    dto.desired_bases_max = formData.desired_bases_max;
+    dto.desired_flyers_min = formData.desired_flyers_min;
+    dto.desired_flyers_max = formData.desired_flyers_max;
+    dto.auto_promote = formData.auto_promote ?? true;
+    dto.public_participants = formData.public_participants ?? true;
   }
 
   // Clean undefined values (except inside location_text object which we handled above)
