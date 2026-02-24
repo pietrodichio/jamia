@@ -48,6 +48,16 @@ export interface Event {
   parent_event_id?: string | null;
   source_jam_id?: string | null;
 
+  // Jam management fields (only used when type='jam' and manage_participants=true)
+  manage_participants?: boolean;
+  capacity?: number | null;
+  desired_bases_min?: number | null;
+  desired_bases_max?: number | null;
+  desired_flyers_min?: number | null;
+  desired_flyers_max?: number | null;
+  auto_promote?: boolean;
+  public_participants?: boolean;
+
   // Timestamps
   created_at: string;
   updated_at: string;
@@ -116,6 +126,15 @@ export interface CreateEventDto {
   recurrence_rule?: string;
   recurrence_dtstart?: string;
   recurrence_until?: string;
+  // Jam management fields (only used when type='jam' and manage_participants=true)
+  manage_participants?: boolean;
+  capacity?: number;
+  desired_bases_min?: number;
+  desired_bases_max?: number;
+  desired_flyers_min?: number;
+  desired_flyers_max?: number;
+  auto_promote?: boolean;
+  public_participants?: boolean;
 }
 
 export interface UpdateEventDto extends Partial<CreateEventDto> {
