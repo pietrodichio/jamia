@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 12.1 (Jam Management Regression Fix)
-Plan: 01 of 03 - Complete
+Plan: 02 of 03 - Complete
 Status: In progress
-Last activity: 2026-02-24 — Completed 12.1-01-PLAN.md (Database Schema)
+Last activity: 2026-02-24 — Completed 12.1-02-PLAN.md (Backend Reverse Sync)
 
-Progress: [████████████░] 98% (66/68 plans)
+Progress: [████████████░] 99% (67/68 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 66
+- Total plans completed: 67
 - Average duration: 4 min
-- Total execution time: 5.41 hours
+- Total execution time: 5.51 hours
 
 **By Phase:**
 
@@ -42,13 +42,13 @@ Progress: [████████████░] 98% (66/68 plans)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 12-01 (4 min), 12-03 (16 min), 12-02 (12 min), 12-04 (25 min), 12.1-01 (5 min)
-- Trend: Starting jam management regression fix phase
+- Last 5 plans: 12-03 (16 min), 12-02 (12 min), 12-04 (25 min), 12.1-01 (5 min), 12.1-02 (6 min)
+- Trend: Jam management regression fix phase progressing well
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
 | 11. Backend Integration Tests | 3/3 | 12 min | 4 min |
 | 12. E2E Testing | 4/4 | 57 min | 14 min |
-| 12.1. Jam Management Regression Fix | 1/3 | 5 min | 5 min |
+| 12.1. Jam Management Regression Fix | 2/3 | 11 min | 6 min |
 
 *Updated after each plan completion*
 
@@ -306,6 +306,9 @@ Recent decisions affecting current work:
 - CI workflow triggers only on push to main (not PRs) to stay within GitHub Actions free tier
 - Bidirectional FK pattern: source_jam_id (events->jams) + source_event_id (jams->events) for jam management sync
 - Jam management columns on events table (not JSONB) for better queryability and sync simplicity
+- Non-throwing sync: jam creation failure doesn't break event creation (resilience over atomicity)
+- Owner auto-added as jam participant with their main_role from profile
+- Skip reverse sync when event has source_jam_id to prevent circular sync loops
 
 
 ### Roadmap Evolution
@@ -334,6 +337,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 12.1-01-PLAN.md (Database Schema)
+Stopped at: Completed 12.1-02-PLAN.md (Backend Reverse Sync)
 Resume file: None
-Next: Execute 12.1-02-PLAN.md (EventsService reverse sync implementation)
+Next: Execute 12.1-03-PLAN.md (JamsService unified lookup)
