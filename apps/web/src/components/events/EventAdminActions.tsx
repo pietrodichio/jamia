@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     Edit,
     Trash2,
@@ -9,6 +10,8 @@ import {
     Calendar,
     Shield,
     UserCheck,
+    Copy,
+    Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,8 +20,24 @@ import { Separator } from '@/components/ui/separator';
 import { DeleteEventDialog } from './DeleteEventDialog';
 import { ManageCoOrganizersDialog } from './ManageCoOrganizersDialog';
 import { ManageTeachersDialog } from './ManageTeachersDialog';
+import { jamsApi } from '@/api/jams.api';
+import { useToast } from '@/hooks/use-toast';
 import type { EventWithOrganizer } from '@jamia/types';
 import type { EventTeacher } from '@jamia/types/event';
+
+/**
+ * Helper to determine if an event is a managed jam (has participant management).
+ * Returns the jam ID to use for cloning (source_jam_id for legacy, event.id for unified lookup).
+ */
+function getJamId(event: EventWithOrganizer): string | null {
+    if (event.source_jam_id) {
+        return event.source_jam_id;
+    }
+    if (event.type === 'jam' && event.manage_participants) {
+        return event.id;
+    }
+    return null;
+}
 
 interface EventAdminActionsProps {
     event: EventWithOrganizer;
@@ -39,7 +58,43 @@ export function EventAdminActions({
 }: EventAdminActionsProps) {
     const navigate = useNavigate();
     const { t } = useTranslation(['events', 'common']);
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+    // Get jam ID for managed jam events (for cloning)
+    const jamId = getJamId(event);
+
+    // Clone jam mutation
+    const cloneMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return jamsApi.cloneJam(id);
+        },
+        onSuccess: (clonedJam) => {
+            toast({
+                title: 'Jam clonata!',
+                description: 'La jam e stata clonata con successo',
+            });
+            // Invalidate relevant queries
+            queryClient.invalidateQueries({ queryKey: ['jams'] });
+            queryClient.invalidateQueries({ queryKey: ['events'] });
+            // Navigate to edit the cloned jam
+            navigate(`/jam/${clonedJam.id}/edit`);
+        },
+        onError: () => {
+            toast({
+                title: 'Errore',
+                description: 'Impossibile clonare la jam',
+                variant: 'destructive',
+            });
+        },
+    });
+
+    const handleClone = () => {
+        if (jamId) {
+            cloneMutation.mutate(jamId);
+        }
+    };
 
     // Don't render if user has no admin permissions
     if (!isOwner && !isCoOrganizer && !isSuperAdmin) {
@@ -100,7 +155,22 @@ export function EventAdminActions({
                                     {t('events:actions.editEvent')}
                                 </Button>
 
-
+                                {/* Clone button - only for managed jam events */}
+                                {jamId && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleClone}
+                                        disabled={cloneMutation.isPending}
+                                        className="rounded-xl"
+                                    >
+                                        {cloneMutation.isPending ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Copy className="mr-2 h-4 w-4" />
+                                        )}
+                                        Clona Jam
+                                    </Button>
+                                )}
 
                                 <ManageCoOrganizersDialog eventId={event.id} isOwner={isOwner}>
                                     <Button variant="outline" className="rounded-xl">
