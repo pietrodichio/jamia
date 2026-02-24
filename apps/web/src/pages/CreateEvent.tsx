@@ -170,11 +170,18 @@ export default function CreateEvent() {
       cta_text: (!data.manageParticipants || data.type !== 'jam') ? data.ctaText : undefined,
       // Image URL
       image_url: data.image_url || undefined,
+      // Jam management fields - only include when type='jam' AND manageParticipants=true
+      ...(data.type === 'jam' && data.manageParticipants && {
+        manage_participants: true,
+        capacity: data.capacity ? Number(data.capacity) : undefined,
+        desired_bases_min: data.desired_bases_min ? Number(data.desired_bases_min) : undefined,
+        desired_bases_max: data.desired_bases_max ? Number(data.desired_bases_max) : undefined,
+        desired_flyers_min: data.desired_flyers_min ? Number(data.desired_flyers_min) : undefined,
+        desired_flyers_max: data.desired_flyers_max ? Number(data.desired_flyers_max) : undefined,
+        auto_promote: data.auto_promote ?? true,
+        public_participants: data.public_participants ?? true,
+      }),
     };
-
-    // Note: For managed jams (manageParticipants = true), the jam management
-    // system should be used separately. This unified flow creates event listings only.
-    // Capacity and visibility are jam management features, not event listing fields.
 
     // Use mutations instead of direct API calls
     if (draftId) {
