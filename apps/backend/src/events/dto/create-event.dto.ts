@@ -7,6 +7,7 @@ import {
   IsArray,
   ValidateNested,
   IsObject,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -119,4 +120,42 @@ export class CreateEventDto {
   @IsOptional()
   @IsDateString()
   recurrence_until?: string; // Series end date (ISO 8601)
+
+  // Jam management fields (only used when type='jam' and manage_participants=true)
+  @IsOptional()
+  @IsBoolean()
+  manage_participants?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  capacity?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  desired_bases_min?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  desired_bases_max?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  desired_flyers_min?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  desired_flyers_max?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  auto_promote?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  public_participants?: boolean;
 }
