@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-20)
 ## Current Position
 
 Phase: 12.1 (Jam Management Regression Fix)
-Plan: 04 of 04 - Complete
+Plan: 05 of 05 - Complete
 Status: Phase complete
-Last activity: 2026-02-24 — Completed 12.1-04-PLAN.md (Frontend Form Integration)
+Last activity: 2026-02-24 — Completed 12.1-05-PLAN.md (Dashboard Navigation Fix)
 
-Progress: [████████████] 100% (69/69 plans)
+Progress: [████████████] 100% (70/70 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 69
+- Total plans completed: 70
 - Average duration: 4 min
-- Total execution time: 5.6 hours
+- Total execution time: 5.65 hours
 
 **By Phase:**
 
@@ -42,13 +42,13 @@ Progress: [████████████] 100% (69/69 plans)
 | 9. Email Adoption & Growth UX | 1/1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 12-04 (25 min), 12.1-01 (5 min), 12.1-02 (6 min), 12.1-03 (3 min), 12.1-04 (3 min)
+- Last 5 plans: 12.1-01 (5 min), 12.1-02 (6 min), 12.1-03 (3 min), 12.1-04 (3 min), 12.1-05 (3 min)
 - Trend: Jam management regression fix phase complete
 
 | 10. Frontend Testing Infrastructure | 2/2 | 6 min | 3 min |
 | 11. Backend Integration Tests | 3/3 | 12 min | 4 min |
 | 12. E2E Testing | 4/4 | 57 min | 14 min |
-| 12.1. Jam Management Regression Fix | 4/4 | 17 min | 4 min |
+| 12.1. Jam Management Regression Fix | 5/5 | 20 min | 4 min |
 
 *Updated after each plan completion*
 
@@ -315,6 +315,9 @@ Recent decisions affecting current work:
 - Form field name mapping (manageParticipants -> manage_participants) for backend DTO compatibility
 - Default auto_promote and public_participants to true for managed jams
 - Navigate to /jam/:id after managed jam creation for immediate participant management
+- getJamManageUrl helper: Use source_jam_id if available, fall back to event.id for unified lookup
+- EventCardWithActions wrapper: Hover overlay pattern for dashboard management actions
+- Clone navigates to /jam/:id/edit after successful clone for immediate editing
 
 
 ### Roadmap Evolution
@@ -343,6 +346,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 12.1-04-PLAN.md (Frontend Form Integration) - Phase 12.1 complete
+Stopped at: Completed 12.1-05-PLAN.md (Dashboard Navigation Fix) - Phase 12.1 complete
 Resume file: None
 Next: All plans complete - project at 100%
