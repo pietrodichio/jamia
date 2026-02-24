@@ -263,15 +263,26 @@ export class JamsService {
     };
   }
 
-  async getPublicJamParticipants(jamId: string) {
-    // First check if jam exists and is published
-    const { data: jam, error: jamError } = await this.supabase
+  async getPublicJamParticipants(idParam: string) {
+    // First check if jam exists - try both jam ID and event ID
+    let { data: jam, error: jamError } = await this.supabase
       .from('jams')
       .select('id, status, public_participants')
-      .eq('id', jamId)
-      .single();
+      .eq('id', idParam)
+      .maybeSingle();
 
-    if (jamError || !jam) {
+    // Fallback to source_event_id lookup
+    if (!jam && (!jamError || jamError.code === 'PGRST116')) {
+      const result = await this.supabase
+        .from('jams')
+        .select('id, status, public_participants')
+        .eq('source_event_id', idParam)
+        .maybeSingle();
+      jam = result.data;
+      jamError = result.error;
+    }
+
+    if (!jam) {
       throw new NotFoundException('Jam not found');
     }
 
@@ -282,6 +293,9 @@ export class JamsService {
     if (jam.public_participants === false) {
       throw new ForbiddenException('Participants are not publicly visible');
     }
+
+    // Use resolved jam.id for subsequent queries
+    const jamId = jam.id;
 
     // Get participants with profile information using explicit join
     const { data, error } = await this.supabase
@@ -398,13 +412,16 @@ export class JamsService {
   }
 
   async updateJam(
-    jamId: string,
+    idParam: string,
     userId: string,
     updateJamDto: UpdateJamDto,
     isSuperAdmin = false,
   ) {
-    // Check ownership or management
-    const jam = await this.getJamById(jamId, userId, isSuperAdmin);
+    // Check ownership or management (accepts either jam ID or event ID)
+    const jam = await this.getJamById(idParam, userId, isSuperAdmin);
+
+    // Use resolved jam ID for all operations
+    const jamId = jam.id;
 
     const isOwnerOrManager = await this.isManagerOrOwner(
       jamId,
@@ -461,8 +478,12 @@ export class JamsService {
     return data;
   }
 
-  async publishJam(jamId: string, userId: string, isSuperAdmin = false) {
-    await this.getJamById(jamId, userId, isSuperAdmin);
+  async publishJam(idParam: string, userId: string, isSuperAdmin = false) {
+    // Accepts either jam ID or event ID
+    const jam = await this.getJamById(idParam, userId, isSuperAdmin);
+
+    // Use resolved jam ID for all operations
+    const jamId = jam.id;
 
     const isOwnerOrManager = await this.isManagerOrOwner(
       jamId,
@@ -505,12 +526,16 @@ export class JamsService {
     return data;
   }
 
-  async deleteJam(jamId: string, userId: string, isSuperAdmin = false) {
-    const jam = await this.getJamById(jamId, userId, isSuperAdmin);
+  async deleteJam(idParam: string, userId: string, isSuperAdmin = false) {
+    // Accepts either jam ID or event ID
+    const jam = await this.getJamById(idParam, userId, isSuperAdmin);
 
     if (!jam) {
       throw new NotFoundException('Jam not found');
     }
+
+    // Use resolved jam ID for all operations
+    const jamId = jam.id;
 
     const isOwnerOrManager = await this.isManagerOrOwner(
       jamId,
@@ -653,13 +678,17 @@ export class JamsService {
   }
 
   async sendJamEmail(
-    jamId: string,
+    idParam: string,
     userId: string,
     dto: SendJamEmailDto,
     isSuperAdmin = false,
     senderEmail?: string | null,
   ) {
-    await this.getJamById(jamId, userId, isSuperAdmin);
+    // Accepts either jam ID or event ID
+    const jam = await this.getJamById(idParam, userId, isSuperAdmin);
+
+    // Use resolved jam ID for all operations
+    const jamId = jam.id;
 
     const canManage = await this.isManagerOrOwner(jamId, userId, isSuperAdmin);
     if (!canManage) {
@@ -706,13 +735,17 @@ export class JamsService {
   }
 
   async sendJamEmailTest(
-    jamId: string,
+    idParam: string,
     userId: string,
     dto: TestJamEmailDto,
     isSuperAdmin = false,
     senderEmail?: string | null,
   ) {
-    await this.getJamById(jamId, userId, isSuperAdmin);
+    // Accepts either jam ID or event ID
+    const jam = await this.getJamById(idParam, userId, isSuperAdmin);
+
+    // Use resolved jam ID for all operations
+    const jamId = jam.id;
 
     const canManage = await this.isManagerOrOwner(jamId, userId, isSuperAdmin);
     if (!canManage) {
