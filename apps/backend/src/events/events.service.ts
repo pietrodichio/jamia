@@ -705,10 +705,10 @@ export class EventsService {
         date_from: dto.dateFrom || null,
         date_to: dto.dateTo || null,
         keyword: dto.keyword || null,
-        tags: dto.tags || null,
-        accommodation_options: dto.accommodation_options || null,
-        food_options: dto.food_options || null,
-        teacher_id: dto.teacher_id || null,
+        filter_tags: dto.tags || null,
+        filter_accommodation: dto.accommodation_options || null,
+        filter_food: dto.food_options || null,
+        filter_teacher_id: dto.teacher_id || null,
       },
     );
 
@@ -935,5 +935,91 @@ export class EventsService {
       operation: 'delete',
       reason: 'jam_deleted',
     });
+  }
+
+  /**
+   * Create corresponding jam record when event with manage_participants is created
+   * Called during event creation for type='jam' events with participant management
+   * REVERSE SYNC: Event -> Jam direction (vs createEventFromJam which is Jam -> Event)
+   */
+  private async createJamFromEvent(
+    event: any,
+    dto: CreateEventDto,
+    userId: string,
+  ): Promise<any> {
+    // Skip if already linked to a jam (prevents circular sync)
+    if (event.source_jam_id) {
+      return null;
+    }
+
+    const jamData = {
+      owner_id: event.owner_id,
+      name: event.title,
+      location_text: event.location_text,
+      location_lat: event.location_lat,
+      location_lng: event.location_lng,
+      gmaps_link: event.gmaps_link,
+      starts_at: event.starts_at,
+      ends_at: event.ends_at,
+      description: event.description,
+      status: event.status, // 'draft' on creation
+      source_event_id: event.id, // Link back to event
+      // Jam-specific fields from DTO
+      capacity: dto.capacity ?? null,
+      desired_bases_min: dto.desired_bases_min ?? null,
+      desired_bases_max: dto.desired_bases_max ?? null,
+      desired_flyers_min: dto.desired_flyers_min ?? null,
+      desired_flyers_max: dto.desired_flyers_max ?? null,
+      auto_promote: dto.auto_promote ?? true,
+      public_participants: dto.public_participants ?? true,
+      // Build location JSON object if coordinates available
+      location:
+        event.location_lat && event.location_lng
+          ? {
+              description: event.location_text,
+              latitude: event.location_lat,
+              longitude: event.location_lng,
+              google_maps_url: event.gmaps_link,
+            }
+          : null,
+    };
+
+    const { data: jam, error } = await this.supabase
+      .from('jams')
+      .insert(jamData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Failed to create jam from event:', error);
+      // Non-throwing: event creation succeeds even if jam sync fails
+      return null;
+    }
+
+    // Update event with source_jam_id for bidirectional linking
+    await this.supabase
+      .from('events')
+      .update({ source_jam_id: jam.id })
+      .eq('id', event.id);
+
+    // Add owner as participant (mirrors JamsService.ensureOwnerParticipation pattern)
+    // Get user's main_role from profile
+    const { data: profile } = await this.supabase
+      .from('profiles')
+      .select('main_role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const role = profile?.main_role || 'both';
+
+    await this.supabase.from('jam_participants').insert({
+      jam_id: jam.id,
+      user_id: userId,
+      role,
+      state: 'participant',
+      source: 'owner',
+    });
+
+    return jam;
   }
 }
