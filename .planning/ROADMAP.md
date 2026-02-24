@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 10: Frontend Testing Infrastructure** - Set up Vitest + React Testing Library, test critical components and custom hooks
 - [x] **Phase 11: Backend Integration Tests** - Controller tests via supertest, API endpoint validation, DTO validation testing
 - [x] **Phase 12: E2E Testing** - Playwright setup with tests for event creation, discovery, jam participation, and auth flows
-- [ ] **Phase 12.1: Jam Management Regression Fix (INSERTED)** - Restore managed jam functionality broken by event system refactor
+- [x] **Phase 12.1: Jam Management Regression Fix (INSERTED)** - Restore managed jam functionality broken by event system refactor
 
 ## Phase Details
 
@@ -395,11 +395,11 @@ Plans:
 **Plans:** 5 plans
 
 Plans:
-- [ ] 12.1-01-PLAN.md — Database schema (source_event_id column, jam management columns on events)
-- [ ] 12.1-02-PLAN.md — Backend reverse sync (EventsService.createJamFromEvent, publish sync)
-- [ ] 12.1-03-PLAN.md — Backend lookup unification (JamsService accepts event ID)
-- [ ] 12.1-04-PLAN.md — Frontend form integration (pass jam fields to backend)
-- [ ] 12.1-05-PLAN.md — Dashboard and event actions navigation fix
+- [x] 12.1-01-PLAN.md — Database schema (source_event_id column, jam management columns on events)
+- [x] 12.1-02-PLAN.md — Backend reverse sync (EventsService.createJamFromEvent, publish sync)
+- [x] 12.1-03-PLAN.md — Backend lookup unification (JamsService accepts event ID)
+- [x] 12.1-04-PLAN.md — Frontend form integration (pass jam fields to backend)
+- [x] 12.1-05-PLAN.md — Dashboard and event actions navigation fix
 
 **Details:**
 Critical regression discovered post-Phase 12:
@@ -444,4 +444,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 6.1 -> 6.2 -> 6.3
 | 10. Frontend Testing Infrastructure | 2/2 | Complete | 2026-02-18 |
 | 11. Backend Integration Tests | 3/3 | Complete | 2026-02-18 |
 | 12. E2E Testing | 4/4 | Complete | 2026-02-19 |
-| 12.1. Jam Management Regression Fix (INSERTED) | 0/5 | Not Started | - |
+| 12.1. Jam Management Regression Fix (INSERTED) | 5/5 | Complete | 2026-02-24 |
