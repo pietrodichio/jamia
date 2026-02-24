@@ -587,9 +587,12 @@ export class JamsService {
     }));
   }
 
-  async cloneJam(jamId: string, userId: string, isSuperAdmin = false) {
-    // Get the original jam
-    const originalJam = await this.getJamById(jamId, userId, isSuperAdmin);
+  async cloneJam(idParam: string, userId: string, isSuperAdmin = false) {
+    // Get the original jam (accepts either jam ID or event ID)
+    const originalJam = await this.getJamById(idParam, userId, isSuperAdmin);
+
+    // Use resolved jam ID for permission check
+    const jamId = originalJam.id;
 
     // Check if user has permission to clone this jam
     const isOwnerOrManager = await this.isManagerOrOwner(
