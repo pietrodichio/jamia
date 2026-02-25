@@ -563,7 +563,7 @@ export function UnifiedSearchBar() {
           <div className="p-4 space-y-4">
             {/* Keyword input - full width */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('search.mobile.keywordLabel')}</label>
+              <label htmlFor="keyword" className="text-sm font-medium">{t('search.mobile.keywordLabel')}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -579,7 +579,7 @@ export function UnifiedSearchBar() {
 
             {/* Location input - full width */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t('search.mobile.locationLabel')}</label>
+              <label htmlFor="location" className="text-sm font-medium">{t('search.mobile.locationLabel')}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -812,6 +812,7 @@ export function UnifiedSearchBar() {
                   {predictions.map((prediction, index) => (
                     <li
                       key={prediction.place_id}
+                      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: <biome loop errors>
                       role="option"
                       aria-selected={highlightedIndex === index + 1}
                       tabIndex={highlightedIndex === index + 1 ? 0 : -1}

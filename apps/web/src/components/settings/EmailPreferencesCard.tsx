@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { emailPreferencesApi } from '@/api/email-preferences.api';
@@ -23,33 +23,15 @@ export function EmailPreferencesCard({ isNewUser = false }: EmailPreferencesCard
   const [localDigestFrequency, setLocalDigestFrequency] = useState<'weekly' | 'monthly'>('monthly');
   const [localProductUpdatesEnabled, setLocalProductUpdatesEnabled] = useState(true);
 
+  // Ref to track if auto-save has been performed (prevents duplicate saves)
+  const hasAutoSaved = useRef(false);
+
   // Fetch current preferences
   const { data: preferences, isLoading } = useQuery({
     queryKey: ['email-preferences'],
     queryFn: emailPreferencesApi.getPreferences,
     enabled: true,
   });
-
-  // Update local state when data is fetched
-  useEffect(() => {
-    if (preferences) {
-      setLocalDigestEnabled(preferences.digest_enabled);
-      setLocalDigestFrequency(preferences.digest_frequency);
-      setLocalProductUpdatesEnabled(preferences.product_updates_enabled);
-    }
-  }, [preferences]);
-
-  // Auto-save for new users on mount
-  useEffect(() => {
-    if (isNewUser && !preferences) {
-      // Auto-save default preference for new users
-      updateMutation.mutate({
-        digest_enabled: true,
-        digest_frequency: 'monthly',
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isNewUser]); // Only run once on mount
 
   // Update mutation
   const updateMutation = useMutation({
@@ -61,14 +43,36 @@ export function EmailPreferencesCard({ isNewUser = false }: EmailPreferencesCard
         description: t('emailPreferences.savedDescription'),
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast({
         title: t('emailPreferences.error'),
-        description: error.response?.data?.message || t('emailPreferences.errorDescription'),
+        description: errorMessage || t('emailPreferences.errorDescription'),
         variant: 'destructive',
       });
     },
   });
+
+  // Update local state when data is fetched
+  useEffect(() => {
+    console.log('preferences', preferences);
+    if (preferences) {
+      setLocalDigestEnabled(preferences.digest_enabled);
+      setLocalDigestFrequency(preferences.digest_frequency);
+      setLocalProductUpdatesEnabled(preferences.product_updates_enabled);
+    }
+  }, [preferences]);
+
+  // Auto-save for new users on mount
+  useEffect(() => {
+    if (isNewUser && !isLoading && !preferences && !hasAutoSaved.current) {
+      hasAutoSaved.current = true;
+      updateMutation.mutate({
+        digest_enabled: true,
+        digest_frequency: 'monthly',
+      });
+    }
+  }, [isNewUser, isLoading, preferences, updateMutation]);
 
   const handleDigestToggle = (checked: boolean) => {
     setLocalDigestEnabled(checked);

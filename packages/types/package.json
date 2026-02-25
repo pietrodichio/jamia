@@ -28,6 +28,10 @@
     "./profile": {
       "types": "./dist/profile.d.ts",
       "default": "./dist/profile.js"
+    },
+    "./email-preferences": {
+      "types": "./dist/email-preferences.d.ts",
+      "default": "./dist/email-preferences.js"
     }
   },
   "devDependencies": {

@@ -629,40 +629,107 @@ export class JamsService {
       throw new ForbiddenException('You can only clone jams you own or manage');
     }
 
+    // Check if original jam was created from an event (has source_event_id)
+    // If so, we need to clone the event as well for bidirectional linking
+    let clonedEventId: string | null = null;
+
+    if (originalJam.source_event_id) {
+      // Fetch the original event
+      const { data: originalEvent, error: eventError } = await this.supabase
+        .from('events')
+        .select('*')
+        .eq('id', originalJam.source_event_id)
+        .single();
+
+      if (!eventError && originalEvent) {
+        // Clone the event (without source_jam_id - will be set after jam creation)
+        const { data: clonedEvent, error: cloneEventError } = await this.supabase
+          .from('events')
+          .insert({
+            owner_id: userId,
+            type: originalEvent.type,
+            title: `${originalEvent.title} (Copia)`,
+            description: originalEvent.description,
+            location_text: originalEvent.location_text,
+            location_lat: originalEvent.location_lat,
+            location_lng: originalEvent.location_lng,
+            location_city: originalEvent.location_city,
+            gmaps_link: originalEvent.gmaps_link,
+            starts_at: new Date().toISOString(),
+            ends_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+            price: originalEvent.price,
+            external_link: originalEvent.external_link,
+            organizer_contact: originalEvent.organizer_contact,
+            tags: originalEvent.tags,
+            accommodation_options: originalEvent.accommodation_options,
+            food_options: originalEvent.food_options,
+            cta_text: originalEvent.cta_text,
+            image_url: originalEvent.image_url,
+            status: 'draft',
+            // Jam management fields
+            manage_participants: originalEvent.manage_participants,
+            capacity: originalEvent.capacity,
+            desired_bases_min: originalEvent.desired_bases_min,
+            desired_bases_max: originalEvent.desired_bases_max,
+            desired_flyers_min: originalEvent.desired_flyers_min,
+            desired_flyers_max: originalEvent.desired_flyers_max,
+            auto_promote: originalEvent.auto_promote,
+            public_participants: originalEvent.public_participants,
+          })
+          .select()
+          .single();
+
+        if (!cloneEventError && clonedEvent) {
+          clonedEventId = clonedEvent.id;
+        }
+      }
+    }
+
     // Create new jam with basic details (no dates, no participants)
     const { data, error } = await this.supabase
       .from('jams')
-        .insert({
-          owner_id: userId,
-          name: `${originalJam.name} (Copia)`,
-          location: originalJam.location || null,
-          location_text: originalJam.location?.description || originalJam.location_text,
-          gmaps_link: originalJam.location?.google_maps_url || originalJam.gmaps_link,
-          location_lat:
-            originalJam.location?.latitude !== undefined
-              ? originalJam.location?.latitude
-              : originalJam.location_lat,
-          location_lng:
-            originalJam.location?.longitude !== undefined
-              ? originalJam.location?.longitude
-              : originalJam.location_lng,
-          description: originalJam.description,
-          capacity: originalJam.capacity,
-          desired_bases_min: originalJam.desired_bases_min,
-          desired_bases_max: originalJam.desired_bases_max,
-          desired_flyers_min: originalJam.desired_flyers_min,
+      .insert({
+        owner_id: userId,
+        name: `${originalJam.name} (Copia)`,
+        location: originalJam.location || null,
+        location_text: originalJam.location?.description || originalJam.location_text,
+        gmaps_link: originalJam.location?.google_maps_url || originalJam.gmaps_link,
+        location_lat:
+          originalJam.location?.latitude !== undefined
+            ? originalJam.location?.latitude
+            : originalJam.location_lat,
+        location_lng:
+          originalJam.location?.longitude !== undefined
+            ? originalJam.location?.longitude
+            : originalJam.location_lng,
+        description: originalJam.description,
+        capacity: originalJam.capacity,
+        desired_bases_min: originalJam.desired_bases_min,
+        desired_bases_max: originalJam.desired_bases_max,
+        desired_flyers_min: originalJam.desired_flyers_min,
         desired_flyers_max: originalJam.desired_flyers_max,
         auto_promote: originalJam.auto_promote,
+        public_participants: originalJam.public_participants,
         status: 'draft',
         // Note: starts_at and ends_at are required but will be set by user when editing
         starts_at: new Date().toISOString(),
         ends_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now as placeholder
+        // Link to cloned event if original had one
+        source_event_id: clonedEventId,
       })
       .select()
       .single();
 
     if (error) {
       throw new Error(`Failed to clone jam: ${error.message}`);
+    }
+
+    // Update cloned event with source_jam_id for bidirectional linking
+    if (clonedEventId) {
+      await this.supabase
+        .from('events')
+        .update({ source_jam_id: data.id })
+        .eq('id', clonedEventId);
     }
 
     // Add owner as participant
@@ -672,6 +739,7 @@ export class JamsService {
     await this.auditService.log(data.id, userId, 'cloned', {
       original_jam_id: jamId,
       original_jam_name: originalJam.name,
+      cloned_event_id: clonedEventId,
     });
 
     return data;

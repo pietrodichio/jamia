@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesApi } from "@/api/profiles.api";
 import { Button } from "@/components/ui/button";
@@ -16,9 +17,29 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Upload, X } from "lucide-react";
 import imageCompression from "browser-image-compression";
 import { EmailPreferencesCard } from "@/components/settings/EmailPreferencesCard";
+import { useIpLocation } from "@/hooks/useIpLocation";
+import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { cn } from "@/lib/utils";
 
 const phoneNumberRegex = /^\+?[0-9\s\-().]{7,20}$/;
 const ROLE_OPTIONS = ["base", "flyer"] as const;
+
+interface PlacePrediction {
+  description: string;
+  place_id: string;
+  placePrediction: {
+    text: { text?: string } | string;
+    placeId: string;
+    toPlace?: () => {
+      fetchFields: (options: { fields: string[] }) => Promise<void>;
+      location?: { lat: () => number; lng: () => number };
+      addressComponents?: Array<{
+        types: string[];
+        longText: string;
+      }>;
+    };
+  };
+}
 type MainRole = (typeof ROLE_OPTIONS)[number];
 
 const sanitizeMainRole = (role?: string | null): MainRole =>
@@ -45,7 +66,6 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const ProfileSetup = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -53,6 +73,23 @@ const ProfileSetup = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // City autocomplete state
+  const [citySearchText, setCitySearchText] = useState('');
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [isLoadingPredictions, setIsLoadingPredictions] = useState(false);
+  const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
+  const cityInputRef = useRef<HTMLInputElement>(null);
+  const lastRequestId = useRef(0);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const sessionTokenRef = useRef<any>(null);
+
+  // IP location and Google Maps hooks
+  const { data: ipLocation, isSuccess: ipLocationReady } = useIpLocation();
+  const googleApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const { isLoaded: placesLibraryLoaded } = useGoogleMaps(googleApiKey);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -62,10 +99,226 @@ const ProfileSetup = () => {
       phone: "",
       bio: "",
       city: "",
-      mainRole: sanitizeMainRole(),
     },
   });
   const { control, handleSubmit, reset } = form;
+
+  // Session token management for Google Places
+  const getSessionToken = useCallback(() => {
+    const maps = (window as any).google?.maps;
+    if (!sessionTokenRef.current && maps?.places?.AutocompleteSessionToken) {
+      sessionTokenRef.current = new maps.places.AutocompleteSessionToken();
+    }
+    return sessionTokenRef.current;
+  }, []);
+
+  const resetSessionToken = useCallback(() => {
+    sessionTokenRef.current = null;
+  }, []);
+
+  // Handle city selection from predictions
+  const handleSelectCity = async (prediction: PlacePrediction) => {
+    if (!prediction) return;
+
+    // Clear pending requests
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+      debounceTimeout.current = null;
+    }
+
+    setIsLoadingPredictions(true);
+    setPredictions([]);
+    setIsCityDropdownOpen(false);
+
+    try {
+      if (prediction.placePrediction?.toPlace) {
+        const place = prediction.placePrediction.toPlace() as any;
+        await place.fetchFields({
+          fields: ['location', 'addressComponents'],
+        });
+
+        // Extract city name from address components
+        let cityName = '';
+        if (place.addressComponents) {
+          for (const component of place.addressComponents) {
+            if (component.types.includes('locality')) {
+              cityName = component.longText;
+              break;
+            }
+          }
+          // Fallback to administrative_area_level_3 if locality not found
+          if (!cityName) {
+            for (const component of place.addressComponents) {
+              if (component.types.includes('administrative_area_level_3')) {
+                cityName = component.longText;
+                break;
+              }
+            }
+          }
+        }
+
+        // Use the prediction description if no city name extracted
+        if (!cityName) {
+          cityName = prediction.description.split(',')[0].trim();
+        }
+
+        form.setValue('city', cityName);
+        setCitySearchText(cityName);
+        resetSessionToken();
+      }
+    } catch (error) {
+      console.error('Error fetching place details:', error);
+      // Fallback: use the first part of description
+      const fallbackCity = prediction.description.split(',')[0].trim();
+      form.setValue('city', fallbackCity);
+      setCitySearchText(fallbackCity);
+    } finally {
+      setIsLoadingPredictions(false);
+    }
+  };
+
+  // Keyboard navigation for city dropdown
+  const handleCityKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isCityDropdownOpen || predictions.length === 0) {
+      if (e.key === 'Escape') {
+        setIsCityDropdownOpen(false);
+        cityInputRef.current?.blur();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex((prev) =>
+          prev < predictions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex((prev) =>
+          prev > 0 ? prev - 1 : predictions.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < predictions.length) {
+          void handleSelectCity(predictions[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsCityDropdownOpen(false);
+        setHighlightedIndex(-1);
+        break;
+    }
+  };
+
+  // Fetch city predictions with debounce
+  useEffect(() => {
+    if (!placesLibraryLoaded || !citySearchText || citySearchText.length < 2) {
+      setPredictions([]);
+      setIsCityDropdownOpen(false);
+      return;
+    }
+
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(async () => {
+      const requestId = ++lastRequestId.current;
+      setIsLoadingPredictions(true);
+
+      const maps = (window as any).google?.maps;
+      if (!maps?.places?.AutocompleteSuggestion) {
+        setIsLoadingPredictions(false);
+        return;
+      }
+
+      try {
+        const sessionToken = getSessionToken();
+        const request = {
+          input: citySearchText,
+          types: ['(cities)'],
+          sessionToken,
+        };
+
+        const { suggestions } = await maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        if (requestId !== lastRequestId.current) {
+          return;
+        }
+
+        setIsLoadingPredictions(false);
+
+        if (Array.isArray(suggestions)) {
+          const mappedPredictions: PlacePrediction[] = suggestions.slice(0, 5).map((suggestion: {
+            placePrediction: {
+              text: { text?: string } | string;
+              placeId: string;
+            };
+          }) => {
+            const placePrediction = suggestion.placePrediction;
+            return {
+              description: typeof placePrediction.text === 'object'
+                ? placePrediction.text.text || placePrediction.text.toString()
+                : placePrediction.text.toString(),
+              place_id: placePrediction.placeId,
+              placePrediction: placePrediction as PlacePrediction['placePrediction'],
+            };
+          });
+          setPredictions(mappedPredictions);
+          setIsCityDropdownOpen(mappedPredictions.length > 0);
+          setHighlightedIndex(-1);
+        } else {
+          setPredictions([]);
+          setIsCityDropdownOpen(false);
+        }
+      } catch (error) {
+        if (requestId !== lastRequestId.current) {
+          return;
+        }
+        setIsLoadingPredictions(false);
+        setPredictions([]);
+        setIsCityDropdownOpen(false);
+      }
+    }, 350);
+
+    return () => {
+      if (debounceTimeout.current) {
+        clearTimeout(debounceTimeout.current);
+      }
+    };
+  }, [citySearchText, placesLibraryLoaded, getSessionToken]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        cityDropdownRef.current &&
+        !cityDropdownRef.current.contains(e.target as Node) &&
+        cityInputRef.current &&
+        !cityInputRef.current.contains(e.target as Node)
+      ) {
+        setIsCityDropdownOpen(false);
+        setHighlightedIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Auto-fill city from IP location for new users
+  useEffect(() => {
+    if (ipLocationReady && ipLocation?.city && !form.getValues('city')) {
+      form.setValue('city', ipLocation.city);
+      setCitySearchText(ipLocation.city);
+    }
+  }, [ipLocationReady, ipLocation, form]);
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -134,6 +387,11 @@ const ProfileSetup = () => {
           city: profile.city || "",
           mainRole: sanitizeMainRole(profile.main_role),
         });
+
+        // Sync city search text with loaded profile city
+        if (profile.city) {
+          setCitySearchText(profile.city);
+        }
 
         const candidatePhoto = profile.photo_url?.trim();
         const isPlaceholderPhoto = candidatePhoto
@@ -245,10 +503,8 @@ const ProfileSetup = () => {
     }
   };
 
-  const onSubmit = handleSubmit(async (values) => {
-    setIsLoading(true);
-
-    try {
+  const updateProfileMutation = useMutation({
+    mutationFn: async (values: ProfileFormValues) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non autenticato");
 
@@ -261,7 +517,7 @@ const ProfileSetup = () => {
         }
       }
 
-      await profilesApi.updateProfile(user.id, {
+      return profilesApi.updateProfile(user.id, {
         first_name: values.firstName,
         last_name: values.lastName || "",
         phone: values.phone,
@@ -270,7 +526,8 @@ const ProfileSetup = () => {
         main_role: values.mainRole,
         photo_url: photoUrl || undefined,
       });
-
+    },
+    onSuccess: () => {
       toast({
         title: "Profilo aggiornato!",
         description: "Il tuo profilo è stato salvato con successo.",
@@ -283,19 +540,22 @@ const ProfileSetup = () => {
       } else {
         navigate("/dashboard");
       }
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast({
         title: "Errore",
         description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  const onSubmit = handleSubmit((values) => {
+    updateProfileMutation.mutate(values);
   });
 
   const triggerFilePicker = () => {
-    if (isLoading || isUploadingPhoto) return;
+    if (updateProfileMutation.isPending || isUploadingPhoto) return;
     fileInputRef.current?.click();
   };
 
@@ -328,7 +588,7 @@ const ProfileSetup = () => {
                           size="icon"
                           className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
                           onClick={handleRemovePhoto}
-                          disabled={isLoading || isUploadingPhoto}
+                          disabled={updateProfileMutation.isPending || isUploadingPhoto}
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -338,7 +598,7 @@ const ProfileSetup = () => {
                         type="button"
                         onClick={triggerFilePicker}
                         className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-primary/20 transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                        disabled={isLoading || isUploadingPhoto}
+                        disabled={updateProfileMutation.isPending || isUploadingPhoto}
                       >
                         <Upload className="h-8 w-8 text-muted-foreground" />
                       </button>
@@ -349,7 +609,7 @@ const ProfileSetup = () => {
                         type="file"
                         accept="image/jpeg,image/png"
                         onChange={handlePhotoChange}
-                        disabled={isLoading || isUploadingPhoto}
+                        disabled={updateProfileMutation.isPending || isUploadingPhoto}
                         className="rounded-xl"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -371,7 +631,7 @@ const ProfileSetup = () => {
                             id="firstName"
                             type="text"
                             placeholder="Mario"
-                            disabled={isLoading}
+                            disabled={updateProfileMutation.isPending}
                             className="rounded-xl"
                             {...field}
                             value={field.value ?? ""}
@@ -393,7 +653,7 @@ const ProfileSetup = () => {
                             id="lastName"
                             type="text"
                             placeholder="Rossi"
-                            disabled={isLoading}
+                            disabled={updateProfileMutation.isPending}
                             className="rounded-xl"
                             {...field}
                             value={field.value ?? ""}
@@ -417,7 +677,7 @@ const ProfileSetup = () => {
                             id="phone"
                             type="tel"
                             placeholder="+39 123 456 7890"
-                            disabled={isLoading}
+                            disabled={updateProfileMutation.isPending}
                             className="rounded-xl"
                             {...field}
                             value={field.value ?? ""}
@@ -432,18 +692,71 @@ const ProfileSetup = () => {
                     control={control}
                     name="city"
                     render={({ field }) => (
-                      <FormItem className="space-y-2">
+                      <FormItem className="space-y-2 relative">
                         <FormLabel htmlFor="city">Città</FormLabel>
                         <FormControl>
-                          <Input
-                            id="city"
-                            type="text"
-                            placeholder="Milano, Roma, Torino..."
-                            disabled={isLoading}
-                            className="rounded-xl"
-                            {...field}
-                            value={field.value ?? ""}
-                          />
+                          <div className="relative">
+                            <Input
+                              ref={cityInputRef}
+                              id="city"
+                              type="text"
+                              placeholder="Milano, Roma, Torino..."
+                              disabled={updateProfileMutation.isPending}
+                              className="rounded-xl pr-9"
+                              value={citySearchText || field.value || ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setCitySearchText(value);
+                                field.onChange(value);
+                                if (value.length >= 2) {
+                                  setIsCityDropdownOpen(true);
+                                }
+                              }}
+                              onFocus={() => {
+                                if (predictions.length > 0) {
+                                  setIsCityDropdownOpen(true);
+                                }
+                              }}
+                              onKeyDown={handleCityKeyDown}
+                            />
+                            {isLoadingPredictions && (
+                              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                            )}
+                            {isCityDropdownOpen && predictions.length > 0 && (
+                              <div
+                                ref={cityDropdownRef}
+                                className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md"
+                              >
+                                <ul className="py-1">
+                                  {predictions.map((prediction, index) => (
+                                    <li
+                                      key={prediction.place_id}
+                                      tabIndex={0}
+                                      onClick={() => void handleSelectCity(prediction)}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                          e.preventDefault();
+                                          void handleSelectCity(prediction);
+                                        }
+                                      }}
+                                      onMouseEnter={() => setHighlightedIndex(index)}
+                                      className={cn(
+                                        'cursor-pointer px-3 py-2 text-sm',
+                                        highlightedIndex === index
+                                          ? 'bg-accent text-accent-foreground'
+                                          : 'hover:bg-accent hover:text-accent-foreground'
+                                      )}
+                                      aria-selected={highlightedIndex === index}
+                                      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: <explanation>
+                                      role="option"
+                                    >
+                                      {prediction.description}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -460,7 +773,7 @@ const ProfileSetup = () => {
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={isLoading}
+                        disabled={updateProfileMutation.isPending}
                       >
                         <SelectTrigger id="mainRole" className="rounded-xl">
                           <SelectValue />
@@ -485,7 +798,7 @@ const ProfileSetup = () => {
                         <Textarea
                           id="bio"
                           placeholder="Raccontaci qualcosa di te, la tua esperienza con l'AcroYoga..."
-                          disabled={isLoading}
+                          disabled={updateProfileMutation.isPending}
                           rows={4}
                           className="rounded-xl resize-none"
                           {...field}
@@ -500,9 +813,9 @@ const ProfileSetup = () => {
                 <Button
                   type="submit"
                   className="w-full rounded-xl"
-                  disabled={isLoading || isUploadingPhoto}
+                  disabled={updateProfileMutation.isPending || isUploadingPhoto}
                 >
-                  {(isLoading || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {(updateProfileMutation.isPending || isUploadingPhoto) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isUploadingPhoto ? "Caricamento foto..." : "Salva profilo"}
                 </Button>
               </form>

@@ -527,6 +527,26 @@ export class EventsService {
       throw new Error(`Failed to update event: ${error.message}`);
     }
 
+    // REVERSE SYNC: Create jam if this is a managed jam being published without a linked jam
+    if (
+      data.type === 'jam' &&
+      data.manage_participants &&
+      !data.source_jam_id &&
+      data.status === 'published'
+    ) {
+      // Check if jam already exists by source_event_id
+      const { data: existingJam } = await this.supabase
+        .from('jams')
+        .select('id')
+        .eq('source_event_id', eventId)
+        .maybeSingle();
+
+      if (!existingJam) {
+        // Create the jam - pass the updated event data and the updateDto for jam fields
+        await this.createJamFromEvent(data, updateEventDto as CreateEventDto, userId);
+      }
+    }
+
     // Log update
     await this.auditService.log(
       eventId,

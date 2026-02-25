@@ -52,7 +52,7 @@ export function RecommendationsSection({ userId }: RecommendationsSectionProps) 
       <CardHeader>
         <CardTitle className="text-xl font-semibold">{t("sections.recommendations")}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 md:p-6">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />

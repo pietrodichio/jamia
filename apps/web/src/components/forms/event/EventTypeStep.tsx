@@ -47,11 +47,17 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
   const predictionsTimeout = useRef<NodeJS.Timeout | null>(null);
   const suppressNextPredictions = useRef(false);
   const suppressUntilTimestamp = useRef<number | null>(null);
+  const lastMapsDebugState = useRef<string | null>(null);
 
   const googleApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+
   // Load Google Maps API using React Query
-  const { isLoaded: placesLibraryLoaded } = useGoogleMaps(googleApiKey);
+  const {
+    isLoaded: placesLibraryLoaded,
+    status: placesLibraryStatus,
+    errorReason: placesLibraryErrorReason,
+  } = useGoogleMaps(googleApiKey);
 
   // Parse Google Maps URLs for coordinates
   useEffect(() => {
@@ -79,6 +85,35 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
   // Watch location coordinates to detect when location is already selected
   const locationLatitude = form.watch('location.latitude');
   const locationLongitude = form.watch('location.longitude');
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    const stateKey = `${placesLibraryStatus}:${placesLibraryErrorReason ?? ''}`;
+    if (lastMapsDebugState.current === stateKey) {
+      return;
+    }
+
+    lastMapsDebugState.current = stateKey;
+
+    if (placesLibraryStatus === 'missing_key') {
+      console.warn('[EventTypeStep] Google Places disabled: VITE_GOOGLE_MAPS_API_KEY is missing.');
+      return;
+    }
+
+    if (placesLibraryStatus === 'error') {
+      console.error('[EventTypeStep] Google Places failed to load.', {
+        reason: placesLibraryErrorReason,
+      });
+      return;
+    }
+
+    if (placesLibraryStatus === 'loaded') {
+      console.debug('[EventTypeStep] Google Places loaded successfully.');
+    }
+  }, [placesLibraryStatus, placesLibraryErrorReason]);
 
   // Fetch autocomplete predictions
   useEffect(() => {
@@ -131,7 +166,7 @@ export function EventTypeStep({ form }: EventTypeStepProps) {
         };
 
         const { suggestions } = await maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
-
+        console.log('suggestions', suggestions);
         if (requestId !== lastPredictionRequestId.current) {
           return;
         }

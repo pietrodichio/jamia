@@ -47,7 +47,7 @@
   "emailPreferences": {
     "title": "Notifiche Email",
     "description": "Ricevi un riepilogo degli eventi di AcroYoga in Italia",
-    "digestLabel": "Ricezione digest",
+    "digestLabel": "Riepilogo eventi periodico",
     "digestDescription": "Ricevi un riepilogo periodico degli eventi in programma",
     "weekly": "Settimanale",
     "weeklyDescription": "Ogni lunedi mattina",
@@ -66,9 +66,9 @@
     "description": "Ricevi un riepilogo mensile degli eventi su Jamia direttamente via email.",
     "ctaButton": "Attiva",
     "loading": "Attivazione...",
-    "successTitle": "Digest attivato!",
+    "successTitle": "Riepilogo attivato!",
     "successMessage": "Riceverai un riepilogo mensile degli eventi su Jamia.",
-    "errorMessage": "Impossibile attivare il digest. Riprova."
+    "errorMessage": "Impossibile attivare il riepilogo. Riprova."
   },
   "unsubscribe": {
     "loading": "Annullamento iscrizione in corso...",

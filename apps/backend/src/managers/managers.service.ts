@@ -54,7 +54,7 @@ export class ManagersService {
         user_id,
         added_by,
         created_at,
-        profiles (
+        profiles!jam_managers_user_id_profiles_fkey (
           id,
           first_name,
           last_name,
@@ -268,7 +268,7 @@ export class ManagersService {
         user_id,
         added_by,
         created_at,
-        profiles (
+        profiles!jam_managers_user_id_profiles_fkey (
           id,
           first_name,
           last_name,

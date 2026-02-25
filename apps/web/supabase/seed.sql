@@ -621,3 +621,231 @@ ON CONFLICT (id) DO UPDATE SET
   status = EXCLUDED.status,
   auto_promote = EXCLUDED.auto_promote,
   public_participants = EXCLUDED.public_participants;
+
+-- ============================================
+-- Seed Managed Jams (event + jam with bidirectional linking)
+-- These test the new event-based jam creation flow
+-- ============================================
+
+-- First, create the events with jam management fields
+INSERT INTO public.events (
+  id,
+  owner_id,
+  type,
+  title,
+  description,
+  location_text,
+  location_lat,
+  location_lng,
+  starts_at,
+  ends_at,
+  price,
+  tags,
+  status,
+  -- Jam management fields
+  manage_participants,
+  capacity,
+  desired_bases_min,
+  desired_bases_max,
+  desired_flyers_min,
+  desired_flyers_max,
+  auto_promote,
+  public_participants
+)
+VALUES
+  -- Public managed jam (public_participants = true)
+  (
+    '20000000-0000-0000-0000-000000000101',
+    '11111111-1111-4111-8111-111111111111',
+    'jam',
+    'Jam Pubblica Gestita - Milano',
+    'Jam con gestione partecipanti attiva. Lista partecipanti visibile a tutti. Perfetta per trovare partner!',
+    'Centro Sportivo XXV Aprile, Milano',
+    45.4642,
+    9.1900,
+    date_trunc('day', now()) + interval '4 days' + interval '10 hours',
+    date_trunc('day', now()) + interval '4 days' + interval '13 hours',
+    'Gratuito',
+    ARRAY['beginner-friendly', 'outdoor', 'free', 'mat-required'],
+    'published',
+    -- Jam management
+    true,   -- manage_participants
+    20,     -- capacity
+    4,      -- desired_bases_min
+    8,      -- desired_bases_max
+    4,      -- desired_flyers_min
+    8,      -- desired_flyers_max
+    true,   -- auto_promote
+    true    -- public_participants (PUBLIC)
+  ),
+  -- Private managed jam (public_participants = false)
+  (
+    '20000000-0000-0000-0000-000000000102',
+    '33333333-3333-4333-8333-333333333333',
+    'jam',
+    'Jam Privata Gestita - Firenze',
+    'Jam con gestione partecipanti attiva ma lista privata. Solo l''organizzatore vede chi partecipa.',
+    'Parco delle Cascine, Firenze',
+    43.7696,
+    11.2355,
+    date_trunc('day', now()) + interval '6 days' + interval '15 hours',
+    date_trunc('day', now()) + interval '6 days' + interval '18 hours',
+    '5€',
+    ARRAY['intermediate', 'indoor', 'paid', 'mat-required'],
+    'published',
+    -- Jam management
+    true,   -- manage_participants
+    15,     -- capacity
+    3,      -- desired_bases_min
+    6,      -- desired_bases_max
+    3,      -- desired_flyers_min
+    6,      -- desired_flyers_max
+    true,   -- auto_promote
+    false   -- public_participants (PRIVATE)
+  )
+ON CONFLICT (id) DO UPDATE SET
+  owner_id = EXCLUDED.owner_id,
+  type = EXCLUDED.type,
+  title = EXCLUDED.title,
+  description = EXCLUDED.description,
+  location_text = EXCLUDED.location_text,
+  location_lat = EXCLUDED.location_lat,
+  location_lng = EXCLUDED.location_lng,
+  starts_at = EXCLUDED.starts_at,
+  ends_at = EXCLUDED.ends_at,
+  price = EXCLUDED.price,
+  tags = EXCLUDED.tags,
+  status = EXCLUDED.status,
+  manage_participants = EXCLUDED.manage_participants,
+  capacity = EXCLUDED.capacity,
+  desired_bases_min = EXCLUDED.desired_bases_min,
+  desired_bases_max = EXCLUDED.desired_bases_max,
+  desired_flyers_min = EXCLUDED.desired_flyers_min,
+  desired_flyers_max = EXCLUDED.desired_flyers_max,
+  auto_promote = EXCLUDED.auto_promote,
+  public_participants = EXCLUDED.public_participants;
+
+-- Create corresponding jams with source_event_id (bidirectional linking)
+INSERT INTO public.jams (
+  id,
+  owner_id,
+  name,
+  location_text,
+  location_lat,
+  location_lng,
+  starts_at,
+  ends_at,
+  description,
+  capacity,
+  desired_bases_min,
+  desired_bases_max,
+  desired_flyers_min,
+  desired_flyers_max,
+  status,
+  auto_promote,
+  public_participants,
+  source_event_id
+)
+VALUES
+  -- Jam for public managed event
+  (
+    '30000000-0000-0000-0000-000000000101',
+    '11111111-1111-4111-8111-111111111111',
+    'Jam Pubblica Gestita - Milano',
+    'Centro Sportivo XXV Aprile, Milano',
+    45.4642,
+    9.1900,
+    date_trunc('day', now()) + interval '4 days' + interval '10 hours',
+    date_trunc('day', now()) + interval '4 days' + interval '13 hours',
+    'Jam con gestione partecipanti attiva. Lista partecipanti visibile a tutti. Perfetta per trovare partner!',
+    20,
+    4,
+    8,
+    4,
+    8,
+    'published',
+    true,
+    true,   -- public_participants
+    '20000000-0000-0000-0000-000000000101'  -- source_event_id
+  ),
+  -- Jam for private managed event
+  (
+    '30000000-0000-0000-0000-000000000102',
+    '33333333-3333-4333-8333-333333333333',
+    'Jam Privata Gestita - Firenze',
+    'Parco delle Cascine, Firenze',
+    43.7696,
+    11.2355,
+    date_trunc('day', now()) + interval '6 days' + interval '15 hours',
+    date_trunc('day', now()) + interval '6 days' + interval '18 hours',
+    'Jam con gestione partecipanti attiva ma lista privata. Solo l''organizzatore vede chi partecipa.',
+    15,
+    3,
+    6,
+    3,
+    6,
+    'published',
+    true,
+    false,  -- public_participants (PRIVATE)
+    '20000000-0000-0000-0000-000000000102'  -- source_event_id
+  )
+ON CONFLICT (id) DO UPDATE SET
+  owner_id = EXCLUDED.owner_id,
+  name = EXCLUDED.name,
+  location_text = EXCLUDED.location_text,
+  location_lat = EXCLUDED.location_lat,
+  location_lng = EXCLUDED.location_lng,
+  starts_at = EXCLUDED.starts_at,
+  ends_at = EXCLUDED.ends_at,
+  description = EXCLUDED.description,
+  capacity = EXCLUDED.capacity,
+  desired_bases_min = EXCLUDED.desired_bases_min,
+  desired_bases_max = EXCLUDED.desired_bases_max,
+  desired_flyers_min = EXCLUDED.desired_flyers_min,
+  desired_flyers_max = EXCLUDED.desired_flyers_max,
+  status = EXCLUDED.status,
+  auto_promote = EXCLUDED.auto_promote,
+  public_participants = EXCLUDED.public_participants,
+  source_event_id = EXCLUDED.source_event_id;
+
+-- Update events with source_jam_id (complete bidirectional linking)
+UPDATE public.events SET source_jam_id = '30000000-0000-0000-0000-000000000101'
+WHERE id = '20000000-0000-0000-0000-000000000101';
+
+UPDATE public.events SET source_jam_id = '30000000-0000-0000-0000-000000000102'
+WHERE id = '20000000-0000-0000-0000-000000000102';
+
+-- Add owners as participants in the managed jams
+INSERT INTO public.jam_participants (
+  jam_id,
+  user_id,
+  role,
+  state,
+  source
+)
+VALUES
+  -- Alice as owner/participant of public jam
+  (
+    '30000000-0000-0000-0000-000000000101',
+    '11111111-1111-4111-8111-111111111111',
+    'base',  -- Alice's main_role from profile
+    'participant',
+    'owner'
+  ),
+  -- Charlie as owner/participant of private jam
+  (
+    '30000000-0000-0000-0000-000000000102',
+    '33333333-3333-4333-8333-333333333333',
+    'both',  -- Charlie's main_role from profile
+    'participant',
+    'owner'
+  ),
+  -- Bob as participant in public jam (to test non-owner participant)
+  (
+    '30000000-0000-0000-0000-000000000101',
+    '22222222-2222-4222-8222-222222222222',
+    'flyer',  -- Bob's main_role from profile
+    'participant',
+    'self'
+  )
+ON CONFLICT DO NOTHING;
