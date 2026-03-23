@@ -95,6 +95,7 @@ export const jamFormSchema = z
       .optional(),
     auto_promote: z.boolean(),
     public_participants: z.boolean(),
+    telegram_notifications_enabled: z.boolean().optional(),
   })
   .refine((data) => {
     if (!data.starts_at || !data.ends_at) return true;
@@ -127,4 +128,5 @@ export const jamFormDefaults: JamFormValues = {
   desired_flyers_max: undefined,
   auto_promote: true,
   public_participants: true,
+  telegram_notifications_enabled: true,
 };

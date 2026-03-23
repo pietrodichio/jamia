@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { profilesApi } from "@/api/profiles.api";
 import { supabase } from "@/integrations/supabase/client";
 import { jamsApi } from "@/api/jams.api";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ const CreateJam = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const form = useJamForm();
+  const [hasTelegramLinked, setHasTelegramLinked] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -23,6 +25,14 @@ const CreateJam = () => {
       } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
+        return;
+      }
+
+      try {
+        const profile = await profilesApi.getProfile(session.user.id);
+        setHasTelegramLinked(Boolean(profile.telegram_chat_id));
+      } catch (error) {
+        console.error("Error fetching profile:", error);
       }
     };
 
@@ -60,6 +70,7 @@ const CreateJam = () => {
         desired_flyers_max: data.desired_flyers_max || undefined,
         auto_promote: data.auto_promote,
         public_participants: data.public_participants,
+        telegram_notifications_enabled: data.telegram_notifications_enabled ?? true,
       });
 
       toast({
@@ -98,6 +109,7 @@ const CreateJam = () => {
               cancelLabel="Annulla"
               onCancel={() => navigate("/dashboard")}
               defaultDurationHours={4}
+              hasTelegramLinked={hasTelegramLinked}
             />
           </CardContent>
         </Card>
