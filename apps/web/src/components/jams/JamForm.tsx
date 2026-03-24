@@ -24,6 +24,7 @@ type JamFormProps = {
   cancelLabel: string;
   onCancel: () => void;
   defaultDurationHours?: number;
+  hasTelegramLinked?: boolean;
 };
 
 export const JamForm = ({
@@ -33,6 +34,7 @@ export const JamForm = ({
   cancelLabel,
   onCancel,
   defaultDurationHours = 4,
+  hasTelegramLinked = false,
 }: JamFormProps) => {
   const {
     register,
@@ -69,6 +71,7 @@ export const JamForm = ({
   const descriptionValue = watch("description") || "";
   const autoPromote = watch("auto_promote");
   const publicParticipants = watch("public_participants");
+  const telegramNotifications = watch("telegram_notifications_enabled");
 
   // Parse form values into date/time state when they change externally (e.g., from reset/edit)
   const prevStartsAtRef = useRef<string | undefined>(undefined);
@@ -502,6 +505,17 @@ export const JamForm = ({
         onChange={(checked) => setValue("public_participants", checked, { shouldDirty: true })}
         disabled={isSubmitting}
       />
+
+      {hasTelegramLinked && (
+        <FormSwitch
+          id="jam-telegram-notifications"
+          label="Notifiche Telegram"
+          description="Ricevi notifiche su Telegram quando qualcuno si iscrive o annulla la partecipazione"
+          checked={telegramNotifications ?? true}
+          onChange={(checked) => setValue("telegram_notifications_enabled", checked, { shouldDirty: true })}
+          disabled={isSubmitting}
+        />
+      )}
 
       <div className="flex gap-3">
         <Button type="submit" className="flex-1 rounded-xl" disabled={isSubmitting}>

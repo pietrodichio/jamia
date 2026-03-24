@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { profilesApi } from "@/api/profiles.api";
+import { telegramApi } from "@/api/telegram.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, X, ArrowLeft } from "lucide-react";
+import { Loader2, Upload, X, ArrowLeft, MessageCircle } from "lucide-react";
 import imageCompression from "browser-image-compression";
 
 const ROLE_OPTIONS = ["base", "flyer"] as const;
@@ -30,6 +31,9 @@ const Profile = () => {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [telegramLinked, setTelegramLinked] = useState(false);
+  const [telegramUsername, setTelegramUsername] = useState("");
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -53,6 +57,8 @@ const Profile = () => {
         if (profile.photo_url) {
           setPhotoPreview(profile.photo_url);
         }
+        setTelegramLinked(Boolean(profile.telegram_chat_id));
+        setTelegramUsername(profile.telegram_username || "");
       } catch (error) {
         console.error("Error fetching profile:", error);
         toast({
@@ -162,6 +168,58 @@ const Profile = () => {
       return null;
     } finally {
       setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleGenerateTelegramLink = async () => {
+    setIsGeneratingLink(true);
+
+    try {
+      const { botLink } = await telegramApi.generateLink();
+      window.open(botLink, "_blank");
+
+      toast({
+        title: "Link generato!",
+        description: "Apri Telegram e clicca su 'Start' per collegare il tuo account.",
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error("Error generating Telegram link:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile generare il link. Riprova più tardi.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const handleUnlinkTelegram = async () => {
+    const confirmed = window.confirm(
+      "Sei sicuro di voler scollegare il tuo account Telegram? Non riceverai più notifiche."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await telegramApi.unlinkAccount();
+      setTelegramLinked(false);
+      setTelegramUsername("");
+
+      toast({
+        title: "Account scollegato",
+        description: "Il tuo account Telegram è stato scollegato con successo.",
+      });
+    } catch (error) {
+      console.error("Error unlinking Telegram:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile scollegare l'account. Riprova più tardi.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -368,6 +426,72 @@ const Profile = () => {
                 rows={4}
                 className="rounded-xl resize-none"
               />
+            </div>
+
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-primary" />
+                <Label className="text-base font-semibold">Notifiche Telegram</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Collega il tuo account Telegram per ricevere notifiche quando qualcuno si iscrive o annulla la partecipazione alle tue jam.
+              </p>
+
+              {telegramLinked ? (
+                <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-600 dark:text-green-400">
+                        Account collegato
+                      </p>
+                      {telegramUsername && (
+                        <p className="mt-1 text-sm text-muted-foreground">@{telegramUsername}</p>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUnlinkTelegram}
+                      disabled={isLoading}
+                      className="rounded-xl"
+                    >
+                      Scollega
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Riceverai messaggi diretti su Telegram per le tue jam.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 rounded-xl border border-dashed border-primary/20 p-4">
+                  <p className="text-sm text-muted-foreground">
+                    Nessun account Telegram collegato
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleGenerateTelegramLink}
+                    disabled={isLoading || isGeneratingLink}
+                    className="w-full rounded-xl"
+                  >
+                    {isGeneratingLink ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generazione link...
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle className="mr-2 h-4 w-4" />
+                        Collega Telegram
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Cliccando sul pulsante si aprirà Telegram. Clicca "Start" per completare il collegamento.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">

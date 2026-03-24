@@ -22,7 +22,9 @@ export interface ProfileResponse {
   city: string | null;
   main_role: ParticipantRole | null;
   photo_url: string | null;
+  telegram_username: string | null;
   telegram_chat_id: number | null;
+  telegram_linked_at: string | null;
   created_at: string;
   updated_at: string;
 }
