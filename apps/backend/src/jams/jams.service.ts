@@ -331,6 +331,8 @@ export class JamsService {
       throw new BadRequestException('End date must be after start date');
     }
 
+    this.assertRoleLimitsConsistent(createJamDto);
+
     const locationColumns = this.buildLocationColumns(createJamDto.location);
     if (!locationColumns.location_text) {
       throw new BadRequestException('Location description is required');
@@ -395,6 +397,14 @@ export class JamsService {
       }
     }
 
+    this.assertRoleLimitsConsistent({
+      desired_bases_min: jam.desired_bases_min,
+      desired_bases_max: jam.desired_bases_max,
+      desired_flyers_min: jam.desired_flyers_min,
+      desired_flyers_max: jam.desired_flyers_max,
+      ...updateJamDto,
+    });
+
     const { location, ...updateWithoutLocation } =
       updateJamDto as Record<string, unknown>;
     const locationColumns = location
@@ -424,6 +434,31 @@ export class JamsService {
     );
 
     return data;
+  }
+
+  private assertRoleLimitsConsistent(limits: {
+    desired_bases_min?: number | null;
+    desired_bases_max?: number | null;
+    desired_flyers_min?: number | null;
+    desired_flyers_max?: number | null;
+  }) {
+    const isBelowMin = (min?: number | null, max?: number | null) =>
+      min !== null &&
+      min !== undefined &&
+      max !== null &&
+      max !== undefined &&
+      max < min;
+
+    if (isBelowMin(limits.desired_bases_min, limits.desired_bases_max)) {
+      throw new BadRequestException(
+        'Maximum number of bases cannot be lower than the minimum',
+      );
+    }
+    if (isBelowMin(limits.desired_flyers_min, limits.desired_flyers_max)) {
+      throw new BadRequestException(
+        'Maximum number of flyers cannot be lower than the minimum',
+      );
+    }
   }
 
   async publishJam(jamId: string, userId: string, isSuperAdmin = false) {

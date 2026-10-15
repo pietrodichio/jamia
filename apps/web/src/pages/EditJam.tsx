@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { sanitizeHtml } from "@/lib/sanitize";
 import JamForm from "@/components/jams/JamForm";
 import { useJamForm } from "@/hooks/useJamForm";
-import { JamFormValues, formatDateTimeLocalInput } from "@/lib/jam-form";
+import { JamFormValues, jamToFormValues } from "@/lib/jam-form";
 
 const EditJam = () => {
   const { id } = useParams<{ id: string }>();
@@ -90,26 +90,7 @@ const EditJam = () => {
 
   useEffect(() => {
     if (jam) {
-      reset({
-        name: jam.name,
-        location: {
-          description: jam.location?.description || jam.location_text || "",
-          place_id: jam.location?.place_id,
-          latitude: jam.location?.latitude ?? jam.location_lat,
-          longitude: jam.location?.longitude ?? jam.location_lng,
-          google_maps_url: jam.location?.google_maps_url || jam.gmaps_link || undefined,
-        },
-        starts_at: jam.starts_at ? formatDateTimeLocalInput(new Date(jam.starts_at)) : "",
-        ends_at: jam.ends_at ? formatDateTimeLocalInput(new Date(jam.ends_at)) : "",
-        description: jam.description || "",
-        capacity: jam.capacity ?? undefined,
-        desired_bases_min: jam.desired_bases_min ?? undefined,
-        desired_bases_max: jam.desired_bases_max ?? undefined,
-        desired_flyers_min: jam.desired_flyers_min ?? undefined,
-        desired_flyers_max: jam.desired_flyers_max ?? undefined,
-        auto_promote: jam.auto_promote ?? true,
-        public_participants: jam.public_participants ?? true,
-      });
+      reset(jamToFormValues(jam));
     }
   }, [jam, reset]);
 

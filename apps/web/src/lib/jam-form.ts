@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Jam } from "@/api/jams.api";
 
 export const formatDateTimeLocalInput = (date: Date): string => {
   const year = date.getFullYear();
@@ -55,6 +56,9 @@ export const formatDateForDisplay = (date: Date, locale: string = "it-IT"): stri
   });
 };
 
+const isMaxAtLeastMin = (min?: number, max?: number) =>
+  min === undefined || max === undefined || max >= min;
+
 export const jamFormSchema = z
   .object({
     name: z.string().trim().min(1, "Il nome è obbligatorio."),
@@ -104,6 +108,14 @@ export const jamFormSchema = z
   }, {
     message: "La data di fine deve essere successiva alla data di inizio.",
     path: ["ends_at"],
+  })
+  .refine((data) => isMaxAtLeastMin(data.desired_bases_min, data.desired_bases_max), {
+    message: "Il massimo di base non può essere inferiore al minimo.",
+    path: ["desired_bases_max"],
+  })
+  .refine((data) => isMaxAtLeastMin(data.desired_flyers_min, data.desired_flyers_max), {
+    message: "Il massimo di flyer non può essere inferiore al minimo.",
+    path: ["desired_flyers_max"],
   });
 
 export type JamFormValues = z.infer<typeof jamFormSchema>;
@@ -128,3 +140,25 @@ export const jamFormDefaults: JamFormValues = {
   auto_promote: true,
   public_participants: true,
 };
+
+// The API returns null for unset fields, while the form schema only accepts undefined.
+export const jamToFormValues = (jam: Jam): JamFormValues => ({
+  name: jam.name,
+  location: {
+    description: jam.location?.description || jam.location_text || "",
+    place_id: jam.location?.place_id ?? undefined,
+    latitude: jam.location?.latitude ?? jam.location_lat ?? undefined,
+    longitude: jam.location?.longitude ?? jam.location_lng ?? undefined,
+    google_maps_url: jam.location?.google_maps_url || jam.gmaps_link || undefined,
+  },
+  starts_at: jam.starts_at ? formatDateTimeLocalInput(new Date(jam.starts_at)) : "",
+  ends_at: jam.ends_at ? formatDateTimeLocalInput(new Date(jam.ends_at)) : "",
+  description: jam.description || "",
+  capacity: jam.capacity ?? undefined,
+  desired_bases_min: jam.desired_bases_min ?? undefined,
+  desired_bases_max: jam.desired_bases_max ?? undefined,
+  desired_flyers_min: jam.desired_flyers_min ?? undefined,
+  desired_flyers_max: jam.desired_flyers_max ?? undefined,
+  auto_promote: jam.auto_promote ?? true,
+  public_participants: jam.public_participants ?? true,
+});

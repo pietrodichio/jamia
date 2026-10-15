@@ -16,6 +16,7 @@ import { LocationInput } from "./LocationInput";
 import { DescriptionEditor } from "./DescriptionEditor";
 import { CapacitySettings } from "./CapacitySettings";
 import { FormSwitch } from "./FormSwitch";
+import { useToast } from "@/hooks/use-toast";
 
 type JamFormProps = {
   form: UseFormReturn<JamFormValues>;
@@ -41,6 +42,15 @@ export const JamForm = ({
     setValue,
     formState: { isSubmitting, errors },
   } = form;
+  const { toast } = useToast();
+
+  const onInvalid = () => {
+    toast({
+      title: "Impossibile salvare",
+      description: "Controlla i campi del modulo: alcuni valori non sono validi.",
+      variant: "destructive",
+    });
+  };
 
   const [placePredictions, setPlacePredictions] = useState<any[]>([]);
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
@@ -410,7 +420,7 @@ export const JamForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="jam-name">Nome della Jam *</Label>
