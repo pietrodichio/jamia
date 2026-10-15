@@ -73,6 +73,9 @@ export const CapacitySettings = ({
             disabled={disabled}
             className="rounded-xl"
           />
+          {errors?.desired_bases_min && (
+            <p className="text-xs text-destructive mt-1">{String(errors.desired_bases_min.message || "")}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="jam-bases-max">Base Max</Label>
@@ -86,6 +89,9 @@ export const CapacitySettings = ({
             disabled={disabled}
             className="rounded-xl"
           />
+          {errors?.desired_bases_max && (
+            <p className="text-xs text-destructive mt-1">{String(errors.desired_bases_max.message || "")}</p>
+          )}
         </div>
       </div>
 
@@ -102,6 +108,9 @@ export const CapacitySettings = ({
             disabled={disabled}
             className="rounded-xl"
           />
+          {errors?.desired_flyers_min && (
+            <p className="text-xs text-destructive mt-1">{String(errors.desired_flyers_min.message || "")}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="jam-flyers-max">Flyer Max</Label>
@@ -115,6 +124,9 @@ export const CapacitySettings = ({
             disabled={disabled}
             className="rounded-xl"
           />
+          {errors?.desired_flyers_max && (
+            <p className="text-xs text-destructive mt-1">{String(errors.desired_flyers_max.message || "")}</p>
+          )}
         </div>
       </div>
     </div>

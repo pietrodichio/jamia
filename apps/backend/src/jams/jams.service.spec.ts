@@ -15,6 +15,26 @@ describe('JamsService', () => {
     emailService.sendCustomEmail = jest.fn().mockResolvedValue(undefined);
   });
 
+  it('rejects jam creation when a role max is below its min', async () => {
+    const supabase = createSupabaseMock({});
+    const service = new JamsService(
+      supabase.client,
+      auditService as any,
+      emailService as any,
+    );
+
+    await expect(
+      service.createJam('owner-1', {
+        name: 'Morning Jam',
+        location: { description: 'Park' },
+        starts_at: new Date().toISOString(),
+        ends_at: new Date(Date.now() + 3600000).toISOString(),
+        desired_flyers_min: 4,
+        desired_flyers_max: 2,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('enrols the owner as participant when creating a jam', async () => {
     const jamInsertPayloads: unknown[] = [];
     const participantInsertPayloads: unknown[] = [];
@@ -1026,6 +1046,44 @@ describe('JamsService', () => {
           starts_at: '2024-01-01T12:00:00Z',
           ends_at: '2024-01-01T10:00:00Z',
         }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('throws BadRequestException when role max would be below the stored min', async () => {
+      const supabase = createSupabaseMock({
+        jams: [
+          {
+            response: {
+              data: {
+                id: 'jam-1',
+                name: 'Test Jam',
+                owner_id: 'owner-1',
+                status: 'published',
+                starts_at: '2024-01-01T10:00:00Z',
+                ends_at: '2024-01-01T12:00:00Z',
+                desired_bases_min: 2,
+                desired_bases_max: null,
+                desired_flyers_min: null,
+                desired_flyers_max: null,
+                jam_participants: [],
+              },
+              error: null,
+            },
+          },
+        ],
+      });
+      (supabase.client as any).rpc = jest
+        .fn()
+        .mockResolvedValue({ data: true, error: null });
+
+      const service = new JamsService(
+        supabase.client,
+        auditService as any,
+        emailService as any,
+      );
+
+      await expect(
+        service.updateJam('jam-1', 'owner-1', { desired_bases_max: 1 }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
