@@ -4,21 +4,12 @@ import {
   Inject,
 } from '@nestjs/common';
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as jwt from 'jsonwebtoken';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../config/supabase.config';
-
-interface JwtPayload {
-  sub: string;
-  email: string;
-  role: string;
-}
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   constructor(
-    private configService: ConfigService,
     @Inject(SUPABASE_CLIENT) private readonly supabase: SupabaseClient,
   ) { }
 
@@ -33,13 +24,14 @@ export class SupabaseAuthGuard implements CanActivate {
     const token = authHeader.replace('Bearer ', '');
 
     try {
-      const jwtSecret = this.configService.get<string>('SUPABASE_JWT_SECRET');
-      if (!jwtSecret) {
-        console.error('❌ SUPABASE_JWT_SECRET not found in environment variables');
-        throw new Error('JWT secret not configured');
+      // Verifies asymmetric tokens against the project's JWKS; legacy HS256
+      // tokens fall back to a getUser() round-trip to Supabase Auth.
+      const { data, error } = await this.supabase.auth.getClaims(token);
+      if (error || !data) {
+        throw error ?? new Error('Token could not be verified');
       }
 
-      const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
+      const decoded = data.claims;
       const isSuperAdmin = await this.isSuperAdmin(decoded.sub);
 
       request.user = {
